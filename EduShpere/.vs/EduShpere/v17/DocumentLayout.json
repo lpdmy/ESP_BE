@@ -1,0 +1,705 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\FPT\\DoAn\\EduShpere\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\dbcontext\\edushperedbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\edushpere.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:edushpere.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\migrations\\edushperedbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CFC14D43-E43A-4372-815D-8248E9BD548D}|..\\Domain\\EduShpere.Domain.csproj|e:\\fpt\\doan\\domain\\models\\rewardredemptionlog.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CFC14D43-E43A-4372-815D-8248E9BD548D}|..\\Domain\\EduShpere.Domain.csproj|e:\\fpt\\doan\\domain\\models\\post.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CFC14D43-E43A-4372-815D-8248E9BD548D}|..\\Domain\\EduShpere.Domain.csproj|e:\\fpt\\doan\\domain\\models\\friend.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\services\\authservice\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\services\\authservice\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\services\\httpcontextservice\\httpcontextservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\services\\httpcontextservice\\ihttpcontextservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\services\\userservice\\userservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\services\\userservice\\iuserservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\repositories\\appuser\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\repositories\\appuser\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\edushpere.infrastructure.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CFC14D43-E43A-4372-815D-8248E9BD548D}|..\\Domain\\EduShpere.Domain.csproj|e:\\fpt\\doan\\domain\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CFC14D43-E43A-4372-815D-8248E9BD548D}|..\\Domain\\EduShpere.Domain.csproj|e:\\fpt\\doan\\domain\\edushpere.domain.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\repositories\\base\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\repositories\\base\\irepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CFC14D43-E43A-4372-815D-8248E9BD548D}|..\\Domain\\EduShpere.Domain.csproj|e:\\fpt\\doan\\domain\\enum\\userrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\edushpere.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:edushpere.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\edushpere.application.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\dtos\\authdto\\tokenmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\dtos\\authdto\\logindto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\dtos\\responsedto\\responsedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|e:\\fpt\\doan\\edushpere\\middlewares\\customauthorizationmiddlewareresulthandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}|EduShpere.csproj|solutionrelative:middlewares\\customauthorizationmiddlewareresulthandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\extensions\\jsonserializationextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\extensions\\stringextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\exceptions\\http\\unauthorizedexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\exceptions\\http\\notfoundexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\exceptions\\http\\forbiddenexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\exceptions\\http\\conflictexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\exceptions\\http\\badrequestexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A5E903B9-7205-4060-B15F-6B8D309EBBB6}|..\\Application\\EduShpere.Application.csproj|e:\\fpt\\doan\\application\\dtos\\responsedto\\errorresponsedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A7639FEE-B4FC-4078-9CFB-FC8703D33483}|..\\Shared\\EduShpere.Shared.csproj|e:\\fpt\\doan\\shared\\exceptions\\externalserviceexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{75B64E16-614F-40A5-BBB4-DF58A2795D3C}|..\\Infrastructure\\EduShpere.Infrastructure.csproj|e:\\fpt\\doan\\infrastructure\\migrations\\20250807202257_init.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 9,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:35:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EduShpereDbContextModelSnapshot.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\Migrations\\EduShpereDbContextModelSnapshot.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\Migrations\\EduShpereDbContextModelSnapshot.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\Migrations\\EduShpereDbContextModelSnapshot.cs",
+              "RelativeToolTip": "..\\Infrastructure\\Migrations\\EduShpereDbContextModelSnapshot.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-13T11:40:32.77Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "RewardRedemptionLog.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Domain\\Models\\RewardRedemptionLog.cs",
+              "RelativeDocumentMoniker": "..\\Domain\\Models\\RewardRedemptionLog.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Domain\\Models\\RewardRedemptionLog.cs",
+              "RelativeToolTip": "..\\Domain\\Models\\RewardRedemptionLog.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-13T11:40:30.138Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EduShpereDbContext.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\DbContext\\EduShpereDbContext.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\DbContext\\EduShpereDbContext.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\DbContext\\EduShpereDbContext.cs",
+              "RelativeToolTip": "..\\Infrastructure\\DbContext\\EduShpereDbContext.cs",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAnwE8AAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:25:39.797Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "EduShpere.csproj",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\EduShpere.csproj",
+              "RelativeDocumentMoniker": "EduShpere.csproj",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\EduShpere.csproj",
+              "RelativeToolTip": "EduShpere.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-08-06T18:40:33.046Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAiwBQAAABbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:54:37.717Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Post.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Domain\\Models\\Post.cs",
+              "RelativeDocumentMoniker": "..\\Domain\\Models\\Post.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Domain\\Models\\Post.cs",
+              "RelativeToolTip": "..\\Domain\\Models\\Post.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-13T11:40:29.734Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Friend.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Domain\\Models\\Friend.cs",
+              "RelativeDocumentMoniker": "..\\Domain\\Models\\Friend.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Domain\\Models\\Friend.cs",
+              "RelativeToolTip": "..\\Domain\\Models\\Friend.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-13T11:40:29.303Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "HttpContextService.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\Services\\HttpContextService\\HttpContextService.cs",
+              "RelativeDocumentMoniker": "..\\Application\\Services\\HttpContextService\\HttpContextService.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\Services\\HttpContextService\\HttpContextService.cs",
+              "RelativeToolTip": "..\\Application\\Services\\HttpContextService\\HttpContextService.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAYwCMAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:43:48.308Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "IHttpContextService.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\Services\\HttpContextService\\IHttpContextService.cs",
+              "RelativeDocumentMoniker": "..\\Application\\Services\\HttpContextService\\IHttpContextService.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\Services\\HttpContextService\\IHttpContextService.cs",
+              "RelativeToolTip": "..\\Application\\Services\\HttpContextService\\IHttpContextService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:43:51.362Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "IUserService.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\Services\\UserService\\IUserService.cs",
+              "RelativeDocumentMoniker": "..\\Application\\Services\\UserService\\IUserService.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\Services\\UserService\\IUserService.cs",
+              "RelativeToolTip": "..\\Application\\Services\\UserService\\IUserService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwBAAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:39:20.685Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "UserService.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\Services\\UserService\\UserService.cs",
+              "RelativeDocumentMoniker": "..\\Application\\Services\\UserService\\UserService.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\Services\\UserService\\UserService.cs",
+              "RelativeToolTip": "..\\Application\\Services\\UserService\\UserService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:35:30.933Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\Services\\AuthService\\AuthService.cs",
+              "RelativeDocumentMoniker": "..\\Application\\Services\\AuthService\\AuthService.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\Services\\AuthService\\AuthService.cs",
+              "RelativeToolTip": "..\\Application\\Services\\AuthService\\AuthService.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAqwBUAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:50:39.22Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\Services\\AuthService\\IAuthService.cs",
+              "RelativeDocumentMoniker": "..\\Application\\Services\\AuthService\\IAuthService.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\Services\\AuthService\\IAuthService.cs",
+              "RelativeToolTip": "..\\Application\\Services\\AuthService\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:50:59.72Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "IUserRepository.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\AppUser\\IUserRepository.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\Repositories\\AppUser\\IUserRepository.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\AppUser\\IUserRepository.cs",
+              "RelativeToolTip": "..\\Infrastructure\\Repositories\\AppUser\\IUserRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:33:12.731Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "UserRepository.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\AppUser\\UserRepository.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\Repositories\\AppUser\\UserRepository.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\AppUser\\UserRepository.cs",
+              "RelativeToolTip": "..\\Infrastructure\\Repositories\\AppUser\\UserRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:32:54.056Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "EduShpere.Infrastructure.csproj",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\EduShpere.Infrastructure.csproj",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\EduShpere.Infrastructure.csproj",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\EduShpere.Infrastructure.csproj",
+              "RelativeToolTip": "..\\Infrastructure\\EduShpere.Infrastructure.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-08-07T19:25:24.241Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "User.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Domain\\Models\\User.cs",
+              "RelativeDocumentMoniker": "..\\Domain\\Models\\User.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Domain\\Models\\User.cs",
+              "RelativeToolTip": "..\\Domain\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-13T11:35:13.722Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AuthController.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "Controllers\\AuthController.cs",
+              "ViewState": "AgIAABEAAAAAAAAAAAA2wC4AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T20:30:25.794Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "EduShpere.Domain.csproj",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Domain\\EduShpere.Domain.csproj",
+              "RelativeDocumentMoniker": "..\\Domain\\EduShpere.Domain.csproj",
+              "ToolTip": "E:\\FPT\\DoAn\\Domain\\EduShpere.Domain.csproj",
+              "RelativeToolTip": "..\\Domain\\EduShpere.Domain.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-08-07T19:17:51.617Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "IRepository.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\Base\\IRepository.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\Repositories\\Base\\IRepository.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\Base\\IRepository.cs",
+              "RelativeToolTip": "..\\Infrastructure\\Repositories\\Base\\IRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:30:48.159Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "BaseRepository.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\Base\\BaseRepository.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\Repositories\\Base\\BaseRepository.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\Repositories\\Base\\BaseRepository.cs",
+              "RelativeToolTip": "..\\Infrastructure\\Repositories\\Base\\BaseRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:30:32.775Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "UserRole.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Domain\\Enum\\UserRole.cs",
+              "RelativeDocumentMoniker": "..\\Domain\\Enum\\UserRole.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Domain\\Enum\\UserRole.cs",
+              "RelativeToolTip": "..\\Domain\\Enum\\UserRole.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:23:47.775Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-08-07T19:27:38.085Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "20250807202257_init.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Infrastructure\\Migrations\\20250807202257_init.cs",
+              "RelativeDocumentMoniker": "..\\Infrastructure\\Migrations\\20250807202257_init.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Infrastructure\\Migrations\\20250807202257_init.cs",
+              "RelativeToolTip": "..\\Infrastructure\\Migrations\\20250807202257_init.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T20:22:57.44Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "EduShpere.http",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\EduShpere.http",
+              "RelativeDocumentMoniker": "EduShpere.http",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\EduShpere.http",
+              "RelativeToolTip": "EduShpere.http",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2025-08-07T20:24:47.776Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "TokenModel.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\DTOs\\AuthDto\\TokenModel.cs",
+              "RelativeDocumentMoniker": "..\\Application\\DTOs\\AuthDto\\TokenModel.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\DTOs\\AuthDto\\TokenModel.cs",
+              "RelativeToolTip": "..\\Application\\DTOs\\AuthDto\\TokenModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T20:00:44.335Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "EduShpere.Application.csproj",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\EduShpere.Application.csproj",
+              "RelativeDocumentMoniker": "..\\Application\\EduShpere.Application.csproj",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\EduShpere.Application.csproj",
+              "RelativeToolTip": "..\\Application\\EduShpere.Application.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-08-06T18:51:27.458Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "LoginDto.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\DTOs\\AuthDto\\LoginDto.cs",
+              "RelativeDocumentMoniker": "..\\Application\\DTOs\\AuthDto\\LoginDto.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\DTOs\\AuthDto\\LoginDto.cs",
+              "RelativeToolTip": "..\\Application\\DTOs\\AuthDto\\LoginDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-07T19:47:54.835Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "ResponseDto.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\DTOs\\ResponseDto\\ResponseDto.cs",
+              "RelativeDocumentMoniker": "..\\Application\\DTOs\\ResponseDto\\ResponseDto.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\DTOs\\ResponseDto\\ResponseDto.cs",
+              "RelativeToolTip": "..\\Application\\DTOs\\ResponseDto\\ResponseDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:51:57.664Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "ErrorResponseDto.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Application\\DTOs\\ResponseDto\\ErrorResponseDto.cs",
+              "RelativeDocumentMoniker": "..\\Application\\DTOs\\ResponseDto\\ErrorResponseDto.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Application\\DTOs\\ResponseDto\\ErrorResponseDto.cs",
+              "RelativeToolTip": "..\\Application\\DTOs\\ResponseDto\\ErrorResponseDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:51:23.482Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "GlobalExceptionHandlerMiddleware.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "RelativeDocumentMoniker": "Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "RelativeToolTip": "Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:49:00.374Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "CustomAuthorizationMiddlewareResultHandler.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\EduShpere\\Middlewares\\CustomAuthorizationMiddlewareResultHandler.cs",
+              "RelativeDocumentMoniker": "Middlewares\\CustomAuthorizationMiddlewareResultHandler.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\EduShpere\\Middlewares\\CustomAuthorizationMiddlewareResultHandler.cs",
+              "RelativeToolTip": "Middlewares\\CustomAuthorizationMiddlewareResultHandler.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:44:13.016Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "JsonSerializationExtensions.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Extensions\\JsonSerializationExtensions.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Extensions\\JsonSerializationExtensions.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Extensions\\JsonSerializationExtensions.cs",
+              "RelativeToolTip": "..\\Shared\\Extensions\\JsonSerializationExtensions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:46.52Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "StringExtensions.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Extensions\\StringExtensions.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Extensions\\StringExtensions.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Extensions\\StringExtensions.cs",
+              "RelativeToolTip": "..\\Shared\\Extensions\\StringExtensions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:42.307Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "UnauthorizedException.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\UnauthorizedException.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Exceptions\\Http\\UnauthorizedException.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\UnauthorizedException.cs",
+              "RelativeToolTip": "..\\Shared\\Exceptions\\Http\\UnauthorizedException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:22.807Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "NotFoundException.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\NotFoundException.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Exceptions\\Http\\NotFoundException.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\NotFoundException.cs",
+              "RelativeToolTip": "..\\Shared\\Exceptions\\Http\\NotFoundException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:14.555Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "ForbiddenException.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\ForbiddenException.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Exceptions\\Http\\ForbiddenException.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\ForbiddenException.cs",
+              "RelativeToolTip": "..\\Shared\\Exceptions\\Http\\ForbiddenException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:12.474Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "ConflictException.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\ConflictException.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Exceptions\\Http\\ConflictException.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\ConflictException.cs",
+              "RelativeToolTip": "..\\Shared\\Exceptions\\Http\\ConflictException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:09.702Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "BadRequestException.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\BadRequestException.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Exceptions\\Http\\BadRequestException.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Exceptions\\Http\\BadRequestException.cs",
+              "RelativeToolTip": "..\\Shared\\Exceptions\\Http\\BadRequestException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:48:07.351Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "ExternalServiceException.cs",
+              "DocumentMoniker": "E:\\FPT\\DoAn\\Shared\\Exceptions\\ExternalServiceException.cs",
+              "RelativeDocumentMoniker": "..\\Shared\\Exceptions\\ExternalServiceException.cs",
+              "ToolTip": "E:\\FPT\\DoAn\\Shared\\Exceptions\\ExternalServiceException.cs",
+              "RelativeToolTip": "..\\Shared\\Exceptions\\ExternalServiceException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-06T18:46:55.052Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 214,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

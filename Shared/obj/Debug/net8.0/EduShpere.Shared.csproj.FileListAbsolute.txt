@@ -1,0 +1,11 @@
+E:\FPT\DoAn\Shared\bin\Debug\net8.0\EduShpere.Shared.deps.json
+E:\FPT\DoAn\Shared\bin\Debug\net8.0\EduShpere.Shared.dll
+E:\FPT\DoAn\Shared\bin\Debug\net8.0\EduShpere.Shared.pdb
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\EduShpere.Shared.GeneratedMSBuildEditorConfig.editorconfig
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\EduShpere.Shared.AssemblyInfoInputs.cache
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\EduShpere.Shared.AssemblyInfo.cs
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\EduShpere.Shared.csproj.CoreCompileInputs.cache
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\EduShpere.Shared.dll
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\refint\EduShpere.Shared.dll
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\EduShpere.Shared.pdb
+E:\FPT\DoAn\Shared\obj\Debug\net8.0\ref\EduShpere.Shared.dll

@@ -1,0 +1,11 @@
+E:\FPT\DoAn\Application\bin\Debug\net8.0\Application.deps.json
+E:\FPT\DoAn\Application\bin\Debug\net8.0\Application.dll
+E:\FPT\DoAn\Application\bin\Debug\net8.0\Application.pdb
+E:\FPT\DoAn\Application\obj\Debug\net8.0\Application.GeneratedMSBuildEditorConfig.editorconfig
+E:\FPT\DoAn\Application\obj\Debug\net8.0\Application.AssemblyInfoInputs.cache
+E:\FPT\DoAn\Application\obj\Debug\net8.0\Application.AssemblyInfo.cs
+E:\FPT\DoAn\Application\obj\Debug\net8.0\Application.csproj.CoreCompileInputs.cache
+E:\FPT\DoAn\Application\obj\Debug\net8.0\Application.dll
+E:\FPT\DoAn\Application\obj\Debug\net8.0\refint\Application.dll
+E:\FPT\DoAn\Application\obj\Debug\net8.0\Application.pdb
+E:\FPT\DoAn\Application\obj\Debug\net8.0\ref\Application.dll

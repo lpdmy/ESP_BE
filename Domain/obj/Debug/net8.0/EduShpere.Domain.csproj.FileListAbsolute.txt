@@ -1,0 +1,12 @@
+E:\FPT\DoAn\Domain\bin\Debug\net8.0\EduShpere.Domain.deps.json
+E:\FPT\DoAn\Domain\bin\Debug\net8.0\EduShpere.Domain.dll
+E:\FPT\DoAn\Domain\bin\Debug\net8.0\EduShpere.Domain.pdb
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.csproj.AssemblyReference.cache
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.GeneratedMSBuildEditorConfig.editorconfig
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.AssemblyInfoInputs.cache
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.AssemblyInfo.cs
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.csproj.CoreCompileInputs.cache
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.dll
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\refint\EduShpere.Domain.dll
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\EduShpere.Domain.pdb
+E:\FPT\DoAn\Domain\obj\Debug\net8.0\ref\EduShpere.Domain.dll

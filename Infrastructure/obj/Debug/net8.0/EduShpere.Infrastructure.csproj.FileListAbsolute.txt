@@ -1,0 +1,17 @@
+E:\FPT\DoAn\Infrastructure\bin\Debug\net8.0\EduShpere.Infrastructure.deps.json
+E:\FPT\DoAn\Infrastructure\bin\Debug\net8.0\EduShpere.Infrastructure.runtimeconfig.json
+E:\FPT\DoAn\Infrastructure\bin\Debug\net8.0\EduShpere.Infrastructure.dll
+E:\FPT\DoAn\Infrastructure\bin\Debug\net8.0\EduShpere.Infrastructure.pdb
+E:\FPT\DoAn\Infrastructure\bin\Debug\net8.0\EduShpere.Domain.dll
+E:\FPT\DoAn\Infrastructure\bin\Debug\net8.0\EduShpere.Domain.pdb
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.csproj.AssemblyReference.cache
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.AssemblyInfoInputs.cache
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.AssemblyInfo.cs
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.csproj.CoreCompileInputs.cache
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShper.A8E35F9F.Up2Date
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.dll
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\refint\EduShpere.Infrastructure.dll
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.pdb
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\EduShpere.Infrastructure.genruntimeconfig.cache
+E:\FPT\DoAn\Infrastructure\obj\Debug\net8.0\ref\EduShpere.Infrastructure.dll
