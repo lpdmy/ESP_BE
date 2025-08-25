@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\EduShpere.props" />
-</Project>
