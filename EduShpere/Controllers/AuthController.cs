@@ -45,5 +45,15 @@ namespace EduShpere.Controllers
            
             return Ok(await _authService.ImportUsers(file));
         }
+        [HttpGet("Test")]
+        public async Task<IActionResult> Test()
+        {
+
+            return Ok(new
+            {
+                Name = "EduShpere API is working fine",
+                Description = "This is a test endpoint to verify that the API is operational."
+            });
+        }
     }
 }

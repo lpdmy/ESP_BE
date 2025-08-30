@@ -1,4 +1,3 @@
-
 using System.Text;
 using EduShpere.Application;
 using EduShpere.Infrastructure;
@@ -83,6 +82,17 @@ namespace EduShpere
                         ClockSkew = TimeSpan.Zero
                     };
                 });
+            
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -94,6 +104,9 @@ namespace EduShpere
 
             app.UseGlobalExceptionHandler();
             app.UseHttpsRedirection();
+
+            app.UseCors("AllowAll");
+
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
