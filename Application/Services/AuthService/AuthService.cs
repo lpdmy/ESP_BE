@@ -132,10 +132,10 @@ namespace EduShpere.Application
 
                 users.Add(new User
                 {
-                    Name = fullName,
-                    DateOfBirth = dob,
+                    Firstname = fullName,
+                    Birthdate = dob,
                     Email = email,
-                    PassWord = password
+                    Password = password
                 });
             }
 
