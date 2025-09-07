@@ -17,12 +17,12 @@ public partial class User
     public string? Username { get; set; }
 
     [StringLength(255)]
-    public string? Firstname { get; set; }
+    public string? FirstName { get; set; }
 
     [StringLength(255)]
-    public string? Lastname { get; set; }
+    public string? LastName { get; set; }
 
-    public byte? Role { get; set; }
+    public UserRole? Role { get; set; }
 
     [StringLength(1000)]
     public string? AvatarUrl { get; set; }

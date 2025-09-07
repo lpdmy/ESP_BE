@@ -27,7 +27,7 @@ public class HttpContextService : IHttpContextService
 
         if (userId != null)
         {
-            _appUser = await _userService.GetUserByIdAsync(userId.ToString());
+            _appUser = await _userService.GetUserByIdAsync((int) userId);
         }
 
         return _appUser;
@@ -52,12 +52,12 @@ public class HttpContextService : IHttpContextService
         }
         return ipAddress ?? string.Empty;
     }
-    private string? GetUserId()
+    private int? GetUserId()
     {
         var userId = _httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;
 
-        return userId is not null
-            ? new string(userId)
-            : null;
+        if (int.TryParse(userId, out var id))
+            return id;
+        return null;
     }
 }

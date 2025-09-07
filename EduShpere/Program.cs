@@ -1,9 +1,12 @@
 using System.Text;
 using EduShpere.Application;
+using EduShpere.Application.Mappings;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -19,13 +22,21 @@ namespace EduShpere
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
+
+            // Add Configs
+            builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
+            builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
+            builder.Services.AddScoped<IEmailService, EmailService>();
+
             // Register KidNet services
             builder.Services.AddScoped<IHttpContextService,HttpContextService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddHttpContextAccessor();
 
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

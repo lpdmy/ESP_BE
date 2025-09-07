@@ -15,7 +15,7 @@ namespace EduShpere.Application
         {
             return await _userRepository.GetAllAsync();
         }
-        public async Task<User?> GetUserByIdAsync(string id)
+        public async Task<User?> GetUserByIdAsync(int id)
         {
             return await _userRepository.GetByIdAsync(id);
         }
@@ -27,7 +27,7 @@ namespace EduShpere.Application
         {
             await _userRepository.UpdateAsync(user);
         }
-        public async Task DeleteUserAsync(string id)
+        public async Task DeleteUserAsync(int id)
         {
             await _userRepository.DeleteAsync(id);
         }
