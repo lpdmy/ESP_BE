@@ -3,7 +3,8 @@ name: Build and Deploy esp-dev-api to Azure
 on:
   push:
     branches:
-      - "release/0.0.0"
+      - "main"
+      - "release/*"
   workflow_dispatch:
 
 jobs:
