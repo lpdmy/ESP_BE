@@ -1,12 +1,10 @@
 ﻿using EduShpere.Application;
 using EduShpere.Application.DTOs.AuthDto;
 using EduShpere.Application.DTOs.UserDto;
-using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduShpere.Controllers
