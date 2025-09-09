@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using EduShpere.Domain.Models;
+
+namespace EduShpere.Infrastructure.Repositories
+{
+    public interface IActivityRepository 
+    {
+        Task<IEnumerable<Activity>> GetAllAsync();
+        Task<Activity?> GetByIdAsync(int id);
+        Task AddAsync(Activity Activity);
+        Task UpdateAsync(Activity Activity);
+        Task DeleteAsync(int id);
+        Task AddRangeAsync(IEnumerable<Activity> Activity);
+    }
+}
