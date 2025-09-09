@@ -38,7 +38,7 @@ namespace EduShpere.Controllers
             {
                 return NotFound(new ResponseDto<string>(
                     null,
-                    "Không tìm thấy hoạt động",
+                    ErrorMessages.Contest.ContestNotFound,
                     (int)HttpStatusCode.NotFound
                 ));
             }

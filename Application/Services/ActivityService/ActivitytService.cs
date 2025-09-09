@@ -12,7 +12,7 @@ namespace EduShpere.Application.Services
         {
             _repo = repo;
         }
-        public async Task<IEnumerable<Activity>> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? search =null)
+        public async Task<IEnumerable<Activity>> GetAllAsync(int pageNumber, int pageSize, string? search =null)
         {
             var activities = await _repo.GetAllAsync();
 

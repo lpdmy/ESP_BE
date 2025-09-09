@@ -21,5 +21,11 @@
         {
             public const string UnknownError = "Có lỗi xảy ra. Vui lòng thử lại.";
         }
+
+        public struct Contest
+        {
+            public const string ContestNotFound = "Cuộc thi không tồn tại.";
+            public const string ContestAlreadyExists = "Cuộc thi đã tồn tại.";
+        }
     }
 }
