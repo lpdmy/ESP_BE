@@ -8,6 +8,7 @@
             public const string GetMe = "api/auth/GetMe";
             public const string ImportFile = "api/auth/ImportFile";
             public const string Test = "api/auth/Test";
+            public const string TestInvitation = "api/auth/TestInvitation";
             public const string CreateUser = "api/auth/create-user";
             public const string OneTimeLogin = "api/auth/one-time-login";
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
@@ -27,6 +28,15 @@
             public const string CreateCourse = "api/course/create";
             public const string UpdateCourse = "api/course/update";
             public const string DeleteCourse = "api/course/delete";
+        }
+        public static class  Contest
+        {
+            public const string GetAllContests = "api/contest/get-all";
+            public const string GetUserContests = "api/contest/get-by-id";
+            public const string CreateContest = "api/contest/create";
+            public const string UpdateContest = "api/contest/update";
+            public const string DeleteContest = "api/contest/delete";
+
         }
     }
 }
