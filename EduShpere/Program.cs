@@ -1,7 +1,6 @@
 using System.Text;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
-using EduShpere.Application.Services;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
@@ -26,7 +25,6 @@ namespace EduShpere
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
-            builder.Services.AddScoped<IContestRepositories, ContestRepositories>();
 
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
@@ -34,7 +32,6 @@ namespace EduShpere
             builder.Services.AddScoped<IEmailService, EmailService>();
 
             // Register KidNet services
-            builder.Services.AddScoped<IContestService, ContestService>();    
             builder.Services.AddScoped<IHttpContextService,HttpContextService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
