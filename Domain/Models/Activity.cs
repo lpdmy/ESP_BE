@@ -23,7 +23,7 @@ public partial class Activity
 
 
     [StringLength(20)]
-    public string? Scope { get; set; }
+    public string? Location { get; set; }
 
     public int? ClubId { get; set; }
 
