@@ -29,14 +29,6 @@
             public const string UpdateCourse = "api/course/update";
             public const string DeleteCourse = "api/course/delete";
         }
-        public static class  Contest
-        {
-            public const string GetAllContests = "api/contest/get-all";
-            public const string GetUserContests = "api/contest/get-by-id";
-            public const string CreateContest = "api/contest/create";
-            public const string UpdateContest = "api/contest/update";
-            public const string DeleteContest = "api/contest/delete";
-
-        }
+        
     }
 }
