@@ -20,6 +20,7 @@ public partial class Activity
 
     public DateTime? EndDate { get; set; }
 
+    public int CreatedByUserId { get; set; }
 
     [StringLength(20)]
     public string? Scope { get; set; }
@@ -36,10 +37,7 @@ public partial class Activity
 
     public bool IsDeleted { get; set; }
 
-    public string RowVersion { get; set; } = null!;
-    public string Category { get; set; } = null!;
-    public string SubCategory { get; set; } = null!;
-    public string ThumbNailUrl { get; set; } = null!;
+    public byte[] RowVersion { get; set; } = null!;
 
     [InverseProperty("Activity")]
     public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
