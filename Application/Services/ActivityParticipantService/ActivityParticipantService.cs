@@ -41,5 +41,17 @@ namespace EduShpere.Application.Services
             var participantDto = _mapper.Map<ActivityParticipantResponseDto>(participant);
             return participantDto;
         }
+        public async Task<ActivityParticipantResponseDto> RemoveActivityParticipant(int participationId)
+        {
+            var participant = await _repo.GetByIdAsync(participationId);
+            if (participant == null)
+            {
+                throw new NotFoundException(ErrorMessages.ActivityParticipant.NotFound);
+            }
+            await _repo.SoftDeleteAsync(participationId);
+            var participantDto = _mapper.Map<ActivityParticipantResponseDto>(participant);
+            return participantDto;
+        }
+
     }
 }
