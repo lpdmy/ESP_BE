@@ -12,12 +12,9 @@ namespace EduShpere.Infrastructure
         public UserRepository(EduShpereDbContext context) : base(context) { 
         }
 
-        public virtual async Task DeleteAsync(string id)
+        public virtual async Task DeleteAsync(int id)
         {
-            if (!Guid.TryParse(id, out var guid))
-                throw new ArgumentException("Invalid GUID format", nameof(id));
-
-            var entity = await _dbSet.FindAsync(guid);
+            var entity = await _dbSet.FindAsync(id);
             if (entity == null)
                 throw new KeyNotFoundException("Entity not found");
 
@@ -26,15 +23,15 @@ namespace EduShpere.Infrastructure
         }
 
 
-        public virtual async Task<User?> GetByIdAsync(string id)
+        public virtual async Task<User?> GetByIdAsync(int id)
         {
             return await _dbSet.FindAsync(id);
         }
         public async Task<User?> GetUserByUserName(string userName)
         {
-            return await _dbSet.FirstOrDefaultAsync(p => p.Username == userName);
+            return await _dbSet.FirstOrDefaultAsync(p => p.Username == userName || p.Email.Equals(userName));
         }
-        public async Task<bool> FindUserByEmail( string email)
+        public async Task<bool> FindUserByEmail(string email)
         {
           return  await _dbSet.AnyAsync(p => p.Email == email);
         }

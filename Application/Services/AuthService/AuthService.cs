@@ -7,13 +7,17 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 using ClosedXML.Excel;
-using EduShpere.Domain;
+using EduShpere.Application.DTOs.AuthDto;
+using EduShpere.Application.DTOs.UserDto;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.Repositories.OneTimeLogin;
+using EduShpere.Infrastructure.Security;
 using EduShpere.Shared;
+using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -24,17 +28,26 @@ namespace EduShpere.Application
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextService _httpContextService;
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService)
+        private readonly IOneTimeLoginRepository _oneTimeLoginRepository;
+        private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
+
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
             _httpContextService = httpContextService;
+            _mapper = mapper;
+            _oneTimeLoginRepository = oneTimeLoginRepository;
+            _emailService = emailService;
         }
-        public async Task<User> GetMe()
+
+        public async Task<UserDto> GetMe()
         {
-            return await _httpContextService.GetAppUserAndThrow();
+            var user = await _httpContextService.GetAppUserAndThrow();
+            return _mapper.Map<UserDto>(user);
         }
-        
+
         private string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
@@ -44,52 +57,54 @@ namespace EduShpere.Application
                 return Convert.ToBase64String(randomNumber);
             }
         }
+
         private TokenModel GenerateToken(User appUser)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
             var secretKey = _configuration["AppSetting:SecretKey"];
             var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
-            var tokenDescription = new SecurityTokenDescriptor
+
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] {
-                    new Claim("Email",appUser.Email),
-                    new Claim("FullName",appUser.Firstname),
-                    new Claim("Id",appUser.Id.ToString()),
-                    new Claim("UserName",appUser.Username),
-                    new Claim("UserRole",appUser.Role.ToString()),
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("Email", appUser.Email),
+                    new Claim("FullName", appUser.FirstName),
+                    new Claim("Id", appUser.Id.ToString()),
+                    new Claim("UserName", appUser.Username),
+                    new Claim("UserRole", appUser.Role.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), SecurityAlgorithms.HmacSha256Signature)
             };
-            var token = jwtTokenHandler.CreateToken(tokenDescription);
+
+            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
             var accessTokenString = jwtTokenHandler.WriteToken(token);
             var refreshToken = GenerateRefreshToken();
-            //appUser.RefreshToken = refreshToken;
-            //appUser.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
             return new TokenModel
             {
                 AccessToken = accessTokenString,
                 RefreshToken = refreshToken
             };
         }
+
         public async Task<TokenModel> Login(LoginDto dto)
         {
             var user = await _userRepository.GetUserByUserName(dto.Username);
 
-            if (user is null || user.Password != dto.Password)
+            if (user == null || user.Password != dto.Password)
             {
-                throw new UnauthorizedException("Username or Password is not correct.");
+                throw new UnauthorizedException(ErrorMessages.Auth.InvalidCredentials);
             }
 
-           
-
-            var tokenModel = GenerateToken(user);
-            return tokenModel;
+            return GenerateToken(user);
         }
+
         public async Task<object> ImportUsers(IFormFile request)
         {
             if (request == null || request.Length == 0)
-                throw new BadRequestException("File không hợp lệ.");
+                throw new BadRequestException(ErrorMessages.Auth.InvalidFile);
 
             var users = new List<User>();
 
@@ -104,7 +119,6 @@ namespace EduShpere.Application
             for (int row = 2; row <= rowCount; row++)
             {
                 string fullName = worksheet.Cell(row, 1).GetValue<string>().Trim();
-
                 if (string.IsNullOrWhiteSpace(fullName) || worksheet.Cell(row, 2).IsEmpty())
                     continue;
 
@@ -116,7 +130,7 @@ namespace EduShpere.Application
                 catch
                 {
                     string dobText = worksheet.Cell(row, 2).GetValue<string>().Trim();
-                    if (!DateTime.TryParseExact(dobText,    
+                    if (!DateTime.TryParseExact(dobText,
                         new[] { "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd" },
                         CultureInfo.InvariantCulture, DateTimeStyles.None, out dob))
                         continue;
@@ -132,7 +146,7 @@ namespace EduShpere.Application
 
                 users.Add(new User
                 {
-                    Firstname = fullName,
+                    FirstName = fullName,
                     Birthdate = dob,
                     Email = email,
                     Password = password
@@ -151,14 +165,16 @@ namespace EduShpere.Application
 
         private string GenerateUsername(string fullName, DateTime dob)
         {
-            string namePart = RemoveVietnameseSigns(fullName).Replace(" ", "").ToLower(); 
+            string namePart = RemoveVietnameseSigns(fullName).Replace(" ", "").ToLower();
             string year = DateTime.Now.Year.ToString().Substring(2, 2);
             string dayMonth = dob.ToString("ddMM");
             return $"{namePart}{year}{dayMonth}";
         }
+
         private string RemoveVietnameseSigns(string text)
         {
-            string[] vietnameseSigns = new string[] {
+            string[] vietnameseSigns = new string[]
+            {
                 "aAeEoOuUiIdDyY",
                 "áàạảãâấầậẩẫăắằặẳẵ",
                 "ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
@@ -183,8 +199,62 @@ namespace EduShpere.Application
                     text = text.Replace(vietnameseSigns[i][j], vietnameseSigns[0][i - 1]);
                 }
             }
+
             return text;
         }
 
+        public async Task<bool> CreateUserAndGenerateOtlAsync(CreateUserDto dto)
+        {
+            if (await _userRepository.FindUserByEmail(dto.Email))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
+            }
+
+            var user = new User
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                Role = dto.Role,
+                CreatedAt = DateTime.UtcNow,
+                Password = PasswordHelper.HashPassword(new User(), "123"),
+                Username = dto.Username
+            };
+
+            await _userRepository.AddAsync(user);
+
+            var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
+            var baseUrl = _configuration["AppSetting:FrontEndUrl"];
+            var loginLink = $"{baseUrl}/auth/one-time-login?token={otlToken.Token}";
+            await _emailService.SendEmailAsync(dto.Email, "Login Now", loginLink, true);
+
+            return true;
+        }
+
+        public async Task<string> OneTimeLoginAsync(string token)
+        {
+            var otl = await _oneTimeLoginRepository.GetValidTokenAsync(token);
+            if (otl == null)
+                throw new UnauthorizedException(ErrorMessages.Auth.InvalidToken);
+
+            return $"{otl.User.FirstName} {otl.User.LastName}";
+        }
+
+        public async Task<TokenModel> ChangePasswordWithOtlAsync(string token, string newPassword)
+        {
+            var otl = await _oneTimeLoginRepository.GetValidTokenAsync(token);
+            if (otl == null)
+                throw new UnauthorizedException(ErrorMessages.Auth.InvalidToken);
+
+            var user = await _userRepository.GetByIdAsync(otl.UserId);
+            if (user == null)
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+
+            user.Password = PasswordHelper.HashPassword(user, newPassword);
+            await _userRepository.UpdateAsync(user);
+            await _oneTimeLoginRepository.MarkAsUsedAsync(otl);
+
+            return GenerateToken(user);
+        }
     }
 }

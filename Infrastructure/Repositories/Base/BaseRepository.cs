@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Infrastructure
 {
@@ -16,7 +14,7 @@ namespace EduShpere.Infrastructure
         public async Task<IEnumerable<T>> GetAllAsync()
         => await _dbSet.ToListAsync();
 
-        public async Task<T?> GetByIdAsync(Guid id)
+        public async Task<T?> GetByIdAsync(int id)
             => await _dbSet.FindAsync(id);
         public async Task AddRangeAsync(IEnumerable<T> entities)
         {
@@ -35,7 +33,7 @@ namespace EduShpere.Infrastructure
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(int id)
         {
             var entity = await GetByIdAsync(id);
             if (entity != null)

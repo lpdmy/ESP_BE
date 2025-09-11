@@ -82,6 +82,7 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<UserBlock> UserBlocks { get; set; }
 
     public virtual DbSet<UserPoint> UserPoints { get; set; }
+    public virtual DbSet<OneTimeLoginToken> OneTimeLoginTokens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

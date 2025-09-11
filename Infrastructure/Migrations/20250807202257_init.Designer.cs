@@ -26,24 +26,24 @@ namespace EduShpere.Infrastructure.Migrations
 
             modelBuilder.Entity("EduShpere.Domain.AppUser", b =>
                 {
-                    b.Property<string>("ID")
+                    b.Property<int>("ID")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Email")
+                    b.Property<int>("Email")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Name")
+                    b.Property<int>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PassWord")
+                    b.Property<int>("PassWord")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PhoneNumber")
+                    b.Property<int>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserName")
+                    b.Property<int>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
