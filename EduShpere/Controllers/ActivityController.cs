@@ -37,7 +37,7 @@ namespace EduShpere.Controllers
             {
                 return NotFound(new ResponseDto<string>(
                     null,
-                    ErrorMessages.Contest.ContestNotFound,
+                    ErrorMessages.Activity.ActivityNotFound,
                     (int)HttpStatusCode.NotFound
                 ));
             }

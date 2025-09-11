@@ -22,10 +22,10 @@
             public const string UnknownError = "Có lỗi xảy ra. Vui lòng thử lại.";
         }
 
-        public struct Contest
+        public struct Activity
         {
-            public const string ContestNotFound = "Cuộc thi không tồn tại.";
-            public const string ContestAlreadyExists = "Cuộc thi đã tồn tại.";
+            public const string ActivityNotFound = "Hoạt động không tồn tại.";
+            public const string ActivityAlreadyExists = "Hoạt động đã tồn tại.";
         }
     }
 }
