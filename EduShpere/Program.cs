@@ -2,7 +2,6 @@ using System.Text;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Infrastructure;
-using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
