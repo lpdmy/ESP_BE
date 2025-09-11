@@ -8,7 +8,6 @@ using AutoMapper;
 
 namespace EduShpere.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     public class ActivityController : ControllerBase
     {
