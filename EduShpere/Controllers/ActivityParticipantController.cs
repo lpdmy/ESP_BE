@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EduShpere.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     public class ActivityParticipantController : ControllerBase
     {
