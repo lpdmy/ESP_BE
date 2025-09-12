@@ -15,7 +15,7 @@ namespace EduShpere.Controllers
         {
             _service = service;
         }
-        [HttpPost(ApiEndpoints.ActivityParticipant.AddActivityParticipant)]
+        [HttpPost(ApiEndpoints.ActivityParticipant.GetAllActivityParticipant)]
         public async Task<IActionResult> AddActivityParticipant([FromBody] AddParticipantDto dto)
         {
             if (dto == null)
