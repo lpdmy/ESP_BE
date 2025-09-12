@@ -23,5 +23,13 @@ namespace EduShpere.Controllers
             var result = await _service.AddActivityParticipant(dto);
             return Ok(new ResponseDto<ActivityParticipantResponseDto>(result, "Thêm người tham gia hoạt động thành công",200));
         }
+        [HttpDelete(ApiEndpoints.ActivityParticipant.DeleteActivityParticipant)]
+        public async Task<IActionResult> RemoveActivityParticipant( int participationId)
+        {
+            if (participationId <= 0)
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+            var result = await _service.RemoveActivityParticipant(participationId);
+            return Ok(new ResponseDto<ActivityParticipantResponseDto>(result, "Xóa người tham gia hoạt động thành công", 200));
+        }
     }
 }

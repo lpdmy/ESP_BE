@@ -13,5 +13,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task UpdateAsync(ActivityParticipant entity);
         Task DeleteAsync(int id);
         Task<bool> isAlreadyRegistered(int UserId, int ActivityId);
+        Task SoftDeleteAsync(int id);
     }
 }
