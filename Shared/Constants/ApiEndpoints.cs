@@ -29,6 +29,15 @@
             public const string UpdateCourse = "api/course/update";
             public const string DeleteCourse = "api/course/delete";
         }
-        
+
+        public static class ActivityParticipant
+        {
+            public const string GetAllActivityParticipant = "api/ActivityParticipant/get-all";
+            public const string CreateActivityParticipant = "api/ActivityParticipant/create";
+            public const string UpdateActivityParticipant = "api/ActivityParticipant/update";
+            public const string DeleteActivityParticipant = "api/ActivityParticipant/delete";
+            public const string AddActivityParticipant = "api/ActivityParticipant/add-participant";
+        }
+
     }
 }
