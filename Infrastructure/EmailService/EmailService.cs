@@ -1,4 +1,5 @@
 ﻿using EduShpere.Domain.Models;
+using EduShpere.Shared.Constants;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
@@ -33,6 +34,24 @@ public class EmailService : IEmailService
         };
 
         smtpClient.Send(message);
+    }
+    public async Task SendEmailInvitaion(string userFullName, string userEmail)
+    {
+        MailMessage message = new MailMessage();
+        message.From = new MailAddress(_emailConfig.AppEmail);
+        message.Subject = "Test Email";
+        message.To.Add(new MailAddress(userEmail));
+        message.IsBodyHtml = true;
+        message.Body = EmailTemplate.GetInvitationEmail(userFullName, userEmail);
+
+        var smtpClient = new SmtpClient("smtp.gmail.com")
+        {
+            Port = 587,
+            Credentials = new NetworkCredential(_emailConfig.AppEmail, _emailConfig.AppPassword),
+            EnableSsl = true
+        };
+
+       await smtpClient.SendMailAsync(message);
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = true)

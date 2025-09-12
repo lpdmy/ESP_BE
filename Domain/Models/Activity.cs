@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EduShpere.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
@@ -20,10 +21,9 @@ public partial class Activity
 
     public DateTime? EndDate { get; set; }
 
-    public int CreatedByUserId { get; set; }
 
     [StringLength(20)]
-    public string? Scope { get; set; }
+    public string? Location { get; set; }
 
     public int? ClubId { get; set; }
 
@@ -38,6 +38,9 @@ public partial class Activity
     public bool IsDeleted { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;
+    public ActivityType Category { get; set; }
+    public string SubType { get; set; } = null!;
+    public string ThumbnailUrl { get; set; } = null!;
 
     [InverseProperty("Activity")]
     public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
@@ -49,7 +52,7 @@ public partial class Activity
     [InverseProperty("Activities")]
     public virtual Club? Club { get; set; }
 
-    [ForeignKey("CreatedByUserId")]
+    [ForeignKey("CreatedBy")]
     [InverseProperty("Activities")]
     public virtual User CreatedByUser { get; set; } = null!;
 

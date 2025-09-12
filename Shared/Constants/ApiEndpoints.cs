@@ -8,6 +8,7 @@
             public const string GetMe = "api/auth/GetMe";
             public const string ImportFile = "api/auth/ImportFile";
             public const string Test = "api/auth/Test";
+            public const string TestInvitation = "api/auth/TestInvitation";
             public const string CreateUser = "api/auth/create-user";
             public const string GetAllUsers = "api/auth/get-all-users";
             public const string UpdateUser = "api/auth/update-user";
@@ -30,5 +31,25 @@
             public const string UpdateCourse = "api/course/update";
             public const string DeleteCourse = "api/course/delete";
         }
+
+        public static class Activity
+        {
+            public const string GetAllActivitys = "api/Activity/get-all";
+            public const string GetActivity = "api/Activity/get-by-id";
+            public const string CreateActivity = "api/Activity/create";
+            public const string UpdateActivity = "api/Activity/update";
+            public const string DeleteActivity = "api/Activity/delete";
+        }   
+
+
+        public static class ActivityParticipant
+        {
+            public const string GetAllActivityParticipant = "api/ActivityParticipant/get-all";
+            public const string CreateActivityParticipant = "api/ActivityParticipant/create";
+            public const string UpdateActivityParticipant = "api/ActivityParticipant/update";
+            public const string DeleteActivityParticipant = "api/ActivityParticipant/delete";
+            public const string AddActivityParticipant = "api/ActivityParticipant/add-participant";
+        }
+
     }
 }
