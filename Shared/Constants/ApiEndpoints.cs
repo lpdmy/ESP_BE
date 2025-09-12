@@ -11,7 +11,6 @@
             public const string TestInvitation = "api/auth/TestInvitation";
             public const string CreateUser = "api/auth/create-user";
             public const string UserUrl = "api/users";
-            //public const string UserByIdUrl = "api/users/{id}";
             public const string OneTimeLogin = "api/auth/one-time-login";
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
         }
