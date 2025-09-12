@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Domain.Enum;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories;
@@ -66,6 +67,30 @@ namespace EduShpere.Application.Services
 
             await _repo.AddAsync(activity);
             var ActivityDtos = _mapper.Map<ActivityResponseDto>(activity);
+            return ActivityDtos;
+        }
+        public async Task<ActivityResponseDto> UpdateAsync(UpdateActivityDto dto)
+        {
+            var existingActivity = await _repo.GetByIdAsync(dto.Id);
+            if (existingActivity == null)
+            {
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+            }
+            if (dto.StartDate >= dto.EndDate)
+            {
+                throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
+            }
+            existingActivity.Title = dto.Title ?? existingActivity.Title;
+            existingActivity.Description = dto.Description ?? existingActivity.Description;
+            existingActivity.StartDate = dto.StartDate ?? existingActivity.StartDate;
+            existingActivity.EndDate = dto.EndDate ?? existingActivity.EndDate;
+            existingActivity.Location = dto.Location ?? existingActivity.Location;
+            existingActivity.UpdatedAt = DateTime.Now;
+            existingActivity.Category = dto.Category;
+            existingActivity.SubType = dto.SubType ?? existingActivity.SubType;
+            existingActivity.ThumbnailUrl = dto.ThumbnailUrl != null? dto.ThumbnailUrl.FileName : existingActivity.ThumbnailUrl;
+            await _repo.UpdateAsync(existingActivity);
+            var ActivityDtos = _mapper.Map<ActivityResponseDto>(existingActivity);
             return ActivityDtos;
         }
     }
