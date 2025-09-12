@@ -9,8 +9,8 @@
             public const string ImportFile = "api/auth/ImportFile";
             public const string Test = "api/auth/Test";
             public const string CreateUser = "api/auth/create-user";
-            public const string GetAllUsers = "api/auth/get-all-users";
-            public const string UpdateUser = "api/auth/update-user";
+            public const string UserUrl = "api/users";
+            //public const string UserByIdUrl = "api/users/{id}";
             public const string OneTimeLogin = "api/auth/one-time-login";
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
         }
