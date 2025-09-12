@@ -21,5 +21,20 @@
         {
             public const string UnknownError = "Có lỗi xảy ra. Vui lòng thử lại.";
         }
+
+        public struct Activity
+        {
+            public const string ActivityNotFound = "Hoạt động không tồn tại.";
+            public const string ActivityAlreadyExists = "Hoạt động đã tồn tại.";
+            public const string StartDayAfterEndDay = "Ngày bắt đầu phải trước ngày kết thúc.";
+        }
+        
+
+        public struct ActivityParticipant
+        {
+            public const string AlreadyJoined = "Người dùng đã tham gia hoạt động này.";
+            public const string NotFound = "Người dùng chưa tham gia hoạt động này.";
+        }
+
     }
 }

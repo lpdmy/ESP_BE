@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EduShpere.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
@@ -17,11 +18,8 @@ public partial class ActivityParticipant
     public int UserId { get; set; }
 
     [StringLength(50)]
-    public string? Status { get; set; }
-
-    public DateTime? JoinedAt { get; set; }
-
-    public DateTime CreatedAt { get; set; }
+    public ParticipantStatus? Status { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     public int? CreatedBy { get; set; }
 
