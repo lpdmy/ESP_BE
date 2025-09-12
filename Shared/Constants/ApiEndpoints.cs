@@ -8,6 +8,7 @@
             public const string GetMe = "api/auth/GetMe";
             public const string ImportFile = "api/auth/ImportFile";
             public const string Test = "api/auth/Test";
+            public const string TestInvitation = "api/auth/TestInvitation";
             public const string CreateUser = "api/auth/create-user";
             public const string OneTimeLogin = "api/auth/one-time-login";
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
@@ -28,5 +29,6 @@
             public const string UpdateCourse = "api/course/update";
             public const string DeleteCourse = "api/course/delete";
         }
+        
     }
 }
