@@ -12,6 +12,8 @@ namespace EduShpere.Application
         Task<TokenModel> Login(LoginDto dto);
         Task<object> ImportUsers(IFormFile request);
         Task<bool> CreateUserAndGenerateOtlAsync(CreateUserDto dto);
+        Task<IEnumerable<UserDto>> GetAllUsersAsync(int pageNumber, int pageSize, string? search = null);
+        Task<bool> UpdateUserAsync(UpdateUserDto dto);
         Task<string> OneTimeLoginAsync(string token);
         Task<TokenModel> ChangePasswordWithOtlAsync(string token, string newPassword);
     }

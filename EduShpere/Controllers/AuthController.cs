@@ -6,6 +6,7 @@ using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace EduShpere.Controllers
 {
@@ -90,6 +91,32 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, e.Message, 400));
             }
         }
+
+        [HttpPost(ApiEndpoints.Auth.GetAllUsers)]
+        public async Task<IActionResult> GetAllUsers(int pageNumber, int pageSize, string? search = null)
+        {
+            var result = await _authService.GetAllUsersAsync(pageNumber, pageSize, search);
+
+            return Ok(new ResponseDto<IEnumerable<UserDto>>(result, "Lấy danh sách người dùng thành công",
+                (int)HttpStatusCode.OK
+            ));
+
+        }
+
+        [HttpPost(ApiEndpoints.Auth.UpdateUser)]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto dto)
+        {
+            try
+            {
+                var result = await _authService.UpdateUserAsync(dto);
+                return Ok(new ResponseDto<bool>(result, "Chỉnh sửa thông tin người dùng thành công"));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+            }
+        }
+
 
         [HttpGet(ApiEndpoints.Auth.OneTimeLogin)]
         public async Task<IActionResult> OneTimeLogin([FromQuery] string token)
