@@ -16,7 +16,7 @@ namespace EduShpere.Application.DTOs
         public DateTime? EndDate { get; set; }
 
 
-        public string? Scope { get; set; }
+        public string? Location { get; set; }
 
         public int? ClubId { get; set; }
 

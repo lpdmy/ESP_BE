@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using EduShpere.Application.DTOs;
 using System.Net;
 using AutoMapper;
+using EduShpere.Application.DTOs.ActivityDto;
 
 namespace EduShpere.Controllers
 {
@@ -45,6 +46,28 @@ namespace EduShpere.Controllers
             return Ok(new ResponseDto<ActivityResponseDto>(
                 ActivityDto,
                 "Lấy hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+        [HttpPost(ApiEndpoints.Activity.CreateActivity)]
+        public async Task<IActionResult>CreateActivity(CreateActivityDto dto)
+        {
+            var Activity = await _Service.AddAsync(dto);
+            var ActivityDto = _mapper.Map<ActivityResponseDto>(Activity);
+            return Ok(new ResponseDto<ActivityResponseDto>(
+                ActivityDto,
+                "Tạo hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+        [HttpPut(ApiEndpoints.Activity.UpdateActivity)]
+        public async Task<IActionResult> UpdateActivity(UpdateActivityDto dto)
+        {
+            var Activity = await _Service.UpdateAsync(dto);
+            var ActivityDto = _mapper.Map<ActivityResponseDto>(Activity);
+            return Ok(new ResponseDto<ActivityResponseDto>(
+                ActivityDto,
+                "Cập nhật hoạt động thành công",
                 (int)HttpStatusCode.OK
             ));
         }

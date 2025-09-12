@@ -1,4 +1,6 @@
-﻿using EduShpere.Domain.Models;
+﻿using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.ActivityDto;
+using EduShpere.Domain.Models;
 
 namespace EduShpere.Application.Services
 {
@@ -6,5 +8,7 @@ namespace EduShpere.Application.Services
     {
         Task<IEnumerable<Activity>> GetAllAsync(int pageNumber, int pageSize, string? search = null);
         Task<Activity?> GetByIdAsync(int id);
+        Task<ActivityResponseDto> AddAsync(CreateActivityDto dto);
+        Task<ActivityResponseDto> UpdateAsync(UpdateActivityDto dto);
     }
 }
