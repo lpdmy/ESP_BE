@@ -9,11 +9,13 @@
             public const string UserNotFound = "Người dùng không tồn tại.";
             public const string EmailAlreadyExists = "Email đã tồn tại trong hệ thống.";
             public const string InvalidFile = "File không hợp lệ.";
+            public const string InvalidPassword = "Mật khẩu không chính xác";
         }
 
         public struct Password
         {
             public const string PasswordTooShort = "Mật khẩu phải có ít nhất 8 ký tự.";
+            public const string PasswordWhiteSpace = "Mật khẩu không được chứa khoảng trắng";
             public const string PasswordMismatch = "Mật khẩu xác nhận không khớp.";
         }
 

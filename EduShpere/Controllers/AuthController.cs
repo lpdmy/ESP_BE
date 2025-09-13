@@ -117,5 +117,39 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
             }
         }
+
+        [HttpPost(ApiEndpoints.Auth.ChangePassword)]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            try
+            {
+                var result = await _authService.ChangePassword(dto);
+                return Ok(new ResponseDto<bool>(result, "Đổi mật khẩu thành công"));
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(new ResponseDto<string>(null, ex.Message, 400));
+            }
+
+        }
+
+        [HttpPost(ApiEndpoints.Auth.ForgotPassword)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            try
+            {
+                var tokenModel = await _authService.ForgotPassword(dto);
+                return Ok(new ResponseDto<TokenModel>(tokenModel, "Vui lòng kiểm tra email để reset mật khẩu"));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound(new ResponseDto<string>(null, ErrorMessages.Auth.UserNotFound, 404));
+            }
+            catch (Exception)
+            {
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+            }
+        }
     }
 }
