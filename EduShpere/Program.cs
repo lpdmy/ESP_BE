@@ -27,7 +27,6 @@ namespace EduShpere
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
-            builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
 
 
             // Add Configs
@@ -44,10 +43,7 @@ namespace EduShpere
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
-            builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
-            builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

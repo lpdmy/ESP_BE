@@ -65,18 +65,6 @@ namespace EduShpere.Controllers
                 Description = "This is a test endpoint to verify that the API is operational."
             });
         }
-        [HttpGet(ApiEndpoints.Auth.TestInvitation)]
-        public async Task<IActionResult> TestInvitation(string userFullName, string userEmail)
-        {
-            await _emailService.SendEmailInvitaion(userFullName, userEmail);
-            return Ok(new
-            {
-                Name = "EduShpere API is working fine",
-                Description = "This is a test endpoint to verify that the API is operational."
-            });
-        }
-
-
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {

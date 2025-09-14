@@ -31,9 +31,9 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
-        public async Task<IActionResult> GetActivitys(int ID)
+        public async Task<IActionResult> GetActivitys(int id)
         {
-            var Activity = await _Service.GetByIdAsync(ID);
+            var Activity = await _Service.GetByIdAsync(id);
             if (Activity == null)
             {
                 return NotFound(new ResponseDto<string>(
