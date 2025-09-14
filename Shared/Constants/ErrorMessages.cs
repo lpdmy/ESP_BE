@@ -21,5 +21,23 @@
         {
             public const string UnknownError = "Có lỗi xảy ra. Vui lòng thử lại.";
         }
+
+        public struct Upload
+        {
+            public const string UploadFailed = "Upload file thất bại. Vui lòng thử lại.";
+        }
+        public struct UserProfile
+        {
+            public const string UserNotFound = "Người dùng không tồn tại.";
+            public const string ProfileAlreadyExists = "Hồ sơ sinh viên đã tồn tại cho người dùng này.";
+            public const string InvalidStudentNumber = "Mã sinh viên không hợp lệ hoặc đã tồn tại.";
+            public const string EnrollmentYearInvalid = "Năm nhập học không hợp lệ.";
+            public const string CreateFailed = "Tạo hồ sơ sinh viên thất bại. Vui lòng thử lại.";
+            public const string UpdateFailed = "Cập nhật hồ sơ sinh viên thất bại. Vui lòng thử lại.";
+
+            public const string StudentNumberRequired = "Mã sinh viên là bắt buộc.";
+            public const string EnrollmentYearRequired = "Năm nhập học là bắt buộc.";
+        }
+
     }
 }

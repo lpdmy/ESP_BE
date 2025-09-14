@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EduShpere.Application.DTOs.UserProfileDto;
 using EduShpere.Domain;
 using EduShpere.Domain.Models;
 
@@ -15,5 +16,6 @@ namespace EduShpere.Application
         Task AddUserAsync(User user);
         Task UpdateUserAsync(User user);
         Task DeleteUserAsync(int id);
+        Task<StudentProfileDto> CreateOrUpdateStudentProfileAsync(CreateUpdateStudentProfileDto dto);
     }
 }

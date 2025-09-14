@@ -2,6 +2,7 @@ using System.Text;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,12 +24,15 @@ namespace EduShpere
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
 
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddSingleton<CloudinaryService>();
+            builder.Services.AddControllers();
 
             // Register KidNet services
             builder.Services.AddScoped<IHttpContextService,HttpContextService>();
