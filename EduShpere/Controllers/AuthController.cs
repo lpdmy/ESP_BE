@@ -1,13 +1,12 @@
 ﻿using EduShpere.Application;
 using EduShpere.Application.DTOs.AuthDto;
 using EduShpere.Application.DTOs.UserDto;
-using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace EduShpere.Controllers
 {
@@ -67,6 +66,17 @@ namespace EduShpere.Controllers
                 Description = "This is a test endpoint to verify that the API is operational."
             });
         }
+        [HttpGet(ApiEndpoints.Auth.TestInvitation)]
+        public async Task<IActionResult> TestInvitation(string userFullName, string userEmail)
+        {
+            await _emailService.SendEmailInvitaion(userFullName, userEmail);
+            return Ok(new
+            {
+                Name = "EduShpere API is working fine",
+                Description = "This is a test endpoint to verify that the API is operational."
+            });
+        }
+
 
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
@@ -81,6 +91,32 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, e.Message, 400));
             }
         }
+
+        [HttpGet(ApiEndpoints.Auth.UserUrl)]
+        public async Task<IActionResult> GetAllUsers(int pageNumber, int pageSize, string? search = null)
+        {
+            var result = await _authService.GetAllUsersAsync(pageNumber, pageSize, search);
+
+            return Ok(new ResponseDto<IEnumerable<UserDto>>(result, "Lấy danh sách người dùng thành công",
+                (int)HttpStatusCode.OK
+            ));
+
+        }
+
+        [HttpPut(ApiEndpoints.Auth.UserUrl)]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto dto)
+        {
+            try
+            {
+                var result = await _authService.UpdateUserAsync(dto);
+                return Ok(new ResponseDto<bool>(result, "Chỉnh sửa thông tin người dùng thành công"));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+            }
+        }
+
 
         [HttpGet(ApiEndpoints.Auth.OneTimeLogin)]
         public async Task<IActionResult> OneTimeLogin([FromQuery] string token)
@@ -111,6 +147,40 @@ namespace EduShpere.Controllers
             catch (NotFoundException)
             {
                 return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.UserNotFound, 404));
+            }
+            catch (Exception)
+            {
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+            }
+        }
+
+        [HttpPost(ApiEndpoints.Auth.ChangePassword)]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            try
+            {
+                var result = await _authService.ChangePassword(dto);
+                return Ok(new ResponseDto<bool>(result, "Đổi mật khẩu thành công"));
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(new ResponseDto<string>(null, ex.Message, 400));
+            }
+
+        }
+
+        [HttpPost(ApiEndpoints.Auth.ForgotPassword)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            try
+            {
+                var tokenModel = await _authService.ForgotPassword(dto);
+                return Ok(new ResponseDto<TokenModel>(tokenModel, "Vui lòng kiểm tra email để reset mật khẩu"));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound(new ResponseDto<string>(null, ErrorMessages.Auth.UserNotFound, 404));
             }
             catch (Exception)
             {

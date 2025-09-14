@@ -1,6 +1,7 @@
 using System.Text;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
+using EduShpere.Application.Services;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
@@ -26,6 +27,9 @@ namespace EduShpere
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+
 
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
@@ -38,9 +42,15 @@ namespace EduShpere
             builder.Services.AddScoped<IHttpContextService,HttpContextService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
+            builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
