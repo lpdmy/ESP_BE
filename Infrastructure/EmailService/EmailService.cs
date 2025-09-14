@@ -1,4 +1,5 @@
 ﻿using EduShpere.Domain.Models;
+using EduShpere.Shared.Constants;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
@@ -34,7 +35,6 @@ public class EmailService : IEmailService
 
         smtpClient.Send(message);
     }
-
     public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = true)
     {
         if (string.IsNullOrEmpty(toEmail)) return;
