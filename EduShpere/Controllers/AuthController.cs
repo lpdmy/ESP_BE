@@ -92,7 +92,7 @@ namespace EduShpere.Controllers
             }
         }
 
-        [HttpPost(ApiEndpoints.Auth.GetAllUsers)]
+        [HttpGet(ApiEndpoints.Auth.UserUrl)]
         public async Task<IActionResult> GetAllUsers(int pageNumber, int pageSize, string? search = null)
         {
             var result = await _authService.GetAllUsersAsync(pageNumber, pageSize, search);
@@ -103,7 +103,7 @@ namespace EduShpere.Controllers
 
         }
 
-        [HttpPost(ApiEndpoints.Auth.UpdateUser)]
+        [HttpPut(ApiEndpoints.Auth.UserUrl)]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto dto)
         {
             try

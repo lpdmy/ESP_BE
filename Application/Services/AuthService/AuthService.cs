@@ -283,7 +283,7 @@ namespace EduShpere.Application
             user.Address = dto.Address ?? user.Address;
             user.AvatarUrl = dto.AvatarUrl ?? user.AvatarUrl;
             user.UpdatedAt = DateTime.UtcNow;
-            //user.Role = dto.Role ?? user.Role;
+            user.Role = dto.Role ?? user.Role;
 
             await _userRepository.UpdateAsync(user);
             return true;
