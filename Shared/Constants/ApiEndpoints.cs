@@ -32,17 +32,9 @@
 
         public static class Activity
         {
-            public const string Activities = "api/Activity";
-            public const string GetActivityById = "api/Activity/{ID}";
+            public const string Activities = "api/activity";
+            public const string GetActivityById = "api/activity/{id}";
             
         }   
-
-
-        public static class ActivityParticipant
-        {
-            public const string GetAllActivityParticipant = "api/ActivityParticipant";
-            public const string GetActivityParticipantById = "api/ActivityParticipant/{ID}";
-        }
-
     }
 }
