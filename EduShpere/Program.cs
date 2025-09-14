@@ -19,7 +19,7 @@ namespace EduShpere
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            
+
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
@@ -28,6 +28,7 @@ namespace EduShpere
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
 
 
             // Add Configs
@@ -38,7 +39,7 @@ namespace EduShpere
             builder.Services.AddControllers();
 
             // Register KidNet services
-            builder.Services.AddScoped<IHttpContextService,HttpContextService>();
+            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
@@ -46,7 +47,10 @@ namespace EduShpere
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
+            builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -103,7 +107,7 @@ namespace EduShpere
                         ClockSkew = TimeSpan.Zero
                     };
                 });
-            
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
