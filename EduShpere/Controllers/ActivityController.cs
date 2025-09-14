@@ -18,7 +18,7 @@ namespace EduShpere.Controllers
             _Service = Service;
             _mapper = mapper;
         }
-        [HttpPost(ApiEndpoints.Activity.GetAllActivitys)]
+        [HttpGet(ApiEndpoints.Activity.Activities)]
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
             var Activitys = await _Service.GetAllAsync(pageNumber, pageSize, search);
@@ -30,10 +30,10 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
-        [HttpGet(ApiEndpoints.Activity.GetActivity)]
-        public async Task<IActionResult> GetActivitys(int id)
+        [HttpGet(ApiEndpoints.Activity.GetActivityById)]
+        public async Task<IActionResult> GetActivitys(int ID)
         {
-            var Activity = await _Service.GetByIdAsync(id);
+            var Activity = await _Service.GetByIdAsync(ID);
             if (Activity == null)
             {
                 return NotFound(new ResponseDto<string>(
@@ -49,7 +49,7 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
-        [HttpPost(ApiEndpoints.Activity.CreateActivity)]
+        [HttpPost(ApiEndpoints.Activity.Activities)]
         public async Task<IActionResult>CreateActivity(CreateActivityDto dto)
         {
             var Activity = await _Service.AddAsync(dto);
@@ -60,7 +60,7 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
-        [HttpPut(ApiEndpoints.Activity.UpdateActivity)]
+        [HttpPut(ApiEndpoints.Activity.Activities)]
         public async Task<IActionResult> UpdateActivity(UpdateActivityDto dto)
         {
             var Activity = await _Service.UpdateAsync(dto);

@@ -35,21 +35,16 @@
 
         public static class Activity
         {
-            public const string GetAllActivitys = "api/Activity/get-all";
-            public const string GetActivity = "api/Activity/get-by-id";
-            public const string CreateActivity = "api/Activity/create";
-            public const string UpdateActivity = "api/Activity/update";
-            public const string DeleteActivity = "api/Activity/delete";
+            public const string Activities = "api/Activity";
+            public const string GetActivityById = "api/Activity/{ID}";
+            
         }   
 
 
         public static class ActivityParticipant
         {
-            public const string GetAllActivityParticipant = "api/ActivityParticipant/get-all";
-            public const string CreateActivityParticipant = "api/ActivityParticipant/create";
-            public const string UpdateActivityParticipant = "api/ActivityParticipant/update";
-            public const string DeleteActivityParticipant = "api/ActivityParticipant/delete";
-            public const string AddActivityParticipant = "api/ActivityParticipant/add-participant";
+            public const string GetAllActivityParticipant = "api/ActivityParticipant";
+            public const string GetActivityParticipantById = "api/ActivityParticipant/{ID}";
         }
 
     }
