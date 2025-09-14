@@ -35,5 +35,10 @@ namespace EduShpere.Infrastructure
         {
           return  await _dbSet.AnyAsync(p => p.Email == email);
         }
+        public async Task<User?> GetUserByEmail(string email)
+        {
+            return await _dbSet.FirstOrDefaultAsync(p => p.Email == email);
+        }
+
     }
 }

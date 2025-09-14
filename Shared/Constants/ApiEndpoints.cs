@@ -14,6 +14,8 @@
             public const string UpdateUser = "api/auth/update-user";
             public const string OneTimeLogin = "api/auth/one-time-login";
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
+            public const string ChangePassword = "api/auth/change-password";
+            public const string ForgotPassword = "api/auth/forgot-password";
         }
 
         public static class User

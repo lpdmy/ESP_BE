@@ -16,5 +16,7 @@ namespace EduShpere.Application
         Task<bool> UpdateUserAsync(UpdateUserDto dto);
         Task<string> OneTimeLoginAsync(string token);
         Task<TokenModel> ChangePasswordWithOtlAsync(string token, string newPassword);
+        Task<bool> ChangePassword(ChangePasswordDto dto);
+        Task<TokenModel> ForgotPassword(ForgotPasswordDto dto);
     }
 }

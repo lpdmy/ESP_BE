@@ -315,5 +315,57 @@ namespace EduShpere.Application
 
             return GenerateToken(user);
         }
+
+        public async Task<bool> ChangePassword(ChangePasswordDto dto)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+
+            var isOldPasswordValid = PasswordHelper.VerifyPassword(user, user.Password, dto.OldPassword);
+            if (!isOldPasswordValid)
+            {
+                throw new BadRequestException(ErrorMessages.Auth.InvalidPassword);
+            }
+            if (dto.NewPassword.IndexOf(' ') != -1)
+            {
+                throw new BadRequestException(ErrorMessages.Password.PasswordWhiteSpace);
+            }
+            if (dto.NewPassword.Length < 8)
+            {
+                throw new BadRequestException(ErrorMessages.Password.PasswordTooShort);
+            }
+            if (dto.NewPassword != dto.ConfirmPassword)
+            {
+                throw new BadRequestException(ErrorMessages.Password.PasswordMismatch);
+            }
+
+            user.Password = PasswordHelper.HashPassword(user, dto.NewPassword);
+            await _userRepository.UpdateAsync(user);
+            return true;
+        }
+
+        public async Task<TokenModel> ForgotPassword(ForgotPasswordDto dto)
+        {
+            var user = await _userRepository.GetUserByEmail(dto.Email);
+            if (user == null)
+            {
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+            }
+
+            var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
+
+            var baseUrl = _configuration["AppSetting:FrontEndUrl"];
+            var resetLink = $"{baseUrl}/auth/reset-password?token={otlToken.Token}";
+
+            // 4. Gửi email
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Reset your password",
+                $"Click the link below to reset your password:<br/><a href='{resetLink}'>Reset Password</a>",
+                true
+            );
+
+            return GenerateToken(user);
+        }
+
     }
 }
