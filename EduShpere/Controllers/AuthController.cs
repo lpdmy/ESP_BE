@@ -65,7 +65,6 @@ namespace EduShpere.Controllers
                 Description = "This is a test endpoint to verify that the API is operational."
             });
         }
-
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
