@@ -30,11 +30,9 @@
         }
         public static class Activity
         {
-            public const string GetAllActivitys = "api/Activity/get-all";
-            public const string GetActivity = "api/Activity/get-by-id";
-            public const string CreateActivity = "api/Activity/create";
-            public const string UpdateActivity = "api/Activity/update";
-            public const string DeleteActivity = "api/Activity/delete";
-        }   
+            public const string Activities = "api/activity";
+            public const string GetActivityById = "api/activity/{id}";
+
+        }
     }
 }

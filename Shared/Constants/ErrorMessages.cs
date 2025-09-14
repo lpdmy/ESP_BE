@@ -26,6 +26,7 @@
         {
             public const string ActivityNotFound = "Hoạt động không tồn tại.";
             public const string ActivityAlreadyExists = "Hoạt động đã tồn tại.";
+            public const string StartDayAfterEndDay = "Ngày bắt đầu phải trước ngày kết thúc.";
         }
     }
 }
