@@ -10,8 +10,11 @@
             public const string Test = "api/auth/Test";
             public const string TestInvitation = "api/auth/TestInvitation";
             public const string CreateUser = "api/auth/create-user";
+            public const string UserUrl = "api/users";
             public const string OneTimeLogin = "api/auth/one-time-login";
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
+            public const string ChangePassword = "api/auth/change-password";
+            public const string ForgotPassword = "api/auth/forgot-password";
         }
 
         public static class User
@@ -22,19 +25,28 @@
             public const string DeleteUser = "api/user/delete";
         }
 
-        public static class Course
+        public static class Upload
         {
-            public const string GetAllCourses = "api/course/get-all";
-            public const string CreateCourse = "api/course/create";
-            public const string UpdateCourse = "api/course/update";
-            public const string DeleteCourse = "api/course/delete";
+            public const string UploadUrl = "api/upload";
+        }
+        public static class UserProfile
+        {
+            public const string StudentProfileUrl = "api/user/student-profile";
         }
 
         public static class Activity
         {
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
-            
-        }   
+
+        }
+
+
+        public static class ActivityParticipant
+        {
+            public const string ActivityParticipantRoute = "api/activityparticipant";
+            public const string GetActivityParticipantById = "api/activityparticipant/{id}";
+        }
+
     }
 }

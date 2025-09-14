@@ -11,6 +11,7 @@ using AutoMapper;
 using ClosedXML.Excel;
 using EduShpere.Application.DTOs.AuthDto;
 using EduShpere.Application.DTOs.UserDto;
+using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
@@ -231,6 +232,64 @@ namespace EduShpere.Application
             return true;
         }
 
+        public async Task<IEnumerable<UserDto>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 1, string? search = null)
+        {
+            var users = await _userRepository.GetAllAsync();
+            var list = users.Where(l => l.Role != UserRole.Admin);
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                list = list.Where(u =>
+                    (!string.IsNullOrEmpty(u.Username) && u.Username.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(u.Email) && u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(u.FirstName) && u.FirstName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(u.LastName) && u.LastName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+
+            var pagedUsers = list
+                .OrderBy(u => u.Id) 
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+
+            return _mapper.Map<IEnumerable<UserDto>>(pagedUsers);
+        }
+
+        public async Task<bool> UpdateUserAsync(UpdateUserDto dto)
+        {
+            var user = await _userRepository.GetByIdAsync(dto.Id);
+            if (user == null)
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+
+            if (!string.IsNullOrWhiteSpace(dto.Email) &&
+                !string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                var emailExists = await _userRepository.FindUserByEmail(dto.Email);
+                if (emailExists)
+                {
+                    throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
+                }
+
+                user.Email = dto.Email;
+            }
+
+            user.Username = dto.Username ?? user.Username;
+            user.FirstName = dto.FirstName ?? user.FirstName;
+            user.LastName = dto.LastName ?? user.LastName;
+            user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
+            user.Birthdate = dto.Birthdate ?? user.Birthdate;
+            user.Address = dto.Address ?? user.Address;
+            user.AvatarUrl = dto.AvatarUrl ?? user.AvatarUrl;
+            user.UpdatedAt = DateTime.UtcNow;
+            user.Role = dto.Role ?? user.Role;
+
+            await _userRepository.UpdateAsync(user);
+            return true;
+        }
+
+
         public async Task<string> OneTimeLoginAsync(string token)
         {
             var otl = await _oneTimeLoginRepository.GetValidTokenAsync(token);
@@ -256,5 +315,57 @@ namespace EduShpere.Application
 
             return GenerateToken(user);
         }
+
+        public async Task<bool> ChangePassword(ChangePasswordDto dto)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+
+            var isOldPasswordValid = PasswordHelper.VerifyPassword(user, user.Password, dto.OldPassword);
+            if (!isOldPasswordValid)
+            {
+                throw new BadRequestException(ErrorMessages.Auth.InvalidPassword);
+            }
+            if (dto.NewPassword.IndexOf(' ') != -1)
+            {
+                throw new BadRequestException(ErrorMessages.Password.PasswordWhiteSpace);
+            }
+            if (dto.NewPassword.Length < 8)
+            {
+                throw new BadRequestException(ErrorMessages.Password.PasswordTooShort);
+            }
+            if (dto.NewPassword != dto.ConfirmPassword)
+            {
+                throw new BadRequestException(ErrorMessages.Password.PasswordMismatch);
+            }
+
+            user.Password = PasswordHelper.HashPassword(user, dto.NewPassword);
+            await _userRepository.UpdateAsync(user);
+            return true;
+        }
+
+        public async Task<TokenModel> ForgotPassword(ForgotPasswordDto dto)
+        {
+            var user = await _userRepository.GetUserByEmail(dto.Email);
+            if (user == null)
+            {
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+            }
+
+            var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
+
+            var baseUrl = _configuration["AppSetting:FrontEndUrl"];
+            var resetLink = $"{baseUrl}/auth/reset-password?token={otlToken.Token}";
+
+            // 4. Gửi email
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Reset your password",
+                $"Click the link below to reset your password:<br/><a href='{resetLink}'>Reset Password</a>",
+                true
+            );
+
+            return GenerateToken(user);
+        }
+
     }
 }

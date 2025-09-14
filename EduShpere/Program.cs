@@ -25,6 +25,7 @@ namespace EduShpere
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
 
@@ -33,6 +34,8 @@ namespace EduShpere
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddSingleton<CloudinaryService>();
+            builder.Services.AddControllers();
 
             // Register KidNet services
             builder.Services.AddScoped<IHttpContextService,HttpContextService>();
