@@ -25,12 +25,13 @@
             public const string DeleteUser = "api/user/delete";
         }
 
-        public static class Course
+        public static class Upload
         {
-            public const string GetAllCourses = "api/course/get-all";
-            public const string CreateCourse = "api/course/create";
-            public const string UpdateCourse = "api/course/update";
-            public const string DeleteCourse = "api/course/delete";
+            public const string UploadUrl = "api/upload";
+        }
+        public static class UserProfile
+        {
+            public const string StudentProfileUrl = "api/user/student-profile";
         }
 
         public static class Activity

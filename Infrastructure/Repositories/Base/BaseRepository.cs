@@ -4,9 +4,9 @@ namespace EduShpere.Infrastructure
 {
     public class BaseRepository<T> : IRepository<T> where T : class
     {
-        protected readonly DbContext _context;
+        protected readonly EduShpereDbContext _context;
         protected readonly DbSet<T> _dbSet;
-        public BaseRepository(DbContext context)
+        public BaseRepository(EduShpereDbContext context)
         {
             _context = context;
             _dbSet = _context.Set<T>();
