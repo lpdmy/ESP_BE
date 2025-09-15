@@ -19,7 +19,7 @@ namespace EduShpere
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            
+
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
@@ -39,7 +39,7 @@ namespace EduShpere
             builder.Services.AddControllers();
 
             // Register KidNet services
-            builder.Services.AddScoped<IHttpContextService,HttpContextService>();
+            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
@@ -107,7 +107,7 @@ namespace EduShpere
                         ClockSkew = TimeSpan.Zero
                     };
                 });
-            
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>

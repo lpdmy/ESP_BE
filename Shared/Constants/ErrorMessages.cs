@@ -39,7 +39,7 @@
 
             public const string StudentNumberRequired = "Mã sinh viên là bắt buộc.";
             public const string EnrollmentYearRequired = "Năm nhập học là bắt buộc.";
-
+        }
         public struct Activity
         {
             public const string ActivityNotFound = "Hoạt động không tồn tại.";

@@ -12,7 +12,8 @@ namespace EduShpere.Application.Mappings
 {
     public class ActivityParticipantProfile : Profile
     {
-        public ActivityParticipantProfile() {
+        public ActivityParticipantProfile()
+        {
             CreateMap<ActivityParticipant, ActivityParticipantResponseDto>();
             CreateMap<ActivityParticipantResponseDto, ActivityParticipant>();
         }

@@ -15,7 +15,7 @@ namespace EduShpere.Controllers
         {
             _service = service;
         }
-        [HttpPost(ApiEndpoints.ActivityParticipant.GetAllActivityParticipant)]
+        [HttpPost(ApiEndpoints.ActivityParticipant.ActivityParticipantRoute)]
         public async Task<IActionResult> AddActivityParticipant([FromBody] AddParticipantDto dto)
         {
             if (dto == null)
@@ -23,7 +23,7 @@ namespace EduShpere.Controllers
             var result = await _service.AddActivityParticipant(dto);
             return Ok(new ResponseDto<ActivityParticipantResponseDto>(result, "Thêm người tham gia hoạt động thành công",200));
         }
-        [HttpDelete(ApiEndpoints.ActivityParticipant.DeleteActivityParticipant)]
+        [HttpDelete(ApiEndpoints.ActivityParticipant.ActivityParticipantRoute)]
         public async Task<IActionResult> RemoveActivityParticipant( int participationId)
         {
             if (participationId <= 0)
