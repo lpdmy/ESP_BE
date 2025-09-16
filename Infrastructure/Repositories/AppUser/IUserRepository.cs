@@ -15,5 +15,7 @@ namespace EduShpere.Infrastructure
         Task AddRangeAsync(IEnumerable<User> users);
         Task<bool> FindUserByEmail(string email);
         Task<User?> GetUserByEmail(string email);
+        Task<bool> FindUserByUsername(string username);
+        IQueryable<User> GetQueryable();
     }
 }

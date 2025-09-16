@@ -52,6 +52,12 @@ public class HttpContextService : IHttpContextService
         }
         return ipAddress ?? string.Empty;
     }
+
+    public int? GetCurrentUserId()
+    {
+        return GetUserId();
+    }
+
     private int? GetUserId()
     {
         var userId = _httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;

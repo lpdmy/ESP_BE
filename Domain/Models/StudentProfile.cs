@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EduShpere.Domain.Models
 {
-    public partial class StudentProfile
+    public partial class StudentProfile : BaseEntity
     {
         [Key]
         public int Id { get; set; }
@@ -21,15 +21,6 @@ namespace EduShpere.Domain.Models
 
         public string? ExtraJson { get; set; }
 
-        public DateTime CreatedAt { get; set; }
-
-        public int? CreatedBy { get; set; }
-
-        public DateTime? UpdatedAt { get; set; }
-
-        public int? UpdatedBy { get; set; }
-
-        public bool IsDeleted { get; set; }
 
         public byte[] RowVersion { get; set; } = null!;
 

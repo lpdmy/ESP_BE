@@ -1,26 +1,31 @@
 ﻿using EduShpere.Application;
 using EduShpere.Infrastructure;
 using EduShpere.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using EduShpere.Middlewares;
 
-[ApiController]
-public class UploadController : ControllerBase
+namespace EduShpere.Controllers
 {
-    private readonly CloudinaryService _cloudinaryService;
-
-    public UploadController(CloudinaryService cloudinaryService)
+    [CustomModelValidationFilter]
+    public class UploadController : BaseController
     {
-        _cloudinaryService = cloudinaryService;
-    }
+        private readonly CloudinaryService _cloudinaryService;
 
-    [HttpPost(ApiEndpoints.Upload.UploadUrl)]
-    [ApiExplorerSettings(IgnoreApi = true)]
-    public async Task<IActionResult> Upload([FromForm] IFormFile file)
-    {
-        var url = await _cloudinaryService.UploadImageAsync(file);
-        if (url == null)
-            return BadRequest(new ResponseDto<string>(null, ErrorMessages.Upload.UploadFailed, 400));
+        public UploadController(CloudinaryService cloudinaryService)
+        {
+            _cloudinaryService = cloudinaryService;
+        }
 
-        return Ok(new ResponseDto<string>(url, null));
+        [HttpPost(ApiEndpoints.Upload.UploadUrl)]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<IActionResult> Upload([FromForm] IFormFile file)
+        {
+            var url = await _cloudinaryService.UploadImageAsync(file);
+            if (url == null)
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Upload.UploadFailed, 400));
+
+            return Ok(new ResponseDto<string>(url, null));
+        }
     }
 }

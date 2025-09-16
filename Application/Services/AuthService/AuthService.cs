@@ -15,13 +15,15 @@ using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
+using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Security;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-
+using EduShpere.Application.Services;
+using EduShpere.Application.DTOs.CommonDto;
 namespace EduShpere.Application
 {
     public class AuthService : IAuthService
@@ -32,8 +34,11 @@ namespace EduShpere.Application
         private readonly IOneTimeLoginRepository _oneTimeLoginRepository;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
+        private readonly IStudentProfileRepository _studentProfileRepository;
+        private readonly IAuditService _auditService;
+        private readonly IPaginationService _paginationService;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, IAuditService auditService, IPaginationService paginationService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -41,6 +46,9 @@ namespace EduShpere.Application
             _mapper = mapper;
             _oneTimeLoginRepository = oneTimeLoginRepository;
             _emailService = emailService;
+            _studentProfileRepository = studentProfileRepository;
+            _auditService = auditService;
+            _paginationService = paginationService;
         }
 
         public async Task<UserDto> GetMe()
@@ -65,6 +73,15 @@ namespace EduShpere.Application
             var secretKey = _configuration["AppSetting:SecretKey"];
             var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
 
+            // Convert role number to role name
+            var roleName = appUser.Role switch
+            {
+                UserRole.Admin => "Admin",
+                UserRole.Teacher => "Teacher", 
+                UserRole.Student => "Student",
+                _ => "Student"
+            };
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
@@ -73,7 +90,8 @@ namespace EduShpere.Application
                     new Claim("FullName", appUser.FirstName),
                     new Claim("Id", appUser.Id.ToString()),
                     new Claim("UserName", appUser.Username),
-                    new Claim("UserRole", appUser.Role.ToString())
+                    new Claim("UserRole", appUser.Role.ToString()),
+                    new Claim(ClaimTypes.Role, roleName) // Add role claim for authorization
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), SecurityAlgorithms.HmacSha256Signature)
@@ -92,9 +110,27 @@ namespace EduShpere.Application
 
         public async Task<TokenModel> Login(LoginDto dto)
         {
+            // Validate email và password - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.Username))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
+            }
+            
+            if (ContainsVietnameseOrSpaces(dto.Password))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.PasswordContainsSpacesOrVietnamese);
+            }
+
             var user = await _userRepository.GetUserByUserName(dto.Username);
 
-            if (user == null || user.Password != dto.Password)
+            if (user == null)
+            {
+                throw new UnauthorizedException(ErrorMessages.Auth.InvalidCredentials);
+            }
+
+            // Verify password bằng hash
+            var isPasswordValid = PasswordHelper.VerifyPassword(user, user.Password, dto.Password);
+            if (!isPasswordValid)
             {
                 throw new UnauthorizedException(ErrorMessages.Auth.InvalidCredentials);
             }
@@ -204,11 +240,90 @@ namespace EduShpere.Application
             return text;
         }
 
+        private bool ContainsVietnameseOrSpaces(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return false;
+
+            // Kiểm tra dấu cách
+            if (input.Contains(" "))
+                return true;
+
+            // Kiểm tra ký tự tiếng Việt
+            string[] vietnameseSigns = new string[]
+            {
+                "áàạảãâấầậẩẫăắằặẳẵ",
+                "ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
+                "éèẹẻẽêếềệểễ",
+                "ÉÈẸẺẼÊẾỀỆỂỄ",
+                "óòọỏõôốồộổỗơớờợởỡ",
+                "ÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠ",
+                "úùụủũưứừựửữ",
+                "ÚÙỤỦŨƯỨỪỰỬỮ",
+                "íìịỉĩ",
+                "ÍÌỊỈĨ",
+                "đ",
+                "Đ",
+                "ýỳỵỷỹ",
+                "ÝỲỴỶỸ"
+            };
+
+            foreach (string vietnameseSign in vietnameseSigns)
+            {
+                foreach (char c in vietnameseSign)
+                {
+                    if (input.Contains(c))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ValidateStrongPassword(string password)
+        {
+            if (string.IsNullOrEmpty(password))
+                throw new BadRequestException(ErrorMessages.Password.PasswordInvalidLength);
+
+            // Kiểm tra độ dài (6-20 ký tự)
+            if (password.Length < 6)
+                throw new BadRequestException(ErrorMessages.Password.PasswordTooShort);
+            
+            if (password.Length > 20)
+                throw new BadRequestException(ErrorMessages.Password.PasswordTooLong);
+
+            // Kiểm tra chữ cái viết hoa
+            if (!password.Any(char.IsUpper))
+                throw new BadRequestException(ErrorMessages.Password.PasswordMustContainUppercase);
+
+            // Kiểm tra ký tự đặc biệt
+            string specialChars = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            if (!password.Any(c => specialChars.Contains(c)))
+                throw new BadRequestException(ErrorMessages.Password.PasswordMustContainSpecialChar);
+        }
+
         public async Task<bool> CreateUserAndGenerateOtlAsync(CreateUserDto dto)
         {
+            // Validate email - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.Email))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
+            }
+            
             if (await _userRepository.FindUserByEmail(dto.Email))
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
+            }
+
+            // Validate username - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.Username))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.UsernameContainsSpacesOrVietnamese);
+            }
+            
+            if (await _userRepository.FindUserByUsername(dto.Username))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.UsernameAlreadyExists);
             }
 
             var user = new User
@@ -217,12 +332,31 @@ namespace EduShpere.Application
                 LastName = dto.LastName,
                 Email = dto.Email,
                 Role = dto.Role,
-                CreatedAt = DateTime.UtcNow,
                 Password = PasswordHelper.HashPassword(new User(), "123"),
-                Username = dto.Username
+                Username = dto.Username, // Username giữ nguyên (mã số hiển thị)
+                PhoneNumber = dto.PhoneNumber,
+                Birthdate = dto.BirthDate,
+                AvatarUrl = dto.AvatarUrl
             };
 
+            _auditService.SetAuditFieldsForCreate(user);
             await _userRepository.AddAsync(user);
+
+            // Tự động tạo profile nếu là Student
+            if (dto.Role == UserRole.Student)
+            {
+                var profile = new StudentProfile
+                {
+                    UserId = user.Id,
+                    StudentNumber = dto.StudentNumber ?? dto.Username, // Sử dụng Username làm StudentNumber mặc định
+                    EnrollmentYear = dto.EnrollmentYear ?? (short)DateTime.Now.Year,
+                    Bio = dto.Bio,
+                    ExtraJson = dto.ExtraJson
+                };
+
+                // Sử dụng CreateStudentProfileAsync để có thể truyền classGroupId
+                await _studentProfileRepository.CreateStudentProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);
+            }
 
             var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
             var baseUrl = _configuration["AppSetting:FrontEndUrl"];
@@ -232,29 +366,80 @@ namespace EduShpere.Application
             return true;
         }
 
-        public async Task<IEnumerable<UserDto>> GetAllUsersAsync(int pageNumber = 1, int pageSize = 1, string? search = null)
+        public async Task<TokenModel> CreateUserAndReturnTokenAsync(CreateUserDto dto)
         {
-            var users = await _userRepository.GetAllAsync();
-            var list = users.Where(l => l.Role != UserRole.Admin);
-
-            if (!string.IsNullOrEmpty(search))
+            // Validate email - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.Email))
             {
-                list = list.Where(u =>
-                    (!string.IsNullOrEmpty(u.Username) && u.Username.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                    (!string.IsNullOrEmpty(u.Email) && u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                    (!string.IsNullOrEmpty(u.FirstName) && u.FirstName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                    (!string.IsNullOrEmpty(u.LastName) && u.LastName.Contains(search, StringComparison.OrdinalIgnoreCase))
-                );
+                throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
+            }
+            
+            if (await _userRepository.FindUserByEmail(dto.Email))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
             }
 
-            var pagedUsers = list
-                .OrderBy(u => u.Id) 
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            // Validate username - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.Username))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.UsernameContainsSpacesOrVietnamese);
+            }
+            
+            if (await _userRepository.FindUserByUsername(dto.Username))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.UsernameAlreadyExists);
+            }
 
+            var user = new User
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                Role = dto.Role,
+                Password = PasswordHelper.HashPassword(new User(), "123"),
+                Username = dto.Username,
+                PhoneNumber = dto.PhoneNumber,
+                Birthdate = dto.BirthDate,
+                AvatarUrl = dto.AvatarUrl
+            };
 
-            return _mapper.Map<IEnumerable<UserDto>>(pagedUsers);
+            _auditService.SetAuditFieldsForCreate(user);
+            await _userRepository.AddAsync(user);
+
+            // Tự động tạo profile nếu là Student
+            if (dto.Role == UserRole.Student)
+            {
+                var profile = new StudentProfile
+                {
+                    UserId = user.Id,
+                    StudentNumber = dto.StudentNumber ?? dto.Username,
+                    EnrollmentYear = dto.EnrollmentYear ?? (short)DateTime.Now.Year,
+                    Bio = dto.Bio,
+                    ExtraJson = dto.ExtraJson
+                };
+
+                // Sử dụng CreateStudentProfileAsync để có thể truyền classGroupId
+                await _studentProfileRepository.CreateStudentProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);
+            }
+
+            // Trả về token thay vì gửi email (chỉ dành cho development)
+            return GenerateToken(user);
+        }
+
+        public async Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(PaginationRequestDto paginationRequest)
+        {
+            var query = _userRepository.GetQueryable()
+                .Where(u => u.Role != UserRole.Admin);
+
+            var pagedResult = await _paginationService.GetPagedResultAsync(query, paginationRequest);
+
+            return new PaginationResponseDto<UserDto>
+            {
+                Data = _mapper.Map<IEnumerable<UserDto>>(pagedResult.Data),
+                TotalCount = pagedResult.TotalCount,
+                PageNumber = pagedResult.PageNumber,
+                PageSize = pagedResult.PageSize
+            };
         }
 
         public async Task<bool> UpdateUserAsync(UpdateUserDto dto)
@@ -282,9 +467,9 @@ namespace EduShpere.Application
             user.Birthdate = dto.Birthdate ?? user.Birthdate;
             user.Address = dto.Address ?? user.Address;
             user.AvatarUrl = dto.AvatarUrl ?? user.AvatarUrl;
-            user.UpdatedAt = DateTime.UtcNow;
             user.Role = dto.Role ?? user.Role;
 
+            _auditService.SetAuditFieldsForUpdate(user);
             await _userRepository.UpdateAsync(user);
             return true;
         }
@@ -309,7 +494,17 @@ namespace EduShpere.Application
             if (user == null)
                 throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
 
+            // Validate password - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(newPassword))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.PasswordContainsSpacesOrVietnamese);
+            }
+
+            // Validate strong password
+            ValidateStrongPassword(newPassword);
+
             user.Password = PasswordHelper.HashPassword(user, newPassword);
+            _auditService.SetAuditFieldsForUpdate(user);
             await _userRepository.UpdateAsync(user);
             await _oneTimeLoginRepository.MarkAsUsedAsync(otl);
 
@@ -320,31 +515,50 @@ namespace EduShpere.Application
         {
             var user = await _httpContextService.GetAppUserAndThrow();
 
+            // Validate passwords - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.OldPassword))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.OldPasswordContainsSpacesOrVietnamese);
+            }
+            
+            if (ContainsVietnameseOrSpaces(dto.NewPassword))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.NewPasswordContainsSpacesOrVietnamese);
+            }
+            
+            if (ContainsVietnameseOrSpaces(dto.ConfirmPassword))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.ConfirmPasswordContainsSpacesOrVietnamese);
+            }
+
             var isOldPasswordValid = PasswordHelper.VerifyPassword(user, user.Password, dto.OldPassword);
             if (!isOldPasswordValid)
             {
                 throw new BadRequestException(ErrorMessages.Auth.InvalidPassword);
             }
-            if (dto.NewPassword.IndexOf(' ') != -1)
-            {
-                throw new BadRequestException(ErrorMessages.Password.PasswordWhiteSpace);
-            }
-            if (dto.NewPassword.Length < 8)
-            {
-                throw new BadRequestException(ErrorMessages.Password.PasswordTooShort);
-            }
+            
+            // Validate strong password
+            ValidateStrongPassword(dto.NewPassword);
+            
             if (dto.NewPassword != dto.ConfirmPassword)
             {
                 throw new BadRequestException(ErrorMessages.Password.PasswordMismatch);
             }
 
             user.Password = PasswordHelper.HashPassword(user, dto.NewPassword);
+            _auditService.SetAuditFieldsForUpdate(user);
             await _userRepository.UpdateAsync(user);
             return true;
         }
 
         public async Task<TokenModel> ForgotPassword(ForgotPasswordDto dto)
         {
+            // Validate email - cấm dấu cách và chữ tiếng Việt
+            if (ContainsVietnameseOrSpaces(dto.Email))
+            {
+                throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
+            }
+            
             var user = await _userRepository.GetUserByEmail(dto.Email);
             if (user == null)
             {

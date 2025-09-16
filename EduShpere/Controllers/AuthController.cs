@@ -4,14 +4,17 @@ using EduShpere.Application.DTOs.UserDto;
 using EduShpere.Infrastructure;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
+using EduShpere.Middlewares;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Domain.Models;
 
 namespace EduShpere.Controllers
 {
-    [ApiController]
-    public class AuthController : ControllerBase
+    [CustomModelValidationFilter]
+    public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
@@ -47,26 +50,28 @@ namespace EduShpere.Controllers
         }
 
         [HttpPost(ApiEndpoints.Auth.ImportFile)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ImportFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidFile, 400));
 
             var result = await _authService.ImportUsers(file);
-            return Ok(result);
+            return Ok(new ResponseDto<object>(result, "Import file thành công"));
         }
 
         [HttpGet(ApiEndpoints.Auth.Test)]
         public async Task<IActionResult> Test()
         {
             await _emailService.SendEmailAsync("lpdmy15@gmail.com", "Hello", "Hi");
-            return Ok(new
+            return Ok(new ResponseDto<object>(new
             {
                 Name = "EduShpere API is working fine",
                 Description = "This is a test endpoint to verify that the API is operational."
-            });
+            }, "API hoạt động bình thường"));
         }
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             try
@@ -80,18 +85,53 @@ namespace EduShpere.Controllers
             }
         }
 
-        [HttpGet(ApiEndpoints.Auth.UserUrl)]
-        public async Task<IActionResult> GetAllUsers(int pageNumber, int pageSize, string? search = null)
+        [HttpPost("api/auth/create-user-dev")]
+        public async Task<IActionResult> CreateUserDev([FromBody] CreateUserDto dto, [FromServices] IWebHostEnvironment env)
         {
-            var result = await _authService.GetAllUsersAsync(pageNumber, pageSize, search);
+            if (!env.IsDevelopment())
+            {
+                return NotFound(); // hoặc Forbidden
+            }
 
-            return Ok(new ResponseDto<IEnumerable<UserDto>>(result, "Lấy danh sách người dùng thành công",
-                (int)HttpStatusCode.OK
-            ));
-
+            try
+            {
+                var result = await _authService.CreateUserAndReturnTokenAsync(dto);
+                return Ok(new ResponseDto<TokenModel>(result, "Tạo người dùng thành công - Development Mode"));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+            }
         }
 
+        [HttpGet(ApiEndpoints.Auth.UserUrl)]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] PaginationRequestDto? paginationRequest = null)
+        {
+            try
+            {
+                // Set default values if paginationRequest is null
+                paginationRequest ??= new PaginationRequestDto
+                {
+                    PageNumber = 1,
+                    PageSize = 10
+                };
+
+                var result = await _authService.GetAllUsersAsync(paginationRequest);
+
+                return Ok(new ResponseDto<PaginationResponseDto<UserDto>>(result, "Lấy danh sách người dùng thành công",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDto<string>(null, $"Internal Server Error: {ex.Message}", 500));
+            }
+        }
+
+
         [HttpPut(ApiEndpoints.Auth.UserUrl)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto dto)
         {
             try

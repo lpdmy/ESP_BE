@@ -32,6 +32,13 @@
         public static class UserProfile
         {
             public const string StudentProfileUrl = "api/user/student-profile";
+            public const string MyProfile = "api/userprofile/my-profile";
+            public const string AllProfiles = "api/userprofile/all";
+            public const string ProfileById = "api/userprofile/{id}";
+            public const string CreateProfile = "api/userprofile";
+            public const string UpdateProfile = "api/userprofile/{id}";
+            public const string DeleteProfile = "api/userprofile/{id}";
+            public const string CheckProfileExists = "api/userprofile/{id}/exists";
         }
 
         public static class Activity

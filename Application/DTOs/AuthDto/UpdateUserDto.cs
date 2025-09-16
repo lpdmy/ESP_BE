@@ -1,4 +1,5 @@
 ﻿using EduShpere.Domain;
+using EduShpere.Shared.Constants;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -15,7 +16,7 @@ namespace EduShpere.Application.DTOs.AuthDto
         [MaxLength(50)]
         public string? Username { get; set; } = null!;
 
-        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [EmailAddress(ErrorMessage = ErrorMessages.Validation.EmailInvalidFormat)]
         public string? Email { get; set; } = null!;
 
         [MaxLength(100)]

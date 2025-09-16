@@ -36,10 +36,17 @@ namespace EduShpere
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddSingleton<CloudinaryService>();
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(options =>
+            {
+                options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+                options.ModelValidatorProviders.Clear();
+            });
 
             // Register KidNet services
             builder.Services.AddScoped<IHttpContextService, HttpContextService>();
+            builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            builder.Services.AddScoped<IAuditService, AuditService>();
+            builder.Services.AddScoped<IPaginationService, PaginationService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
@@ -51,7 +58,6 @@ namespace EduShpere
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
-            builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

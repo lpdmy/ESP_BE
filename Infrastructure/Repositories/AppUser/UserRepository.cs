@@ -40,5 +40,15 @@ namespace EduShpere.Infrastructure
             return await _dbSet.FirstOrDefaultAsync(p => p.Email == email);
         }
 
+        public async Task<bool> FindUserByUsername(string username)
+        {
+            return await _dbSet.AnyAsync(p => p.Username == username);
+        }
+
+        public IQueryable<User> GetQueryable()
+        {
+            return _dbSet.Where(u => !u.IsDeleted);
+        }
+
     }
 }

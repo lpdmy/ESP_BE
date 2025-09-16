@@ -1,16 +1,18 @@
 ﻿using EduShpere.Application;
 using EduShpere.Application.Services;
 using EduShpere.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EduShpere.Application.DTOs;
 using System.Net;
 using AutoMapper;
 using EduShpere.Application.DTOs.ActivityDto;
+using EduShpere.Middlewares;
 
 namespace EduShpere.Controllers
 {
-    [ApiController]
-    public class ActivityController : ControllerBase
+    [CustomModelValidationFilter]
+    public class ActivityController : BaseController
     {
         private readonly IActivityService _Service;
         private readonly IMapper _mapper;
@@ -19,6 +21,7 @@ namespace EduShpere.Controllers
             _mapper = mapper;
         }
         [HttpGet(ApiEndpoints.Activity.Activities)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
             var Activitys = await _Service.GetAllAsync(pageNumber, pageSize, search);
@@ -31,6 +34,7 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)
         {
             var Activity = await _Service.GetByIdAsync(id);
@@ -50,6 +54,7 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpPost(ApiEndpoints.Activity.Activities)]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult>CreateActivity(CreateActivityDto dto)
         {
             var Activity = await _Service.AddAsync(dto);
@@ -61,6 +66,7 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpPut(ApiEndpoints.Activity.Activities)]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult> UpdateActivity(UpdateActivityDto dto)
         {
             var Activity = await _Service.UpdateAsync(dto);
