@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace EduShpere.Domain
 {
-    public enum UserRole
+    public enum UserRole : byte
     {
-        admin = 0,
-        student=4,
-        teacher = 2,
+        Admin = 0,
+        Student = 4,
+        Teacher = 2,
     }
 }

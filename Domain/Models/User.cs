@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public partial class User
+public partial class User : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -17,12 +17,12 @@ public partial class User
     public string? Username { get; set; }
 
     [StringLength(255)]
-    public string? Firstname { get; set; }
+    public string? FirstName { get; set; }
 
     [StringLength(255)]
-    public string? Lastname { get; set; }
+    public string? LastName { get; set; }
 
-    public byte? Role { get; set; }
+    public UserRole? Role { get; set; }
 
     [StringLength(1000)]
     public string? AvatarUrl { get; set; }
@@ -43,16 +43,6 @@ public partial class User
 
     [StringLength(255)]
     public string? Password { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
-
-    public bool IsDeleted { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;
 

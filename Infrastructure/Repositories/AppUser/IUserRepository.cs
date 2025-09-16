@@ -7,12 +7,15 @@ namespace EduShpere.Infrastructure
     public interface IUserRepository 
     {
         Task<IEnumerable<User>> GetAllAsync();
-        Task<User?> GetByIdAsync(string id);
+        Task<User?> GetByIdAsync(int id);
         Task AddAsync(User user);
         Task UpdateAsync(User user);
-        Task DeleteAsync(string id);
+        Task DeleteAsync(int id);
         Task<User?> GetUserByUserName(string userName);
         Task AddRangeAsync(IEnumerable<User> users);
         Task<bool> FindUserByEmail(string email);
+        Task<User?> GetUserByEmail(string email);
+        Task<bool> FindUserByUsername(string username);
+        IQueryable<User> GetQueryable();
     }
 }

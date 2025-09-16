@@ -1,9 +1,14 @@
 using System.Text;
 using EduShpere.Application;
+using EduShpere.Application.Mappings;
+using EduShpere.Application.Services;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.Repositories;
+using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -14,19 +19,45 @@ namespace EduShpere
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            
+
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
+            builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+
+
+            // Add Configs
+            builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
+            builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
+            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddSingleton<CloudinaryService>();
+            builder.Services.AddControllers(options =>
+            {
+                options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+                options.ModelValidatorProviders.Clear();
+            });
+
             // Register KidNet services
-            builder.Services.AddScoped<IHttpContextService,HttpContextService>();
+            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
+            builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            builder.Services.AddScoped<IAuditService, AuditService>();
+            builder.Services.AddScoped<IPaginationService, PaginationService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
 
-            builder.Services.AddControllers();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
+            builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -82,7 +113,7 @@ namespace EduShpere
                         ClockSkew = TimeSpan.Zero
                     };
                 });
-            
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>

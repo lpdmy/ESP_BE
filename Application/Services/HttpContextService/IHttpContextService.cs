@@ -7,4 +7,5 @@ public interface IHttpContextService
     Task<User?> GetAppUser();
     Task<User> GetAppUserAndThrow();
     string GetIpAddress();
+    int? GetCurrentUserId();
 }
