@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EduShpere.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Infrastructure.Repositories
 {
@@ -12,5 +13,6 @@ namespace EduShpere.Infrastructure.Repositories
         public ActivityRepository(EduShpereDbContext context) : base(context)
         {
         }
+        
     }
 }

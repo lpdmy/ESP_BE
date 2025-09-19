@@ -8,6 +8,7 @@ using System.Net;
 using AutoMapper;
 using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Middlewares;
+using EduShpere.Application.DTOs.CommonDto;
 
 namespace EduShpere.Controllers
 {
@@ -16,19 +17,32 @@ namespace EduShpere.Controllers
     {
         private readonly IActivityService _Service;
         private readonly IMapper _mapper;
-        public ActivityController(IActivityService Service, IMapper mapper) {
+        private readonly IActivityParticipantService _APservice;
+        public ActivityController(IActivityService Service, IMapper mapper, IActivityParticipantService APservice) {
             _Service = Service;
             _mapper = mapper;
+            _APservice = APservice;
         }
         [HttpGet(ApiEndpoints.Activity.Activities)]
-        [Authorize(Roles = "Student,Teacher,Admin")]
+        //[Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
-            var Activitys = await _Service.GetAllAsync(pageNumber, pageSize, search);
-            var ActivityDtos = _mapper.Map<IEnumerable<ActivityResponseDto>>(Activitys);
+            var (Activity, totalCount) = await _Service.GetAllAsync(pageNumber, pageSize, search);
+            var ActivityDtos = _mapper.Map<IEnumerable<ActivityResponseDto>>(Activity);
 
-            return Ok(new ResponseDto<IEnumerable<ActivityResponseDto>>(
-                ActivityDtos,
+            foreach (var dto in ActivityDtos)
+            {
+                dto.numberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
+            }
+            var result = new PaginationResponseDto<ActivityResponseDto>
+            {
+                Data = ActivityDtos,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+            return Ok(new ResponseDto<PaginationResponseDto<ActivityResponseDto>>(
+                result,
                 "Lấy danh sách thành công",
                 (int)HttpStatusCode.OK
             ));

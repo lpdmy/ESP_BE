@@ -8,5 +8,6 @@ namespace EduShpere.Application.Services
     {
         Task<ActivityParticipantResponseDto> AddActivityParticipant(AddParticipantDto dto);
         Task<ActivityParticipantResponseDto> RemoveActivityParticipant(int participationId);
+        Task<int> CountNumberParticipantInActivity(int activityId);
     }
 }

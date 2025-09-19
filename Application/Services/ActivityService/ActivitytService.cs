@@ -19,20 +19,21 @@ namespace EduShpere.Application.Services
             _repo = repo;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<Activity>> GetAllAsync(int pageNumber, int pageSize, string? search =null)
+        public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search =null)
         {
             var activities = await _repo.GetAllAsync();
-            var filteredActivities = activities
-                .Where(c => c.Category == ActivityType.Event);
+            var totalCount = activities.Count();
             if (!string.IsNullOrEmpty(search))
             {
-                filteredActivities = filteredActivities
+                activities = activities
                     .Where(c => c.Title.Contains(search, StringComparison.OrdinalIgnoreCase));
             }
-            return filteredActivities
+
+           var result = activities
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
+            return (result,totalCount);
         }
         public async Task<Activity?> GetByIdAsync(int id)
         {

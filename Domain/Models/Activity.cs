@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public partial class Activity
+public partial class Activity : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -27,14 +27,8 @@ public partial class Activity
 
     public int? ClubId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
-
+    public string Organizer { get; set; } = null!;
+    public int MaxParticipants { get; set; }
     public bool IsDeleted { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;

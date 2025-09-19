@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EduShpere.Domain.Models;
 
 [Index("ActivityId", "UserId", Name = "ActivityParticipants_index_10", IsUnique = true)]
-public partial class ActivityParticipant
+public partial class ActivityParticipant : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -19,13 +19,6 @@ public partial class ActivityParticipant
 
     [StringLength(50)]
     public ParticipantStatus? Status { get; set; }
-    public DateTime? CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
 
     public bool IsDeleted { get; set; }
 

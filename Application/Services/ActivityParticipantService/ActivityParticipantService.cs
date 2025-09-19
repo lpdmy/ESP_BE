@@ -52,6 +52,10 @@ namespace EduShpere.Application.Services
             var participantDto = _mapper.Map<ActivityParticipantResponseDto>(participant);
             return participantDto;
         }
+        public async Task<int> CountNumberParticipantInActivity(int activityId)
+        {
+            return await _repo.CountNumberParticipantInActivity(activityId);
+        }
 
     }
 }
