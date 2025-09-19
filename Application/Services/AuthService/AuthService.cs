@@ -380,7 +380,7 @@ namespace EduShpere.Application
             var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
             var baseUrl = _configuration["AppSetting:FrontEndUrl"];
             var loginLink = $"{baseUrl}/auth/one-time-login?token={otlToken.Token}";
-            await _emailService.SendEmailAsync(dto.Email, "Login Now", loginLink, true);
+            await _emailService.SendEmailAsync(dto.Email, "Login Now", EmailTemplate.GetInvitationEmail(user.LastName, loginLink), true);
 
             return true;
         }
@@ -602,13 +602,13 @@ namespace EduShpere.Application
             var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
 
             var baseUrl = _configuration["AppSetting:FrontEndUrl"];
-            var resetLink = $"{baseUrl}/auth/reset-password?token={otlToken.Token}";
+            var resetLink = $"{baseUrl}/auth/one-time-login?token={otlToken.Token}";
 
             // 4. Gửi email
             await _emailService.SendEmailAsync(
                 user.Email,
-                "Reset your password",
-                $"Click the link below to reset your password:<br/><a href='{resetLink}'>Reset Password</a>",
+                "EduSphere - Đặt lại mật khẩu",
+                EmailTemplate.GetResetPasswordEmail(user.LastName, resetLink),
                 true
             );
 
