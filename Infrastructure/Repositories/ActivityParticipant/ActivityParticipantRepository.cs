@@ -22,6 +22,11 @@ namespace EduShpere.Infrastructure.Repositories
             _dbSet.Update(entity);
             await _context.SaveChangesAsync();
         }
+        public async Task<int> CountNumberParticipantInActivity(int activityId)
+        {
+            var count = await _dbSet.Where(ap => ap.ActivityId == activityId && !ap.IsDeleted).CountAsync();
+            return count;
+        }
 
     }
 }

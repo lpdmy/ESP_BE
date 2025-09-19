@@ -13,7 +13,8 @@ namespace EduShpere.Application.Mappings
     {
         public ActivityProfile()
         {
-            CreateMap<Activity, ActivityResponseDto>();
+            CreateMap<Activity, ActivityResponseDto>().ForMember(dest => dest.Rules,
+                       opt => opt.MapFrom(src => src.Rules.Select(r => r.RuleText)));
             CreateMap<ActivityResponseDto, Activity>();
         }
     }

@@ -16,8 +16,14 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public string? Location { get; set; }
+        public int? ClubId { get; set; }
+        public string Organizer { get; set; }
+        public bool IsDeleted { get; set; }
+        public int MaxParticipants { get; set; }
+        public DateTime RegisterDate { get; set; }
+        public DateTime EndRegisterDate { get; set; }
         public ActivityType Category { get; set; }
-        public string? SubType { get; set; }
-        public IFormFile? ThumbnailUrl { get; set; }
+        public string SubType { get; set; } = null!;
+        public string ThumbnailUrl { get; set; } = null!;
     }
 }
