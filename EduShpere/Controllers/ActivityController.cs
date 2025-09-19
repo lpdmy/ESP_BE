@@ -24,7 +24,7 @@ namespace EduShpere.Controllers
             _APservice = APservice;
         }
         [HttpGet(ApiEndpoints.Activity.Activities)]
-        //[Authorize(Roles = "Student,Teacher,Admin")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
             var (Activity, totalCount) = await _Service.GetAllAsync(pageNumber, pageSize, search);
@@ -48,7 +48,7 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
-        //[Authorize(Roles = "Student,Teacher,Admin")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)
         {
             var Activity = await _Service.GetByIdAsync(id);
@@ -68,7 +68,7 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpPost(ApiEndpoints.Activity.Activities)]
-        //[Authorize(Roles = "Teacher,Admin")]
+        [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult>CreateActivity([FromBody] CreateActivityDto dto)
         {
             var Activity = await _Service.AddAsync(dto);
