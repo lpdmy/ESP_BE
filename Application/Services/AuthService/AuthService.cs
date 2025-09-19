@@ -16,6 +16,8 @@ using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using EduShpere.Infrastructure.Repositories;
+using EduShpere.Infrastructure.Repositories.TeacherProfile;
+using TeacherProfileEntity = EduShpere.Domain.Models.TeacherProfile;
 using EduShpere.Infrastructure.Security;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
@@ -35,10 +37,11 @@ namespace EduShpere.Application
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
         private readonly IStudentProfileRepository _studentProfileRepository;
+        private readonly ITeacherProfileRepository _teacherProfileRepository;
         private readonly IAuditService _auditService;
         private readonly IPaginationService _paginationService;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, IAuditService auditService, IPaginationService paginationService)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, ITeacherProfileRepository teacherProfileRepository, IAuditService auditService, IPaginationService paginationService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -47,6 +50,7 @@ namespace EduShpere.Application
             _oneTimeLoginRepository = oneTimeLoginRepository;
             _emailService = emailService;
             _studentProfileRepository = studentProfileRepository;
+            _teacherProfileRepository = teacherProfileRepository;
             _auditService = auditService;
             _paginationService = paginationService;
         }
@@ -357,6 +361,21 @@ namespace EduShpere.Application
                 // Sử dụng CreateStudentProfileAsync để có thể truyền classGroupId
                 await _studentProfileRepository.CreateStudentProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);
             }
+            // Tự động tạo teacher profile nếu là Teacher
+            else if (dto.Role == UserRole.Teacher)
+            {
+                var teacherProfile = new TeacherProfileEntity
+                {
+                    UserId = user.Id,
+                    TeacherCode = dto.TeacherCode ?? dto.Username, // Sử dụng Username làm TeacherCode mặc định
+                    Department = dto.Department,
+                    Position = dto.Position,
+                    Bio = dto.Bio,
+                    ExtraJson = dto.ExtraJson
+                };
+
+                await _teacherProfileRepository.CreateTeacherProfileAsync(teacherProfile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+            }
 
             var otlToken = await _oneTimeLoginRepository.CreateTokenAsync(user);
             var baseUrl = _configuration["AppSetting:FrontEndUrl"];
@@ -420,6 +439,21 @@ namespace EduShpere.Application
 
                 // Sử dụng CreateStudentProfileAsync để có thể truyền classGroupId
                 await _studentProfileRepository.CreateStudentProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);
+            }
+            // Tự động tạo teacher profile nếu là Teacher
+            else if (dto.Role == UserRole.Teacher)
+            {
+                var teacherProfile = new TeacherProfileEntity
+                {
+                    UserId = user.Id,
+                    TeacherCode = dto.TeacherCode ?? dto.Username, // Sử dụng Username làm TeacherCode mặc định
+                    Department = dto.Department,
+                    Position = dto.Position,
+                    Bio = dto.Bio,
+                    ExtraJson = dto.ExtraJson
+                };
+
+                await _teacherProfileRepository.CreateTeacherProfileAsync(teacherProfile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
             }
 
             // Trả về token thay vì gửi email (chỉ dành cho development)

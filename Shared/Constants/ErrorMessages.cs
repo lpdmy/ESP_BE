@@ -42,6 +42,7 @@
             public const string FirstNameRequired = "Tên là bắt buộc";
             public const string LastNameRequired = "Họ là bắt buộc";
             public const string RoleRequired = "Vai trò là bắt buộc";
+            public const string UserIdRequired = "User ID là bắt buộc";
         }
 
         public struct Generic
@@ -77,6 +78,11 @@
             public const string InvalidPhoneNumber = "Số điện thoại phải là số điện thoại hợp lệ.";
             public const string PhoneNumberTooLong = "Số điện thoại không được vượt quá 20 ký tự.";
             public const string InvalidEnrollmentYear = "Năm nhập học phải từ 2000 đến 2030.";
+            public const string SubjectSpecialtiesTooLong = "Chuyên môn giảng dạy không được vượt quá 500 ký tự.";
+            public const string TitleTooLong = "Chức danh không được vượt quá 100 ký tự.";
+            public const string TeacherCodeTooLong = "Mã giảng viên không được vượt quá 100 ký tự.";
+            public const string DepartmentTooLong = "Khoa/Bộ môn không được vượt quá 100 ký tự.";
+            public const string PositionTooLong = "Chức vụ không được vượt quá 100 ký tự.";
         }
         public struct Activity
         {
