@@ -1,0 +1,133 @@
+{
+  "student_samples": [
+    {
+      "description": "Student cơ bản - Sinh viên năm 1",
+      "data": {
+        "username": "student001",
+        "email": "student001@example.com",
+        "firstName": "Nguyễn Văn",
+        "lastName": "An",
+        "phoneNumber": "+84901234567",
+        "role": 1,
+        "studentNumber": "SV2024001",
+        "enrollmentYear": 2024,
+        "bio": "Sinh viên năm 1 chuyên ngành Công nghệ thông tin, đam mê lập trình và phát triển phần mềm",
+        "extraJson": "{\"hobbies\":[\"Lập trình\",\"Đọc sách\",\"Chơi game\"],\"skills\":[\"C#\",\"JavaScript\",\"Python\"],\"interests\":[\"Web Development\",\"Mobile App\"]}",
+        "avatarUrl": "https://example.com/avatars/student001.jpg",
+        "birthDate": "2005-03-15",
+        "classGroupId": 1
+      }
+    },
+    {
+      "description": "Student đầy đủ thông tin - Sinh viên năm 2",
+      "data": {
+        "username": "student002",
+        "email": "student002@example.com",
+        "firstName": "Trần Thị",
+        "lastName": "Bình",
+        "phoneNumber": "+84901234568",
+        "role": 1,
+        "studentNumber": "SV2023002",
+        "enrollmentYear": 2023,
+        "bio": "Sinh viên năm 2 chuyên ngành Toán học, có kinh nghiệm về Machine Learning và Data Science. Tham gia nhiều cuộc thi lập trình và đạt giải cao",
+        "extraJson": "{\"hobbies\":[\"Toán học\",\"Machine Learning\",\"Nghiên cứu khoa học\"],\"skills\":[\"Python\",\"R\",\"MATLAB\",\"SQL\"],\"achievements\":[\"Giải nhất cuộc thi lập trình\",\"Học bổng xuất sắc\"],\"projects\":[\"Hệ thống dự đoán giá cổ phiếu\",\"Ứng dụng phân tích dữ liệu\"]}",
+        "avatarUrl": "https://example.com/avatars/student002.jpg",
+        "birthDate": "2004-07-22",
+        "classGroupId": 2
+      }
+    },
+    {
+      "description": "Student năm cuối - Sinh viên năm 4",
+      "data": {
+        "username": "student003",
+        "email": "student003@example.com",
+        "firstName": "Lê Văn",
+        "lastName": "Cường",
+        "phoneNumber": "+84901234569",
+        "role": 1,
+        "studentNumber": "SV2021003",
+        "enrollmentYear": 2021,
+        "bio": "Sinh viên năm cuối chuyên ngành Kỹ thuật phần mềm, có kinh nghiệm thực tập tại các công ty công nghệ lớn. Đang làm đồ án tốt nghiệp về AI",
+        "extraJson": "{\"hobbies\":[\"Phát triển phần mềm\",\"Nghiên cứu AI\",\"Thể thao\"],\"skills\":[\"Java\",\"Spring Boot\",\"React\",\"Docker\",\"AWS\"],\"experience\":[\"Thực tập tại FPT Software\",\"Thực tập tại Viettel\"],\"thesis\":\"Ứng dụng AI trong giáo dục\"}",
+        "avatarUrl": "https://example.com/avatars/student003.jpg",
+        "birthDate": "2002-11-08",
+        "classGroupId": 3
+      }
+    },
+    {
+      "description": "Student nữ - Sinh viên năm 1",
+      "data": {
+        "username": "student004",
+        "email": "student004@example.com",
+        "firstName": "Phạm Thị",
+        "lastName": "Dung",
+        "phoneNumber": "+84901234570",
+        "role": 1,
+        "studentNumber": "SV2024004",
+        "enrollmentYear": 2024,
+        "bio": "Sinh viên năm 1 chuyên ngành Ngoại ngữ, đam mê học hỏi và giao lưu văn hóa quốc tế",
+        "extraJson": "{\"hobbies\":[\"Học ngoại ngữ\",\"Du lịch\",\"Nấu ăn\"],\"skills\":[\"Tiếng Anh\",\"Tiếng Pháp\",\"Tiếng Nhật\"],\"languages\":[\"English - Advanced\",\"Français - Intermediate\",\"日本語 - Beginner\"],\"interests\":[\"Văn hóa quốc tế\",\"Dịch thuật\"]}",
+        "avatarUrl": "https://example.com/avatars/student004.jpg",
+        "birthDate": "2005-12-25",
+        "classGroupId": 1
+      }
+    },
+    {
+      "description": "Student có kinh nghiệm - Sinh viên năm 3",
+      "data": {
+        "username": "student005",
+        "email": "student005@example.com",
+        "firstName": "Hoàng Văn",
+        "lastName": "Em",
+        "phoneNumber": "+84901234571",
+        "role": 1,
+        "studentNumber": "SV2022005",
+        "enrollmentYear": 2022,
+        "bio": "Sinh viên năm 3 chuyên ngành Kinh tế, có kinh nghiệm khởi nghiệp và tham gia nhiều dự án xã hội",
+        "extraJson": "{\"hobbies\":[\"Khởi nghiệp\",\"Hoạt động xã hội\",\"Đọc sách kinh tế\"],\"skills\":[\"Excel\",\"Power BI\",\"SPSS\",\"Marketing\"],\"startup\":\"Ứng dụng kết nối sinh viên\",\"social_projects\":[\"Dạy học miễn phí\",\"Tình nguyện môi trường\"]}",
+        "avatarUrl": "https://example.com/avatars/student005.jpg",
+        "birthDate": "2003-06-10",
+        "classGroupId": 4
+      }
+    }
+  ],
+  "role_mapping": {
+    "1": "Student",
+    "2": "Teacher", 
+    "3": "Admin",
+    "4": "Other"
+  },
+  "class_group_samples": [
+    {
+      "id": 1,
+      "name": "IT01 - Công nghệ thông tin năm 1",
+      "description": "Lớp sinh viên năm 1 chuyên ngành Công nghệ thông tin"
+    },
+    {
+      "id": 2,
+      "name": "MATH01 - Toán học năm 2", 
+      "description": "Lớp sinh viên năm 2 chuyên ngành Toán học"
+    },
+    {
+      "id": 3,
+      "name": "SE01 - Kỹ thuật phần mềm năm 4",
+      "description": "Lớp sinh viên năm cuối chuyên ngành Kỹ thuật phần mềm"
+    },
+    {
+      "id": 4,
+      "name": "ECON01 - Kinh tế năm 3",
+      "description": "Lớp sinh viên năm 3 chuyên ngành Kinh tế"
+    }
+  ],
+  "usage_notes": {
+    "role": "1 = Student, 2 = Teacher, 3 = Admin, 4 = Other",
+    "enrollmentYear": "Năm nhập học (ví dụ: 2024, 2023, 2022, 2021)",
+    "studentNumber": "Mã số sinh viên (format: SV + năm + số thứ tự)",
+    "phoneNumber": "Số điện thoại (format: +84xxxxxxxxx)",
+    "birthDate": "Ngày sinh (format: YYYY-MM-DD)",
+    "classGroupId": "ID của lớp học (phải tồn tại trong hệ thống)",
+    "extraJson": "JSON string chứa thông tin bổ sung",
+    "avatarUrl": "URL ảnh đại diện (phải là URL hợp lệ)"
+  }
+}
+
