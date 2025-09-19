@@ -41,7 +41,7 @@ namespace EduShpere.Infrastructure.Repositories.TeacherProfile
         {
             return await _dbSet
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+                .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted);
         }
 
         public async Task<TeacherProfileEntity?> GetTeacherProfileByUserIdAsync(int userId)

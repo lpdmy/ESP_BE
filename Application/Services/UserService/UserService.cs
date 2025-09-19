@@ -162,6 +162,19 @@ namespace EduShpere.Application
                 await _studentProfileRepository.UpdateAsync(profile);
             }
 
+            var teacherProfile = await _teacherProfileRepository.GetTeacherProfileByIdAsync(userId);
+            if (teacherProfile != null)
+            {
+                if (!string.IsNullOrEmpty(dto.Bio))
+                    teacherProfile.Bio = dto.Bio;
+
+                if (!string.IsNullOrEmpty(dto.ExtraJson))
+                    teacherProfile.ExtraJson = dto.ExtraJson;
+
+                _auditService.SetAuditFieldsForUpdate(teacherProfile, userId);
+                await _teacherProfileRepository.UpdateAsync(teacherProfile);
+            }
+
             return true;
         }
 

@@ -1,0 +1,880 @@
+{
+  "info": {
+    "name": "EduShpere API Collection",
+    "description": "Complete API collection for EduShpere backend system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "BASE_API_URL",
+      "value": "https://localhost:7000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login as Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"student001\",\n  \"password\": \"Student123!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/login",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"teacher001\",\n  \"password\": \"Teacher123!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/login",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin001\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/login",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/me",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/users?pageNumber=1&pageSize=10",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "users"],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"OldPassword123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/change-password",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "change-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student001@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/forgot-password",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "forgot-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Endpoint",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/test",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "test"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 User Management",
+      "item": [
+        {
+          "name": "Create Teacher User (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"teacher001\",\n  \"email\": \"teacher001@example.com\",\n  \"password\": \"Teacher123!\",\n  \"firstName\": \"Nguyễn Văn\",\n  \"lastName\": \"Giáo\",\n  \"role\": \"Teacher\",\n  \"teacherCode\": \"GV001\",\n  \"department\": \"Công nghệ thông tin\",\n  \"position\": \"Giảng viên\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/create-user",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "create-user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student User (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"student001\",\n  \"email\": \"student001@example.com\",\n  \"password\": \"Student123!\",\n  \"firstName\": \"Trần Thị\",\n  \"lastName\": \"Sinh viên\",\n  \"role\": \"Student\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/create-user",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "create-user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Admin User (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin001\",\n  \"email\": \"admin001@example.com\",\n  \"password\": \"Admin123!\",\n  \"firstName\": \"Lê Văn\",\n  \"lastName\": \"Quản trị\",\n  \"role\": \"Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/create-user",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "create-user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Teacher User with Full Info (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"teacher002\",\n  \"email\": \"teacher002@example.com\",\n  \"password\": \"Teacher123!\",\n  \"firstName\": \"Trần Thị\",\n  \"lastName\": \"Khoa học\",\n  \"role\": \"Teacher\",\n  \"teacherCode\": \"GV002\",\n  \"department\": \"Toán học\",\n  \"position\": \"Trưởng khoa\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/create-user",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "create-user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student User with Full Info (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"student002\",\n  \"email\": \"student002@example.com\",\n  \"password\": \"Student123!\",\n  \"firstName\": \"Lê Văn\",\n  \"lastName\": \"Văn học\",\n  \"role\": \"Student\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/auth/create-user",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "auth", "create-user"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👤 Student Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/my-profile",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "my-profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Sinh viên năm 1 chuyên ngành Công nghệ thông tin, đam mê lập trình\",\n  \"avatarUrl\": \"https://example.com/avatars/student001_new.jpg\",\n  \"birthDate\": \"2005-01-01T00:00:00Z\",\n  \"phoneNumber\": \"+84901234567\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/my-profile",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "my-profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Student Profiles (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/profiles",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "profiles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Student Profile by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/profiles/1",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "profiles", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Student Profile (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 2,\n  \"studentCode\": \"SV002\",\n  \"enrollmentYear\": 2024,\n  \"major\": \"Toán học\",\n  \"class\": \"MATH01\",\n  \"bio\": \"Sinh viên năm 1 chuyên ngành Toán học\",\n  \"avatarUrl\": \"https://example.com/avatars/student002.jpg\",\n  \"birthDate\": \"2005-02-01T00:00:00Z\",\n  \"phoneNumber\": \"+84901234568\",\n  \"extraJson\": \"{\\\"hobbies\\\":[\\\"Toán học\\\",\\\"Thống kê\\\"],\\\"skills\\\":[\\\"Python\\\",\\\"R\\\"]}\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/profiles",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "profiles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Student Profile (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 2,\n  \"studentCode\": \"SV002\",\n  \"enrollmentYear\": 2024,\n  \"major\": \"Toán học\",\n  \"class\": \"MATH01\",\n  \"bio\": \"Sinh viên năm 1 chuyên ngành Toán học, đam mê nghiên cứu\",\n  \"extraJson\": \"{\\\"hobbies\\\":[\\\"Toán học\\\",\\\"Thống kê\\\",\\\"Machine Learning\\\"],\\\"skills\\\":[\\\"Python\\\",\\\"R\\\",\\\"MATLAB\\\"]}\",\n  \"avatarUrl\": \"https://example.com/avatars/student002_updated.jpg\",\n  \"birthDate\": \"2005-02-01T00:00:00Z\",\n  \"phoneNumber\": \"+84901234568\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/profiles/2",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "profiles", "2"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Student Profile (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/profiles/2",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "profiles", "2"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Student Profile Exists (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/profiles/1/exists",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "profiles", "1", "exists"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👨‍🏫 Teacher Profile",
+      "item": [
+        {
+          "name": "Get My Teacher Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/my-teacher-profile",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "my-teacher-profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Teacher Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Giảng viên có 10 năm kinh nghiệm giảng dạy môn Lập trình, chuyên gia về C# và .NET\",\n  \"avatarUrl\": \"https://example.com/avatars/teacher001_updated.jpg\",\n  \"birthDate\": \"1985-03-15T00:00:00Z\",\n  \"phoneNumber\": \"+84901234569\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/my-teacher-profile",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "my-teacher-profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Teacher Profiles (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/teacher-profiles",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "teacher-profiles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Teacher Profile by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/teacher-profiles/1",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "teacher-profiles", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Teacher Profile (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 4,\n  \"teacherCode\": \"GV002\",\n  \"department\": \"Toán học\",\n  \"position\": \"Trưởng khoa\",\n  \"bio\": \"Giảng viên có 15 năm kinh nghiệm giảng dạy môn Toán học\",\n  \"avatarUrl\": \"https://example.com/avatars/teacher002.jpg\",\n  \"birthDate\": \"1980-05-20T00:00:00Z\",\n  \"phoneNumber\": \"+84901234570\",\n  \"extraJson\": \"{\\\"specialties\\\":[\\\"Toán học\\\",\\\"Thống kê\\\"],\\\"education\\\":\\\"Tiến sĩ Toán học\\\",\\\"experience\\\":\\\"15 năm\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/teacher-profiles",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "teacher-profiles"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Teacher Profile (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 4,\n  \"teacherCode\": \"GV002\",\n  \"department\": \"Toán học\",\n  \"position\": \"Trưởng khoa\",\n  \"bio\": \"Giảng viên có 15 năm kinh nghiệm giảng dạy môn Toán học, chuyên gia về Machine Learning\",\n  \"extraJson\": \"{\\\"specialties\\\":[\\\"Toán học\\\",\\\"Thống kê\\\",\\\"Machine Learning\\\"],\\\"education\\\":\\\"Tiến sĩ Toán học\\\",\\\"experience\\\":\\\"15 năm\\\"}\",\n  \"avatarUrl\": \"https://example.com/avatars/teacher002_updated.jpg\",\n  \"birthDate\": \"1980-05-20T00:00:00Z\",\n  \"phoneNumber\": \"+84901234570\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/teacher-profiles/2",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "teacher-profiles", "2"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Teacher Profile (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/teacher-profiles/2",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "teacher-profiles", "2"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Teacher Profile Exists (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/user-profile/teacher-profiles/1/exists",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "user-profile", "teacher-profiles", "1", "exists"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎯 Activities",
+      "item": [
+        {
+          "name": "Get All Activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/activities?pageNumber=1&pageSize=10&search=programming",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "activities"],
+              "query": [
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "programming"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/activities/1",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "activities", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Seminar Machine Learning\",\n  \"description\": \"Seminar về Machine Learning và ứng dụng thực tế\",\n  \"startDate\": \"2024-03-01T14:00:00Z\",\n  \"endDate\": \"2024-03-01T16:00:00Z\",\n  \"location\": \"Phòng B201\",\n  \"maxParticipants\": 30,\n  \"activityType\": \"Seminar\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/activities",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "activities"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Activity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"title\": \"Workshop Lập trình C# - Nâng cao\",\n  \"description\": \"Workshop học lập trình C# từ cơ bản đến nâng cao, tập trung vào ASP.NET Core\",\n  \"startDate\": \"2024-02-01T09:00:00Z\",\n  \"endDate\": \"2024-02-01T17:00:00Z\",\n  \"location\": \"Phòng A101\",\n  \"maxParticipants\": 60,\n  \"activityType\": \"Workshop\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/activities",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "activities"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 Activity Participants",
+      "item": [
+        {
+          "name": "Add Participant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityId\": 1,\n  \"userId\": 1,\n  \"status\": \"Registered\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/activity-participants",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "activity-participants"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Participant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/activity-participants?participationId=1",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "activity-participants"],
+              "query": [
+                {
+                  "key": "participationId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📁 File Upload",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{BASE_API_URL}}/api/upload",
+              "host": ["{{BASE_API_URL}}"],
+              "path": ["api", "upload"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

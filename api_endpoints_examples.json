@@ -1,0 +1,345 @@
+{
+  "authentication": {
+    "login": {
+      "method": "POST",
+      "url": "/api/auth/login",
+      "description": "Đăng nhập vào hệ thống",
+      "authorization": "Không cần",
+      "request": {
+        "username": "student001",
+        "password": "Student123!"
+      },
+      "response": {
+        "data": {
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "refreshToken": "refresh_token_here",
+          "expiresIn": 3600
+        },
+        "message": "Đăng nhập thành công",
+        "statusCode": 200
+      }
+    },
+    "createUser": {
+      "method": "POST",
+      "url": "/api/auth/create-user",
+      "description": "Tạo user mới (Admin only)",
+      "authorization": "Required (Admin)",
+      "request": {
+        "username": "teacher001",
+        "email": "teacher001@example.com",
+        "password": "Teacher123!",
+        "firstName": "Nguyễn Văn",
+        "lastName": "Giáo",
+        "role": "Teacher",
+        "teacherCode": "GV001",
+        "department": "Công nghệ thông tin",
+        "position": "Giảng viên"
+      },
+      "response": {
+        "data": true,
+        "message": "Tạo người dùng thành công",
+        "statusCode": 200
+      }
+    },
+    "getMe": {
+      "method": "GET",
+      "url": "/api/auth/me",
+      "description": "Lấy thông tin user hiện tại",
+      "authorization": "Required (Bearer Token)",
+      "response": {
+        "data": {
+          "id": 1,
+          "username": "student001",
+          "email": "student001@example.com",
+          "firstName": "Nguyễn Văn",
+          "lastName": "Sinh viên",
+          "role": "Student",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z"
+        },
+        "message": "Lấy thông tin user thành công",
+        "statusCode": 200
+      }
+    }
+  },
+  "studentProfile": {
+    "getMyProfile": {
+      "method": "GET",
+      "url": "/api/user-profile/my-profile",
+      "description": "Lấy profile của user hiện tại",
+      "authorization": "Required (Bearer Token)",
+      "response": {
+        "data": {
+          "id": 1,
+          "userId": 1,
+          "studentCode": "SV001",
+          "enrollmentYear": 2024,
+          "major": "Công nghệ thông tin",
+          "class": "IT01",
+          "bio": "Sinh viên năm 1 chuyên ngành Công nghệ thông tin",
+          "avatarUrl": "https://example.com/avatars/student001.jpg",
+          "birthDate": "2005-01-01T00:00:00Z",
+          "phoneNumber": "+84901234567",
+          "extraJson": "{\"hobbies\":[\"Lập trình\",\"Đọc sách\"],\"skills\":[\"C#\",\"JavaScript\"]}",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z",
+          "username": "student001",
+          "email": "student001@example.com",
+          "firstName": "Nguyễn Văn",
+          "lastName": "Sinh viên"
+        },
+        "message": "Lấy thông tin profile thành công",
+        "statusCode": 200
+      }
+    },
+    "updateMyProfile": {
+      "method": "PUT",
+      "url": "/api/user-profile/my-profile",
+      "description": "Cập nhật thông tin cá nhân của user hiện tại",
+      "authorization": "Required (Bearer Token)",
+      "request": {
+        "bio": "Sinh viên năm 1 chuyên ngành Công nghệ thông tin, đam mê lập trình",
+        "avatarUrl": "https://example.com/avatars/student001_new.jpg",
+        "birthDate": "2005-01-01T00:00:00Z",
+        "phoneNumber": "+84901234567"
+      },
+      "response": {
+        "data": null,
+        "message": "Cập nhật thông tin cá nhân thành công",
+        "statusCode": 200
+      }
+    },
+    "createProfile": {
+      "method": "POST",
+      "url": "/api/user-profile/profiles",
+      "description": "Tạo student profile mới (Admin only)",
+      "authorization": "Required (Admin)",
+      "request": {
+        "userId": 2,
+        "studentCode": "SV002",
+        "enrollmentYear": 2024,
+        "major": "Toán học",
+        "class": "MATH01",
+        "bio": "Sinh viên năm 1 chuyên ngành Toán học",
+        "avatarUrl": "https://example.com/avatars/student002.jpg",
+        "birthDate": "2005-02-01T00:00:00Z",
+        "phoneNumber": "+84901234568",
+        "extraJson": "{\"hobbies\":[\"Toán học\",\"Thống kê\"],\"skills\":[\"Python\",\"R\"]}"
+      },
+      "response": {
+        "data": {
+          "id": 2,
+          "userId": 2,
+          "studentCode": "SV002",
+          "enrollmentYear": 2024,
+          "major": "Toán học",
+          "class": "MATH01",
+          "bio": "Sinh viên năm 1 chuyên ngành Toán học",
+          "avatarUrl": "https://example.com/avatars/student002.jpg",
+          "birthDate": "2005-02-01T00:00:00Z",
+          "phoneNumber": "+84901234568",
+          "extraJson": "{\"hobbies\":[\"Toán học\",\"Thống kê\"],\"skills\":[\"Python\",\"R\"]}",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z"
+        },
+        "message": "Tạo profile thành công",
+        "statusCode": 201
+      }
+    }
+  },
+  "teacherProfile": {
+    "getMyTeacherProfile": {
+      "method": "GET",
+      "url": "/api/user-profile/my-teacher-profile",
+      "description": "Lấy teacher profile của user hiện tại",
+      "authorization": "Required (Teacher, Admin)",
+      "response": {
+        "data": {
+          "id": 1,
+          "userId": 3,
+          "teacherCode": "GV001",
+          "department": "Công nghệ thông tin",
+          "position": "Giảng viên",
+          "bio": "Giảng viên có 10 năm kinh nghiệm giảng dạy môn Lập trình",
+          "avatarUrl": "https://example.com/avatars/teacher001.jpg",
+          "birthDate": "1985-03-15T00:00:00Z",
+          "phoneNumber": "+84901234569",
+          "extraJson": "{\"specialties\":[\"Lập trình\",\"Cơ sở dữ liệu\"],\"education\":\"Tiến sĩ Công nghệ thông tin\",\"experience\":\"10 năm\"}",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z",
+          "username": "teacher001",
+          "email": "teacher001@example.com",
+          "firstName": "Trần Thị",
+          "lastName": "Giáo viên"
+        },
+        "message": "Lấy thông tin teacher profile thành công",
+        "statusCode": 200
+      }
+    },
+    "createTeacherProfile": {
+      "method": "POST",
+      "url": "/api/user-profile/teacher-profiles",
+      "description": "Tạo teacher profile mới (Admin only)",
+      "authorization": "Required (Admin)",
+      "request": {
+        "userId": 4,
+        "teacherCode": "GV002",
+        "department": "Toán học",
+        "position": "Trưởng khoa",
+        "bio": "Giảng viên có 15 năm kinh nghiệm giảng dạy môn Toán học",
+        "avatarUrl": "https://example.com/avatars/teacher002.jpg",
+        "birthDate": "1980-05-20T00:00:00Z",
+        "phoneNumber": "+84901234570",
+        "extraJson": "{\"specialties\":[\"Toán học\",\"Thống kê\"],\"education\":\"Tiến sĩ Toán học\",\"experience\":\"15 năm\"}"
+      },
+      "response": {
+        "data": {
+          "id": 2,
+          "userId": 4,
+          "teacherCode": "GV002",
+          "department": "Toán học",
+          "position": "Trưởng khoa",
+          "bio": "Giảng viên có 15 năm kinh nghiệm giảng dạy môn Toán học",
+          "avatarUrl": "https://example.com/avatars/teacher002.jpg",
+          "birthDate": "1980-05-20T00:00:00Z",
+          "phoneNumber": "+84901234570",
+          "extraJson": "{\"specialties\":[\"Toán học\",\"Thống kê\"],\"education\":\"Tiến sĩ Toán học\",\"experience\":\"15 năm\"}",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z"
+        },
+        "message": "Tạo teacher profile thành công",
+        "statusCode": 201
+      }
+    }
+  },
+  "activities": {
+    "getAllActivities": {
+      "method": "GET",
+      "url": "/api/activities?pageNumber=1&pageSize=10&search=programming",
+      "description": "Lấy danh sách tất cả hoạt động",
+      "authorization": "Required (Student, Teacher, Admin)",
+      "response": {
+        "data": [
+          {
+            "id": 1,
+            "title": "Workshop Lập trình C#",
+            "description": "Workshop học lập trình C# từ cơ bản đến nâng cao",
+            "startDate": "2024-02-01T09:00:00Z",
+            "endDate": "2024-02-01T17:00:00Z",
+            "location": "Phòng A101",
+            "maxParticipants": 50,
+            "activityType": "Workshop",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "updatedAt": "2024-01-01T00:00:00Z"
+          }
+        ],
+        "message": "Lấy danh sách thành công",
+        "statusCode": 200
+      }
+    },
+    "createActivity": {
+      "method": "POST",
+      "url": "/api/activities",
+      "description": "Tạo hoạt động mới",
+      "authorization": "Required (Teacher, Admin)",
+      "request": {
+        "title": "Seminar Machine Learning",
+        "description": "Seminar về Machine Learning và ứng dụng thực tế",
+        "startDate": "2024-03-01T14:00:00Z",
+        "endDate": "2024-03-01T16:00:00Z",
+        "location": "Phòng B201",
+        "maxParticipants": 30,
+        "activityType": "Seminar"
+      },
+      "response": {
+        "data": {
+          "id": 2,
+          "title": "Seminar Machine Learning",
+          "description": "Seminar về Machine Learning và ứng dụng thực tế",
+          "startDate": "2024-03-01T14:00:00Z",
+          "endDate": "2024-03-01T16:00:00Z",
+          "location": "Phòng B201",
+          "maxParticipants": 30,
+          "activityType": "Seminar",
+          "createdAt": "2024-01-01T00:00:00Z",
+          "updatedAt": "2024-01-01T00:00:00Z"
+        },
+        "message": "Tạo hoạt động thành công",
+        "statusCode": 200
+      }
+    }
+  },
+  "activityParticipants": {
+    "addParticipant": {
+      "method": "POST",
+      "url": "/api/activity-participants",
+      "description": "Thêm người tham gia hoạt động",
+      "authorization": "Required (Student, Teacher, Admin)",
+      "request": {
+        "activityId": 1,
+        "userId": 1,
+        "status": "Registered"
+      },
+      "response": {
+        "data": {
+          "id": 1,
+          "activityId": 1,
+          "userId": 1,
+          "status": "Registered",
+          "joinedAt": "2024-01-01T00:00:00Z"
+        },
+        "message": "Thêm người tham gia hoạt động thành công",
+        "statusCode": 200
+      }
+    },
+    "removeParticipant": {
+      "method": "DELETE",
+      "url": "/api/activity-participants?participationId=1",
+      "description": "Xóa người tham gia hoạt động",
+      "authorization": "Required (Teacher, Admin)",
+      "response": {
+        "data": {
+          "id": 1,
+          "activityId": 1,
+          "userId": 1,
+          "status": "Cancelled",
+          "joinedAt": "2024-01-01T00:00:00Z"
+        },
+        "message": "Xóa người tham gia hoạt động thành công",
+        "statusCode": 200
+      }
+    }
+  },
+  "upload": {
+    "uploadFile": {
+      "method": "POST",
+      "url": "/api/upload",
+      "description": "Upload file lên Cloudinary",
+      "authorization": "Không cần",
+      "request": "FormData với file",
+      "response": {
+        "data": "https://res.cloudinary.com/example/image/upload/v1234567890/sample.jpg",
+        "message": null,
+        "statusCode": 200
+      }
+    }
+  },
+  "common": {
+    "errorResponse": {
+      "data": null,
+      "message": "Lỗi validation hoặc business logic",
+      "statusCode": 400
+    },
+    "notFoundResponse": {
+      "data": null,
+      "message": "Không tìm thấy resource",
+      "statusCode": 404
+    },
+    "unauthorizedResponse": {
+      "data": null,
+      "message": "Không có quyền truy cập",
+      "statusCode": 401
+    }
+  }
+}
+
