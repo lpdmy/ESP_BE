@@ -29,7 +29,6 @@ public partial class Activity : BaseEntity
 
     public string Organizer { get; set; } = null!;
     public int MaxParticipants { get; set; }
-    public bool IsDeleted { get; set; }
     public DateTime RegisterDate { get; set; }
     public DateTime EndRegisterDate { get; set; }
     public byte[] RowVersion { get; set; } = null!;

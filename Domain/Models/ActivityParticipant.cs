@@ -20,8 +20,6 @@ public partial class ActivityParticipant : BaseEntity
     [StringLength(50)]
     public ParticipantStatus? Status { get; set; }
 
-    public bool IsDeleted { get; set; }
-
     public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("ActivityId")]
