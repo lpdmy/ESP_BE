@@ -5,6 +5,8 @@ using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
+using EduShpere.Infrastructure.Repositories.TeacherProfile;
+using TeacherProfileEntity = EduShpere.Domain.Models.TeacherProfile;
 using EduShpere.Shared.Constants;
 
 namespace EduShpere.Application
@@ -13,14 +15,16 @@ namespace EduShpere.Application
     {
         private readonly IUserRepository _userRepository;
         private readonly IStudentProfileRepository _studentProfileRepository;
+        private readonly ITeacherProfileRepository _teacherProfileRepository;
         private readonly IMapper _mapper;
         private readonly IAuditService _auditService;
         
-        public UserService(IUserRepository userRepository, IMapper mapper, IStudentProfileRepository studentProfileRepository, IAuditService auditService)
+        public UserService(IUserRepository userRepository, IMapper mapper, IStudentProfileRepository studentProfileRepository, ITeacherProfileRepository teacherProfileRepository, IAuditService auditService)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _studentProfileRepository = studentProfileRepository;
+            _teacherProfileRepository = teacherProfileRepository;
             _auditService = auditService;
         }
 
@@ -176,6 +180,88 @@ namespace EduShpere.Application
             _auditService.SetAuditFieldsForUpdate(profile);
             var student = await _studentProfileRepository.UpdateStudentProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
             return _mapper.Map<StudentProfileDto>(student);
+        }
+
+        // Teacher Profile CRUD operations
+        public async Task<GetTeacherProfileDto?> GetTeacherProfileByIdAsync(int id)
+        {
+            var profile = await _teacherProfileRepository.GetTeacherProfileByIdAsync(id);
+            return profile != null ? _mapper.Map<GetTeacherProfileDto>(profile) : null;
+        }
+
+        public async Task<GetTeacherProfileDto?> GetTeacherProfileByUserIdAsync(int userId)
+        {
+            var profile = await _teacherProfileRepository.GetTeacherProfileByUserIdAsync(userId);
+            return profile != null ? _mapper.Map<GetTeacherProfileDto>(profile) : null;
+        }
+
+        public async Task<IEnumerable<GetTeacherProfileDto>> GetAllTeacherProfilesAsync()
+        {
+            var profiles = await _teacherProfileRepository.GetAllTeacherProfilesAsync();
+            return _mapper.Map<IEnumerable<GetTeacherProfileDto>>(profiles);
+        }
+
+        public async Task<TeacherProfileDto> CreateTeacherProfileAsync(CreateUpdateTeacherProfileDto dto)
+        {
+            // Kiểm tra xem user đã có profile chưa
+            var existingProfile = await _teacherProfileRepository.TeacherProfileExistsByUserIdAsync(dto.UserId);
+            if (existingProfile)
+            {
+                throw new InvalidOperationException(ErrorMessages.UserProfile.ProfileAlreadyExists);
+            }
+
+            var profile = _mapper.Map<TeacherProfileEntity>(dto);
+            _auditService.SetAuditFieldsForCreate(profile);
+            var teacher = await _teacherProfileRepository.CreateTeacherProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+            return _mapper.Map<TeacherProfileDto>(teacher);
+        }
+
+        public async Task<TeacherProfileDto> UpdateTeacherProfileAsync(int id, CreateUpdateTeacherProfileDto dto)
+        {
+            // Kiểm tra xem profile có tồn tại không
+            var exists = await _teacherProfileRepository.TeacherProfileExistsAsync(id);
+            if (!exists)
+            {
+                throw new KeyNotFoundException(ErrorMessages.UserProfile.ProfileNotFound);
+            }
+
+            var profile = _mapper.Map<TeacherProfileEntity>(dto);
+            profile.Id = id; // Đảm bảo cập nhật đúng profile
+            _auditService.SetAuditFieldsForUpdate(profile);
+            var teacher = await _teacherProfileRepository.UpdateTeacherProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+            return _mapper.Map<TeacherProfileDto>(teacher);
+        }
+
+        public async Task<bool> DeleteTeacherProfileAsync(int id)
+        {
+            return await _teacherProfileRepository.DeleteTeacherProfileAsync(id);
+        }
+
+        public async Task<bool> TeacherProfileExistsAsync(int id)
+        {
+            return await _teacherProfileRepository.TeacherProfileExistsAsync(id);
+        }
+
+        public async Task<bool> TeacherProfileExistsByUserIdAsync(int userId)
+        {
+            return await _teacherProfileRepository.TeacherProfileExistsByUserIdAsync(userId);
+        }
+
+        // Teacher Info Update (Admin only)
+        public async Task<TeacherProfileDto> UpdateTeacherInfoAsync(int id, UpdateTeacherInfoDto dto)
+        {
+            // Kiểm tra xem profile có tồn tại không
+            var exists = await _teacherProfileRepository.TeacherProfileExistsAsync(id);
+            if (!exists)
+            {
+                throw new KeyNotFoundException(ErrorMessages.UserProfile.ProfileNotFound);
+            }
+
+            var profile = _mapper.Map<TeacherProfileEntity>(dto);
+            profile.Id = id; // Đảm bảo cập nhật đúng profile
+            _auditService.SetAuditFieldsForUpdate(profile);
+            var teacher = await _teacherProfileRepository.UpdateTeacherProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+            return _mapper.Map<TeacherProfileDto>(teacher);
         }
     }
 }

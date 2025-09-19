@@ -1,0 +1,35 @@
+using EduShpere.Shared.Constants;
+using System.ComponentModel.DataAnnotations;
+
+namespace EduShpere.Application.DTOs.UserProfileDto
+{
+    public class UpdateTeacherInfoDto
+    {
+        public int UserId { get; set; }
+
+        [StringLength(100, ErrorMessage = ErrorMessages.UserProfile.TeacherCodeTooLong)]
+        public string? TeacherCode { get; set; }
+
+        [StringLength(100, ErrorMessage = ErrorMessages.UserProfile.DepartmentTooLong)]
+        public string? Department { get; set; }
+
+        [StringLength(100, ErrorMessage = ErrorMessages.UserProfile.PositionTooLong)]
+        public string? Position { get; set; }
+
+        [StringLength(1000, ErrorMessage = ErrorMessages.UserProfile.BioTooLong)]
+        public string? Bio { get; set; }
+
+        public string? ExtraJson { get; set; }
+
+        [Url(ErrorMessage = ErrorMessages.UserProfile.InvalidAvatarUrl)]
+        [StringLength(500, ErrorMessage = ErrorMessages.UserProfile.AvatarUrlTooLong)]
+        public string? AvatarUrl { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime? BirthDate { get; set; }
+
+        [Phone(ErrorMessage = ErrorMessages.UserProfile.InvalidPhoneNumber)]
+        [StringLength(20, ErrorMessage = ErrorMessages.UserProfile.PhoneNumberTooLong)]
+        public string? PhoneNumber { get; set; }
+    }
+}

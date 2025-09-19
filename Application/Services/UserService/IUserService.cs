@@ -33,5 +33,18 @@ namespace EduShpere.Application
         
         // Student Info Update (Admin only)
         Task<StudentProfileDto> UpdateStudentInfoAsync(int id, UpdateStudentInfoDto dto);
+        
+        // Teacher Profile CRUD operations
+        Task<GetTeacherProfileDto?> GetTeacherProfileByIdAsync(int id);
+        Task<GetTeacherProfileDto?> GetTeacherProfileByUserIdAsync(int userId);
+        Task<IEnumerable<GetTeacherProfileDto>> GetAllTeacherProfilesAsync();
+        Task<TeacherProfileDto> CreateTeacherProfileAsync(CreateUpdateTeacherProfileDto dto);
+        Task<TeacherProfileDto> UpdateTeacherProfileAsync(int id, CreateUpdateTeacherProfileDto dto);
+        Task<bool> DeleteTeacherProfileAsync(int id);
+        Task<bool> TeacherProfileExistsAsync(int id);
+        Task<bool> TeacherProfileExistsByUserIdAsync(int userId);
+        
+        // Teacher Info Update (Admin only)
+        Task<TeacherProfileDto> UpdateTeacherInfoAsync(int id, UpdateTeacherInfoDto dto);
     }
 }

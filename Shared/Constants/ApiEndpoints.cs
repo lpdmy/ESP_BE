@@ -39,6 +39,15 @@
             public const string UpdateProfile = "api/userprofile/{id}";
             public const string DeleteProfile = "api/userprofile/{id}";
             public const string CheckProfileExists = "api/userprofile/{id}/exists";
+            
+            // Teacher Profile endpoints
+            public const string MyTeacherProfile = "api/userprofile/my-teacher-profile";
+            public const string AllTeacherProfiles = "api/userprofile/teachers";
+            public const string TeacherProfileById = "api/userprofile/teachers/{id}";
+            public const string CreateTeacherProfile = "api/userprofile/teachers";
+            public const string UpdateTeacherProfile = "api/userprofile/teachers/{id}";
+            public const string DeleteTeacherProfile = "api/userprofile/teachers/{id}";
+            public const string CheckTeacherProfileExists = "api/userprofile/teachers/{id}/exists";
         }
 
         public static class Activity
