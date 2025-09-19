@@ -11,13 +11,27 @@ namespace EduShpere.Application.DTOs
 {
     public class CreateActivityDto
     {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public string? Location { get; set; }
+        [Required]
+        public string Title { get; set; }
+        [Required]
+        public string Description { get; set; }
+        [Required]
+        public DateTime StartDate { get; set; }
+        [Required]
+        public DateTime EndDate { get; set; }
+        [Required]
+        public string Location { get; set; }
+        [Required]
         public ActivityType Category { get; set; }
         public string SubType { get; set; } = null!;
-        public IFormFile ThumbnailUrl { get; set; } = null!;
+        public string ThumbnailUrl { get; set; } = null!;
+        [Required]
+        public string Organizer { get; set; }
+        [Required]
+        public DateTime RegisterDate { get; set; }
+        [Required]
+        public DateTime EndRegisterDate { get; set; }
+        [Required]
+        public int MaxParticipants { get; set; }
     }
 }

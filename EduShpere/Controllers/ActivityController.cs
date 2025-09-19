@@ -48,7 +48,7 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
-        [Authorize(Roles = "Student,Teacher,Admin")]
+        //[Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)
         {
             var Activity = await _Service.GetByIdAsync(id);
@@ -68,8 +68,8 @@ namespace EduShpere.Controllers
             ));
         }
         [HttpPost(ApiEndpoints.Activity.Activities)]
-        [Authorize(Roles = "Teacher,Admin")]
-        public async Task<IActionResult>CreateActivity(CreateActivityDto dto)
+        //[Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult>CreateActivity([FromBody] CreateActivityDto dto)
         {
             var Activity = await _Service.AddAsync(dto);
             var ActivityDto = _mapper.Map<ActivityResponseDto>(Activity);
@@ -81,7 +81,7 @@ namespace EduShpere.Controllers
         }
         [HttpPut(ApiEndpoints.Activity.Activities)]
         [Authorize(Roles = "Teacher,Admin")]
-        public async Task<IActionResult> UpdateActivity(UpdateActivityDto dto)
+        public async Task<IActionResult> UpdateActivity([FromBody] UpdateActivityDto dto)
         {
             var Activity = await _Service.UpdateAsync(dto);
             var ActivityDto = _mapper.Map<ActivityResponseDto>(Activity);

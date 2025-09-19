@@ -30,7 +30,8 @@ public partial class Activity : BaseEntity
     public string Organizer { get; set; } = null!;
     public int MaxParticipants { get; set; }
     public bool IsDeleted { get; set; }
-
+    public DateTime RegisterDate { get; set; }
+    public DateTime EndRegisterDate { get; set; }
     public byte[] RowVersion { get; set; } = null!;
     public ActivityType Category { get; set; }
     public string SubType { get; set; } = null!;
@@ -52,4 +53,6 @@ public partial class Activity : BaseEntity
 
     [InverseProperty("Activity")]
     public virtual ICollection<Submission> Submissions { get; set; } = new List<Submission>();
+    [InverseProperty("Activity")]
+    public virtual ICollection<ActivityRule> Rules { get; set; } = new List<ActivityRule>();
 }

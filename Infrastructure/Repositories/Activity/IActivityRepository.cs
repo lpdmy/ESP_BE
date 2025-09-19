@@ -15,5 +15,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task UpdateAsync(Activity Activity);
         Task DeleteAsync(int id);
         Task AddRangeAsync(IEnumerable<Activity> Activity);
+        Task<Activity?> GetByIdWithIncludesAsync(int id);
     }
 }

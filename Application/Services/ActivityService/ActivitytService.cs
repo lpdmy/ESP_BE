@@ -37,13 +37,25 @@ namespace EduShpere.Application.Services
         }
         public async Task<Activity?> GetByIdAsync(int id)
         {
-            return await _repo.GetByIdAsync(id);
+            return await _repo.GetByIdWithIncludesAsync(id);
         }
         public async Task<ActivityResponseDto> AddAsync(CreateActivityDto dto)
         {
             if(dto.StartDate >= dto.EndDate)
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
+            }
+            if (dto.RegisterDate >= dto.EndRegisterDate)
+            {
+                throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDayRegister);
+            }
+            if (dto.EndRegisterDate >= dto.StartDate)
+            {
+                throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
+            }
+            if (dto.MaxParticipants <=0)
+            {
+                throw new BadRequestException(ErrorMessages.Activity.MaxParticipantGreaterThanZero);
             }
             var activity = new Activity
             {
@@ -56,7 +68,9 @@ namespace EduShpere.Application.Services
                 IsDeleted = false,
                 Category = dto.Category,
                 SubType = dto.SubType,
-                ThumbnailUrl = dto.ThumbnailUrl.FileName
+                ThumbnailUrl = dto.ThumbnailUrl,
+                RegisterDate = dto.RegisterDate,
+                EndRegisterDate = dto.EndRegisterDate,
             };
 
             await _repo.AddAsync(activity);
@@ -74,6 +88,14 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
             }
+            if (dto.RegisterDate >= dto.EndRegisterDate)
+            {
+                throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDayRegister);
+            }
+            if(dto.EndRegisterDate >= dto.StartDate)
+            {
+                throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
+            }
             existingActivity.Title = dto.Title ?? existingActivity.Title;
             existingActivity.Description = dto.Description ?? existingActivity.Description;
             existingActivity.StartDate = dto.StartDate ?? existingActivity.StartDate;
@@ -82,7 +104,11 @@ namespace EduShpere.Application.Services
             existingActivity.UpdatedAt = DateTime.Now;
             existingActivity.Category = dto.Category;
             existingActivity.SubType = dto.SubType ?? existingActivity.SubType;
-            existingActivity.ThumbnailUrl = dto.ThumbnailUrl != null? dto.ThumbnailUrl.FileName : existingActivity.ThumbnailUrl;
+            existingActivity.ThumbnailUrl = dto.ThumbnailUrl != null? dto.ThumbnailUrl : existingActivity.ThumbnailUrl;
+            existingActivity.Organizer = dto.Organizer ?? existingActivity.Organizer;
+            existingActivity.MaxParticipants = dto.MaxParticipants != 0 ? dto.MaxParticipants : existingActivity.MaxParticipants;
+            existingActivity.RegisterDate = dto.RegisterDate != DateTime.MinValue ? dto.RegisterDate : existingActivity.RegisterDate;
+            existingActivity.EndRegisterDate = dto.EndRegisterDate != DateTime.MinValue ? dto.EndRegisterDate : existingActivity.EndRegisterDate;
             await _repo.UpdateAsync(existingActivity);
             var ActivityDtos = _mapper.Map<ActivityResponseDto>(existingActivity);
             return ActivityDtos;
