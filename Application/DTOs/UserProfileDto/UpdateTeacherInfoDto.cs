@@ -21,14 +21,12 @@ namespace EduShpere.Application.DTOs.UserProfileDto
 
         public string? ExtraJson { get; set; }
 
-        [Url(ErrorMessage = ErrorMessages.UserProfile.InvalidAvatarUrl)]
         [StringLength(500, ErrorMessage = ErrorMessages.UserProfile.AvatarUrlTooLong)]
         public string? AvatarUrl { get; set; }
 
         [DataType(DataType.Date)]
         public DateTime? BirthDate { get; set; }
 
-        [Phone(ErrorMessage = ErrorMessages.UserProfile.InvalidPhoneNumber)]
         [StringLength(20, ErrorMessage = ErrorMessages.UserProfile.PhoneNumberTooLong)]
         public string? PhoneNumber { get; set; }
     }
