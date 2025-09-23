@@ -47,7 +47,12 @@ namespace EduShpere.Infrastructure
 
         public IQueryable<User> GetQueryable()
         {
-            return _dbSet.Where(u => !u.IsDeleted);
+            return _dbSet
+                .Where(u => !u.IsDeleted)
+                .Include(u => u.StudentProfile)
+                .Include(u => u.TeacherProfile)
+                .Include(u => u.ClassGroupMembers)
+                    .ThenInclude(cgm => cgm.ClassGroup);
         }
 
     }

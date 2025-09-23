@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using EduShpere.Domain.Enum;
 
 namespace EduShpere.Domain.Models;
 
@@ -43,6 +44,8 @@ public partial class User : BaseEntity
 
     [StringLength(255)]
     public string? Password { get; set; }
+
+    public UserStatus Status { get; set; } = UserStatus.Active;
 
     public byte[] RowVersion { get; set; } = null!;
 

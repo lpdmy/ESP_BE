@@ -19,10 +19,9 @@
 
         public static class User
         {
-            public const string GetAllUsers = "api/user/get-all";
-            public const string GetUserById = "api/user/get-by-id";
-            public const string UpdateUser = "api/user/update";
-            public const string DeleteUser = "api/user/delete";
+            public const string Users = "api/users";
+            public const string GetUserById = "api/users/{id}";
+            public const string Statistics = "api/user/statistics";
         }
 
         public static class Upload

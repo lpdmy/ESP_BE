@@ -1,31 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using ClosedXML.Excel;
 using EduShpere.Application.DTOs.AuthDto;
+using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.DTOs.UserDto;
+using EduShpere.Application.Services;
 using EduShpere.Domain;
+using EduShpere.Domain.Enum;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
-using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using EduShpere.Infrastructure.Repositories;
+using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using EduShpere.Infrastructure.Repositories.TeacherProfile;
-using TeacherProfileEntity = EduShpere.Domain.Models.TeacherProfile;
 using EduShpere.Infrastructure.Security;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using EduShpere.Application.Services;
-using EduShpere.Application.DTOs.CommonDto;
+using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using TeacherProfileEntity = EduShpere.Domain.Models.TeacherProfile;
 namespace EduShpere.Application
 {
     public class AuthService : IAuthService
@@ -81,7 +79,7 @@ namespace EduShpere.Application
             var roleName = appUser.Role switch
             {
                 UserRole.Admin => "Admin",
-                UserRole.Teacher => "Teacher", 
+                UserRole.Teacher => "Teacher",
                 UserRole.Student => "Student",
                 _ => "Student"
             };
@@ -119,7 +117,7 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
             }
-            
+
             if (ContainsVietnameseOrSpaces(dto.Password))
             {
                 throw new BadRequestException(ErrorMessages.Auth.PasswordContainsSpacesOrVietnamese);
@@ -292,7 +290,7 @@ namespace EduShpere.Application
             // Kiểm tra độ dài (6-20 ký tự)
             if (password.Length < 6)
                 throw new BadRequestException(ErrorMessages.Password.PasswordTooShort);
-            
+
             if (password.Length > 20)
                 throw new BadRequestException(ErrorMessages.Password.PasswordTooLong);
 
@@ -313,7 +311,7 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
             }
-            
+
             if (await _userRepository.FindUserByEmail(dto.Email))
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
@@ -324,7 +322,7 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.UsernameContainsSpacesOrVietnamese);
             }
-            
+
             if (await _userRepository.FindUserByUsername(dto.Username))
             {
                 throw new BadRequestException(ErrorMessages.Auth.UsernameAlreadyExists);
@@ -392,7 +390,7 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
             }
-            
+
             if (await _userRepository.FindUserByEmail(dto.Email))
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
@@ -403,7 +401,7 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.UsernameContainsSpacesOrVietnamese);
             }
-            
+
             if (await _userRepository.FindUserByUsername(dto.Username))
             {
                 throw new BadRequestException(ErrorMessages.Auth.UsernameAlreadyExists);
@@ -460,10 +458,30 @@ namespace EduShpere.Application
             return GenerateToken(user);
         }
 
-        public async Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(PaginationRequestDto paginationRequest)
+        public async Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(PaginationRequestDto paginationRequest, int? status = null)
         {
-            var query = _userRepository.GetQueryable()
-                .Where(u => u.Role != UserRole.Admin);
+            var query = _userRepository.GetQueryable();
+
+            // Add status filter
+            if (status.HasValue)
+            {
+                var statusEnum = (UserStatus)status.Value;
+                query = query.Where(u => u.Status == statusEnum);
+            }
+
+            // Add search functionality
+            if (!string.IsNullOrEmpty(paginationRequest.Search))
+            {
+                var searchTerm = paginationRequest.Search.ToLower();
+                query = query.Where(u => 
+                    (u.FirstName != null && u.FirstName.ToLower().Contains(searchTerm)) ||
+                    (u.LastName != null && u.LastName.ToLower().Contains(searchTerm)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(searchTerm)) ||
+                    (u.Username != null && u.Username.ToLower().Contains(searchTerm)) ||
+                    (u.StudentProfile != null && u.StudentProfile.StudentNumber != null && u.StudentProfile.StudentNumber.ToLower().Contains(searchTerm)) ||
+                    (u.TeacherProfile != null && u.TeacherProfile.TeacherCode != null && u.TeacherProfile.TeacherCode.ToLower().Contains(searchTerm))
+                );
+            }
 
             var pagedResult = await _paginationService.GetPagedResultAsync(query, paginationRequest);
 
@@ -482,29 +500,102 @@ namespace EduShpere.Application
             if (user == null)
                 throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
 
-            if (!string.IsNullOrWhiteSpace(dto.Email) &&
-                !string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+            // Check email duplication nếu có thay đổi
+            if (!string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
             {
+                if (ContainsVietnameseOrSpaces(dto.Email))
+                    throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
+
                 var emailExists = await _userRepository.FindUserByEmail(dto.Email);
                 if (emailExists)
-                {
                     throw new BadRequestException(ErrorMessages.Auth.EmailAlreadyExists);
-                }
 
                 user.Email = dto.Email;
             }
 
-            user.Username = dto.Username ?? user.Username;
-            user.FirstName = dto.FirstName ?? user.FirstName;
-            user.LastName = dto.LastName ?? user.LastName;
-            user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
-            user.Birthdate = dto.Birthdate ?? user.Birthdate;
-            user.Address = dto.Address ?? user.Address;
-            user.AvatarUrl = dto.AvatarUrl ?? user.AvatarUrl;
-            user.Role = dto.Role ?? user.Role;
+            // Check username duplication nếu có thay đổi
+            if (!string.Equals(user.Username, dto.Username, StringComparison.OrdinalIgnoreCase))
+            {
+                if (ContainsVietnameseOrSpaces(dto.Username))
+                    throw new BadRequestException(ErrorMessages.Auth.UsernameContainsSpacesOrVietnamese);
+
+                var usernameExists = await _userRepository.FindUserByUsername(dto.Username);
+                if (usernameExists)
+                    throw new BadRequestException(ErrorMessages.Auth.UsernameAlreadyExists);
+
+                user.Username = dto.Username;
+            }
+
+            // Update các field chung trong User
+            user.FirstName = dto.FirstName;
+            user.LastName = dto.LastName;
+            user.PhoneNumber = dto.PhoneNumber;
+            user.Birthdate = dto.BirthDate;
+            user.AvatarUrl = dto.AvatarUrl;
+            user.Role = dto.Role;
+            user.Status = dto.Status;
 
             _auditService.SetAuditFieldsForUpdate(user);
             await _userRepository.UpdateAsync(user);
+
+            // Cập nhật StudentProfile nếu là Student
+            if (dto.Role == UserRole.Student)
+            {
+                var profile = await _studentProfileRepository.GetStudentProfileByIdAsync(user.Id);
+                /*if (profile == null)
+                {
+                    // Nếu chưa có thì tạo mới
+                    profile = new StudentProfile
+                    {
+                        UserId = user.Id,
+                        StudentNumber = dto.StudentNumber ?? dto.Username,
+                        EnrollmentYear = dto.EnrollmentYear ?? (short)DateTime.Now.Year,
+                        Bio = dto.Bio,
+                        ExtraJson = dto.ExtraJson
+                    };
+
+                    await _studentProfileRepository.CreateStudentProfileAsync(
+                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);
+                }
+                else*/
+                profile.StudentNumber = dto.StudentNumber ?? profile.StudentNumber;
+                profile.EnrollmentYear = dto.EnrollmentYear ?? profile.EnrollmentYear;
+                //profile.Bio = dto.Bio ?? profile.Bio;
+                //profile.ExtraJson = dto.ExtraJson ?? profile.ExtraJson;
+                //profile.ClassGroupId = dto.ClassGroupId ?? profile.ClassGroupId;
+
+                await _studentProfileRepository.UpdateAsync(profile);
+            }
+            // Cập nhật TeacherProfile nếu là Teacher
+            else if (dto.Role == UserRole.Teacher)
+            {
+                var profile = await _teacherProfileRepository.GetTeacherProfileByIdAsync(user.Id);
+                /*if (profile == null)
+                {
+                    profile = new TeacherProfileEntity
+                    {
+                        UserId = user.Id,
+                        TeacherCode = dto.TeacherCode ?? dto.Username,
+                        Department = dto.Department,
+                        Position = dto.Position,
+                        Bio = dto.Bio,
+                        ExtraJson = dto.ExtraJson
+                    };
+
+                    await _teacherProfileRepository.CreateTeacherProfileAsync(
+                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+                }
+                else
+                {*/
+                    profile.TeacherCode = dto.TeacherCode ?? profile.TeacherCode;
+                    profile.Department = dto.Department ?? profile.Department;
+                    profile.Position = dto.Position ?? profile.Position;
+                    //profile.Bio = dto.Bio ?? profile.Bio;
+                    //profile.ExtraJson = dto.ExtraJson ?? profile.ExtraJson;
+
+                    await _teacherProfileRepository.UpdateAsync(profile);
+            }
+
             return true;
         }
 
@@ -554,12 +645,12 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.OldPasswordContainsSpacesOrVietnamese);
             }
-            
+
             if (ContainsVietnameseOrSpaces(dto.NewPassword))
             {
                 throw new BadRequestException(ErrorMessages.Auth.NewPasswordContainsSpacesOrVietnamese);
             }
-            
+
             if (ContainsVietnameseOrSpaces(dto.ConfirmPassword))
             {
                 throw new BadRequestException(ErrorMessages.Auth.ConfirmPasswordContainsSpacesOrVietnamese);
@@ -570,10 +661,10 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.InvalidPassword);
             }
-            
+
             // Validate strong password
             ValidateStrongPassword(dto.NewPassword);
-            
+
             if (dto.NewPassword != dto.ConfirmPassword)
             {
                 throw new BadRequestException(ErrorMessages.Password.PasswordMismatch);
@@ -592,7 +683,7 @@ namespace EduShpere.Application
             {
                 throw new BadRequestException(ErrorMessages.Auth.EmailContainsSpacesOrVietnamese);
             }
-            
+
             var user = await _userRepository.GetUserByEmail(dto.Email);
             if (user == null)
             {
@@ -613,6 +704,34 @@ namespace EduShpere.Application
             );
 
             return GenerateToken(user);
+        }
+
+        public async Task<bool> DeleteUserAsync(int id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+
+            _auditService.SetAuditFieldsForDelete(user);
+            await _userRepository.UpdateAsync(user);
+            return true;
+        }
+
+        public async Task<UserStatisticsDto> GetUserStatisticsAsync()
+        {
+            var allUsers = await _userRepository.GetQueryable().ToListAsync();
+
+            var statistics = new UserStatisticsDto
+            {
+                TotalUsers = allUsers.Count,
+                ActiveUsers = allUsers.Count(u => u.Status == UserStatus.Active),
+                InactiveUsers = allUsers.Count(u => u.Status == UserStatus.Inactive),
+                Students = allUsers.Count(u => u.Role == UserRole.Student),
+                Teachers = allUsers.Count(u => u.Role == UserRole.Teacher),
+                Admins = allUsers.Count(u => u.Role == UserRole.Admin)
+            };
+
+            return statistics;
         }
 
     }
