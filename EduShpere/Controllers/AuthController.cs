@@ -71,7 +71,7 @@ namespace EduShpere.Controllers
             }, "API hoạt động bình thường"));
         }
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             try
@@ -104,9 +104,11 @@ namespace EduShpere.Controllers
             }
         }
 
-        [HttpGet(ApiEndpoints.Auth.UserUrl)]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllUsers([FromQuery] PaginationRequestDto? paginationRequest = null)
+        [HttpGet(ApiEndpoints.User.Users)]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers(
+            [FromQuery] PaginationRequestDto? paginationRequest = null,
+            [FromQuery] int? status = null)
         {
             try
             {
@@ -117,7 +119,7 @@ namespace EduShpere.Controllers
                     PageSize = 10
                 };
 
-                var result = await _authService.GetAllUsersAsync(paginationRequest);
+                var result = await _authService.GetAllUsersAsync(paginationRequest, status);
 
                 return Ok(new ResponseDto<PaginationResponseDto<UserDto>>(result, "Lấy danh sách người dùng thành công",
                     (int)HttpStatusCode.OK
@@ -130,8 +132,8 @@ namespace EduShpere.Controllers
         }
 
 
-        [HttpPut(ApiEndpoints.Auth.UserUrl)]
-        [Authorize(Roles = "Admin")]
+        [HttpPut(ApiEndpoints.User.Users)]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto dto)
         {
             try
@@ -213,6 +215,40 @@ namespace EduShpere.Controllers
             catch (Exception)
             {
                 return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+            }
+        }
+
+        [HttpDelete(ApiEndpoints.User.Users + "/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                var result = await _authService.DeleteUserAsync(id);
+                return Ok(new ResponseDto<bool>(result, "Xóa người dùng thành công"));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound(new ResponseDto<string>(null, ErrorMessages.Auth.UserNotFound, 404));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+            }
+        }
+
+        [HttpGet(ApiEndpoints.User.Statistics)]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUserStatistics()
+        {
+            try
+            {
+                var statistics = await _authService.GetUserStatisticsAsync();
+                return Ok(new ResponseDto<UserStatisticsDto>(statistics, "Lấy thống kê người dùng thành công"));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
             }
         }
     }

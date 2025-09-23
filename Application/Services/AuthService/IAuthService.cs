@@ -14,11 +14,13 @@ namespace EduShpere.Application
         Task<object> ImportUsers(IFormFile request);
         Task<bool> CreateUserAndGenerateOtlAsync(CreateUserDto dto);
         Task<TokenModel> CreateUserAndReturnTokenAsync(CreateUserDto dto);
-        Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(PaginationRequestDto paginationRequest);
+        Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(PaginationRequestDto paginationRequest, int? status);
         Task<bool> UpdateUserAsync(UpdateUserDto dto);
         Task<string> OneTimeLoginAsync(string token);
         Task<TokenModel> ChangePasswordWithOtlAsync(string token, string newPassword);
         Task<bool> ChangePassword(ChangePasswordDto dto);
         Task<TokenModel> ForgotPassword(ForgotPasswordDto dto);
+        Task<bool> DeleteUserAsync(int id);
+        Task<UserStatisticsDto> GetUserStatisticsAsync();
     }
 }
