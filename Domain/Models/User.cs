@@ -139,4 +139,7 @@ public partial class User : BaseEntity
 
     [InverseProperty("User")]
     public virtual UserPoint? UserPoint { get; set; }
+    [InverseProperty("MentionedUser")]
+    public virtual ICollection<PostMention> MentionsInPosts { get; set; } = new List<PostMention>();
+
 }

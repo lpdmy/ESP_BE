@@ -101,6 +101,11 @@
             public const string NotFound = "Người dùng chưa tham gia hoạt động này.";
 
         }
+        public struct Post
+        {
+            public const string PostIsFlaged = "Bài viết đã bị vi phạm nội dung.";
+            public const string PostError = "Bài viết đã bị lỗi khi tạo.";
+        }
 
     }
 }
