@@ -2,13 +2,14 @@ using System.Text;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Application.Services;
+using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.AIService;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -30,6 +31,8 @@ namespace EduShpere
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+            builder.Services.AddScoped<IPostRepository, PostRepository>();
+            builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
 
 
             // Add Configs
@@ -51,15 +54,18 @@ namespace EduShpere
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
-
+            builder.Services.AddScoped<IPostService, PostService>();
+            builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(TeacherProfileMapping).Assembly);
+            builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

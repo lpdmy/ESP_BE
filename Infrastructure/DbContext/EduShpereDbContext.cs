@@ -83,6 +83,9 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<UserPoint> UserPoints { get; set; }
     public virtual DbSet<OneTimeLoginToken> OneTimeLoginTokens { get; set; }
+    public virtual DbSet<PostMention> PostMentions { get; set; }
+    public virtual DbSet<PostHashtag> PostHashtags { get; set; }
+    public virtual DbSet<Hashtag> Hashtags { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -620,6 +623,11 @@ public partial class EduShpereDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserPoint__UserI__73852659");
         });
+
+        modelBuilder.Entity<PostHashtag>()
+    .HasKey(ph => new { ph.PostId, ph.HashtagId });
+        modelBuilder.Entity<PostMention>()
+    .HasKey(pm => new { pm.PostId, pm.MentionedUserId });
 
         OnModelCreatingPartial(modelBuilder);
     }

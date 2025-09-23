@@ -63,6 +63,11 @@
             public const string ActivityParticipantRoute = "api/activityparticipant";
             public const string GetActivityParticipantById = "api/activityparticipant/{id}";
         }
-
+        public static class Post
+        {
+            public const string Posts = "api/post";
+            public const string GetPostById = "api/post/{id}";
+            public const string GetPostByUser = "api/post/user";
+        }
     }
 }
