@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public partial class FavoriteCollection
+public partial class FavoriteCollection : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -15,16 +15,6 @@ public partial class FavoriteCollection
 
     [StringLength(255)]
     public string? Name { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
-
-    public bool IsDeleted { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;
 

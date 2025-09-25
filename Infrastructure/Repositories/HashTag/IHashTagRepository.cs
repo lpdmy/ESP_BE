@@ -16,5 +16,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task UpdateAsync(Hashtag entity);
         Task DeleteAsync(int id);
         Task<Hashtag?> GetByNameAsync(string name);
+        Task DeleteHashTagByPostId(int postId);
     }
 }

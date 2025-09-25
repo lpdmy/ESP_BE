@@ -105,6 +105,7 @@
         {
             public const string PostIsFlaged = "Bài viết đã bị vi phạm nội dung.";
             public const string PostError = "Bài viết đã bị lỗi khi tạo.";
+            public const string PostNotFound = "Bài viết không tồn tại.";
         }
 
     }

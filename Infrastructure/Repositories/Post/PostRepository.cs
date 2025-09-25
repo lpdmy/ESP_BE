@@ -24,6 +24,12 @@ namespace EduShpere.Infrastructure.Repositories
                     .ThenInclude(pm => pm.MentionedUser)
                 .ToListAsync();
         }
+        public async Task DeleteSoft(int id)
+        {
+            var posts = _dbSet.Where(p => p.Id == id).FirstOrDefault();
+            posts.IsDeleted = true;
+            await _context.SaveChangesAsync();
+        }
 
     }
 }
