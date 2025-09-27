@@ -1,6 +1,7 @@
 ﻿using EduShpere.Application;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.AuthDto;
+using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.Services;
 using EduShpere.Domain.Models;
 using EduShpere.Shared.Constants;
@@ -34,13 +35,13 @@ namespace EduShpere.Controllers
             }
         }
         [HttpGet(ApiEndpoints.Collection.GetCollectionByUser)]
-        public async Task<IActionResult> GetCollectionByUser()
+        public async Task<IActionResult> GetCollectionByUser(PaginationRequestDto paginationRequestv)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
             try
             {
-                var result = await _Service.getAllCollectionByUser(user);
-                return Ok(new ResponseDto<IEnumerable<CollectionResponseDto>>(result, "lấy bộ sưu tập thành công", 200));
+                var result = await _Service.GetAllCollectionByUserAsync(user, paginationRequestv);
+                return Ok(new ResponseDto<IEnumerable<PaginationResponseDto<CollectionResponseDto>>>(result, "lấy bộ sưu tập thành công", 200));
             }
             catch (UnauthorizedAccessException ex)
             {

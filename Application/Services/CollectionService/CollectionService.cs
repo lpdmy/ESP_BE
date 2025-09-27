@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 using AutoMapper;
 using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Application.Services
 {
@@ -22,11 +24,28 @@ namespace EduShpere.Application.Services
             _mapper = mapper;
             _iteamRepo = iteamRepo;
         }
-        public async Task<IEnumerable<CollectionResponseDto>> getAllCollectionByUser(User user)
+        public async Task<PaginationResponseDto<CollectionResponseDto>> GetAllCollectionByUserAsync(
+    User user,
+    PaginationRequestDto paginationRequest)
         {
-            var list = await _repo.GetByUserIdAsync(user);
-            return _mapper.Map<IEnumerable<FavoriteCollection>, IEnumerable<CollectionResponseDto>>(list);
+            var query = _repo.GetByUserIdQuery(user);
+            var totalCount = await query.CountAsync();
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<CollectionResponseDto>>(data);
+
+            return new PaginationResponseDto<CollectionResponseDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
         }
+
         public async Task<CollectionResponseDto?> CreateCollectionResponse(User user,CreateCollectionDto dto)
         {
             var collection = new FavoriteCollection

@@ -15,6 +15,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task AddRangeAsync(IEnumerable<FavoriteCollection> entities);
         Task UpdateAsync(FavoriteCollection entity);
         Task DeleteAsync(int id);
-        Task<IEnumerable<FavoriteCollection>> GetByUserIdAsync(User user);
+        IQueryable<FavoriteCollection> GetByUserIdQuery(User user);
     }
 }

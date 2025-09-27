@@ -18,12 +18,11 @@ namespace EduShpere.Infrastructure.Repositories
             return await _context.FavoriteCollections
                 .FirstOrDefaultAsync(c => c.Name == name);
         }
-        public async Task<IEnumerable<FavoriteCollection>> GetByUserIdAsync(User user)
+        public IQueryable<FavoriteCollection> GetByUserIdQuery(User user)
         {
-            return await _context.FavoriteCollections
-                .Include(c => c.CollectionItems)
-                .Where(c => c.UserId == user.Id && c.IsDeleted == false)
-                .ToListAsync();
+            return _context.FavoriteCollections.
+                Include(c => c.CollectionItems)
+                .Where(c => c.UserId == user.Id);
         }
     }
 }
