@@ -68,5 +68,12 @@
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
         }
+        public static class Collection
+        {
+            public const string Collections = "api/collection";
+            public const string GetCollectionById = "api/collection/{id}";
+            public const string GetCollectionByUser = "api/collection/user";
+            public const string AddCollectionIteam = "api/collection/add-collection-iteam";
+        }
     }
 }
