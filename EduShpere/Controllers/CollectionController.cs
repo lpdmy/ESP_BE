@@ -35,19 +35,25 @@ namespace EduShpere.Controllers
             }
         }
         [HttpGet(ApiEndpoints.Collection.GetCollectionByUser)]
-        public async Task<IActionResult> GetCollectionByUser(PaginationRequestDto paginationRequestv)
+        public async Task<IActionResult> GetCollectionByUser([FromQuery] PaginationRequestDto paginationRequest)
         {
-            var user = await _httpContextService.GetAppUserAndThrow();
             try
             {
-                var result = await _Service.GetAllCollectionByUserAsync(user, paginationRequestv);
-                return Ok(new ResponseDto<IEnumerable<PaginationResponseDto<CollectionResponseDto>>>(result, "lấy bộ sưu tập thành công", 200));
+                var user = await _httpContextService.GetAppUserAndThrow();
+                var result = await _Service.GetAllCollectionByUserAsync(user, paginationRequest);
+
+                return Ok(new ResponseDto<PaginationResponseDto<CollectionResponseDto>>(
+                    result,
+                    message: "Lấy bộ sưu tập thành công",
+                    statusCode: 200
+                ));
             }
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { message = ex.Message });
             }
         }
+
         [HttpDelete(ApiEndpoints.Collection.Collections)]
         public async Task<IActionResult> DeleteCollection([FromRoute] int id)
         {
