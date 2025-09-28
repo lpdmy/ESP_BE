@@ -16,5 +16,8 @@ namespace EduShpere.Infrastructure
         Task UpdateAsync(Post entity);
         Task DeleteAsync(int id);
         Task<IEnumerable<Post>> getAllPostIncluding();
+        Task<IEnumerable<Post>> SearchAsync(string query, int limit = 10);
+        Task<IEnumerable<Post>> SearchWithFiltersAsync(object request);
+        Task<Dictionary<int, (int LikesCount, int CommentsCount)>> GetPostEngagementStatsAsync(IEnumerable<int> postIds);
     }
 }
