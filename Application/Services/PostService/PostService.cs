@@ -95,18 +95,18 @@ namespace EduShpere.Application.Services
                 }
             }
 
-            var moderationBody = await _moderation.Moderate(new ModerationRequest
-            {
-                Input = dto.Body,
-            });
-            var moderationTitle = await _moderation.Moderate(new ModerationRequest
-            {
-                Input = dto.Title,
-            });
-            if (moderationBody.IsFlagged == true || moderationTitle.IsFlagged)
-            { 
-               throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
-            }    
+            //var moderationBody = await _moderation.Moderate(new ModerationRequest
+            //{
+            //    Input = dto.Body,
+            //});
+            //var moderationTitle = await _moderation.Moderate(new ModerationRequest
+            //{
+            //    Input = dto.Title,
+            //});
+            //if (moderationBody.IsFlagged == true || moderationTitle.IsFlagged)
+            //{ 
+            //   throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
+            //}    
 
             await _repo.AddAsync(post);
             var postDto = _mapper.Map<PostResponseDto>(post);
@@ -144,19 +144,19 @@ namespace EduShpere.Application.Services
             }
 
             
-            if (!string.IsNullOrWhiteSpace(dto.Body))
-            {
-                var moderationBody = await _moderation.Moderate(new ModerationRequest { Input = dto.Body });
-                if (moderationBody.IsFlagged)
-                    throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
-            }
+            //if (!string.IsNullOrWhiteSpace(dto.Body))
+            //{
+            //    var moderationBody = await _moderation.Moderate(new ModerationRequest { Input = dto.Body });
+            //    if (moderationBody.IsFlagged)
+            //        throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
+            //}
 
-            if (!string.IsNullOrWhiteSpace(dto.Title))
-            {
-                var moderationTitle = await _moderation.Moderate(new ModerationRequest { Input = dto.Title });
-                if (moderationTitle.IsFlagged)
-                    throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
-            }
+            //if (!string.IsNullOrWhiteSpace(dto.Title))
+            //{
+            //    var moderationTitle = await _moderation.Moderate(new ModerationRequest { Input = dto.Title });
+            //    if (moderationTitle.IsFlagged)
+            //        throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
+            //}
 
             post.UpdatedAt = DateTime.UtcNow;
             
