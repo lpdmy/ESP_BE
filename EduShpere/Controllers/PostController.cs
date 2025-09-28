@@ -71,5 +71,17 @@ namespace EduShpere.Controllers
             }
 
         }
+        [HttpDelete(ApiEndpoints.Post.Posts)]
+        public async Task<IActionResult> deletePost(int id)
+        {
+            var result = await _postService.DeletePost(id);
+            return Ok(new ResponseDto<PostResponseDto>(result, "Xóa bài viết thành công", 200));
+        }
+        [HttpPut(ApiEndpoints.Post.Posts)]
+        public async Task<IActionResult> UpdatePost(UpdatePostDto dto)
+        {
+            var result = await _postService.UpdatePost(dto);
+            return Ok(new ResponseDto<PostResponseDto>(result, "Chỉnh sửa bài viết thành công", 200));
+        }
     }
 }
