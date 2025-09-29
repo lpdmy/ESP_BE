@@ -38,6 +38,7 @@ namespace EduShpere
             builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
 
+
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));

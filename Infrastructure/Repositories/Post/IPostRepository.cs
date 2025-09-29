@@ -16,5 +16,6 @@ namespace EduShpere.Infrastructure
         Task UpdateAsync(Post entity);
         Task DeleteAsync(int id);
         Task<IEnumerable<Post>> getAllPostIncluding();
+        Task DeleteSoft(int id);
     }
 }

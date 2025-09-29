@@ -10,5 +10,7 @@ namespace EduShpere.Application.Services
         Task<PostResponseDto> CreatePost(CreatePostDto dto, User user);
         Task<IEnumerable<PostResponseDto>> getAllPostsGeneral();
         Task<IEnumerable<PostResponseDto>> GetPostByUserId(User user, string sortOrder = "desc");
+        Task<PostResponseDto> DeletePost(int id);
+        Task<PostResponseDto> UpdatePost(UpdatePostDto dto);
     }
 }
