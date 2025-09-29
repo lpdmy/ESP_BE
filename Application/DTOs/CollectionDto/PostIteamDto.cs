@@ -4,15 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduShpere.Application.DTOs
+namespace EduShpere.Application.DTOs.CollectionDto
 {
-    public class CollectionIteamDto
+    public class PostIteamDto
     {
         public int Id { get; set; }
-
-        public int CollectionId { get; set; }
-
-        public int PostId { get; set; }
-
+        public string? Title { get; set; }
+        public string? Image { get; set; }
     }
 }

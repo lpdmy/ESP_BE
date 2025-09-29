@@ -62,8 +62,9 @@ namespace EduShpere.Application.Services
         public async Task<bool> DeleteCollection(int id)
         {
             var collection = await _repo.GetByIdAsync(id);
-            if (collection == null || collection.IsDeleted) return false;
-            await _repo.DeleteAsync(id);
+            if (collection == null || collection.IsDeleted) 
+                return false;
+            await _repo.DeleteSoft(id);
             return true;
         }
         public async Task<bool> UpdateCollection( UpdateCollectionDto dto)

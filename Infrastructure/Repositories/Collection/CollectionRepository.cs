@@ -16,13 +16,25 @@ namespace EduShpere.Infrastructure.Repositories
         public async Task<FavoriteCollection?> GetByNameAsync(string name)
         {
             return await _context.FavoriteCollections
-                .FirstOrDefaultAsync(c => c.Name == name);
+                .FirstOrDefaultAsync(c => c.Name == name && c.IsDeleted == false);
         }
         public IQueryable<FavoriteCollection> GetByUserIdQuery(User user)
         {
             return _context.FavoriteCollections.
                 Include(c => c.CollectionItems)
-                .Where(c => c.UserId == user.Id);
+                .ThenInclude(ci => ci.Post)
+                .ThenInclude(p => p.Attachments)
+                .Where(c => c.UserId == user.Id && c.IsDeleted == false);
+        }
+        public async Task DeleteSoft(int id)
+        {
+            var collection = await GetByIdAsync(id);
+            if (collection != null)
+            {
+                collection.IsDeleted = true;
+                collection.UpdatedAt = DateTime.UtcNow;
+                await UpdateAsync(collection);
+            }
         }
     }
 }

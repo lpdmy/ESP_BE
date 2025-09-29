@@ -16,5 +16,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task UpdateAsync(FavoriteCollection entity);
         Task DeleteAsync(int id);
         IQueryable<FavoriteCollection> GetByUserIdQuery(User user);
+        Task DeleteSoft(int id);
     }
 }

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EduShpere.Application.DTOs.CollectionDto;
 
 namespace EduShpere.Application.DTOs
 {
@@ -16,6 +17,6 @@ namespace EduShpere.Application.DTOs
         [StringLength(255)]
         public string? Name { get; set; }
         public DateTime? CreatedAt { get; set; } 
-        public List<string> CollectionItems { get; set; } = new List<string>();
+        public List<PostIteamDto> CollectionItems { get; set; } = new List<PostIteamDto>();
     }
 }

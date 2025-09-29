@@ -55,7 +55,7 @@ namespace EduShpere.Controllers
         }
 
         [HttpDelete(ApiEndpoints.Collection.Collections)]
-        public async Task<IActionResult> DeleteCollection([FromRoute] int id)
+        public async Task<IActionResult> DeleteCollection(int id)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
             try
