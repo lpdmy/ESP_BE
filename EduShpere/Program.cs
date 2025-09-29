@@ -37,6 +37,7 @@ namespace EduShpere
             builder.Services.AddScoped<IPostHashTagRepository, PostHashTagRepository>();
             builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
+            builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
 
 
             // Add Configs

@@ -37,7 +37,10 @@ namespace EduShpere.Application.Mappings
         opt => opt.MapFrom(src => src.PostLikes.Count))
 
     .ForMember(dest => dest.ReportCount,
-        opt => opt.MapFrom(src => src.PostReports.Count));
+        opt => opt.MapFrom(src => src.PostReports.Count))
+    .ForMember(dest => dest.IsLikedByCurrentUser,
+                opt => opt.MapFrom((src, dest, destMember, ctx) =>
+                    src.PostLikes.Any(l => l.UserId == (int)ctx.Items["currentUserId"])));
         }
     }
 }

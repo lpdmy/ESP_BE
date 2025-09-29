@@ -6,6 +6,7 @@ using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EduShpere.Shared;
+using Microsoft.Data.SqlClient;
 
 namespace EduShpere.Controllers
 {
@@ -53,7 +54,8 @@ namespace EduShpere.Controllers
         [HttpGet(ApiEndpoints.Post.Posts)]
         public async Task<IActionResult> getAllPost()
         {
-            var result = await _postService.getAllPostsGeneral();
+            var user = await _httpContextService.GetAppUserAndThrow();
+            var result = await _postService.GetAllPostsGeneral(user);
             return Ok(new ResponseDto<IEnumerable<PostResponseDto>>(result, "Lấy danh sách bài viết thành công", 200));
         }
 
@@ -82,6 +84,20 @@ namespace EduShpere.Controllers
         {
             var result = await _postService.UpdatePost(dto);
             return Ok(new ResponseDto<PostResponseDto>(result, "Chỉnh sửa bài viết thành công", 200));
+        }
+        [HttpPost(ApiEndpoints.Post.Like)]
+        public async Task<IActionResult> LikePost(CreatePostLikeDto dto)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            try
+            {
+                var result = await _postService.PostLike(dto, user);
+                return Ok(new ResponseDto<PostResponseDto>(result, "Thích bài viết thành công", 200));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
     }
 }

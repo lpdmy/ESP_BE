@@ -67,6 +67,8 @@
             public const string Posts = "api/post";
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
+            public const string Like = "api/post/like";
+
         }
         public static class Collection
         {
@@ -75,5 +77,6 @@
             public const string GetCollectionByUser = "api/collection/user";
             public const string AddCollectionIteam = "api/collection/add-collection-iteam";
         }
+        
     }
 }
