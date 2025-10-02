@@ -1,0 +1,14 @@
+﻿using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Domain.Models;
+
+namespace EduShpere.Application.Services
+{
+    public interface IClubCreationRequestService
+    {
+        Task<ClubCreationResponseDto> createClubRequest(CreateClubRequestDto dto, User user);
+        Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsync(
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+    }
+}

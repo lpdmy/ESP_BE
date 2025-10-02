@@ -77,6 +77,11 @@
             public const string GetCollectionByUser = "api/collection/user";
             public const string AddCollectionIteam = "api/collection/add-collection-iteam";
         }
-        
+        public static class ClubCreationRequest
+        {
+            public const string Create = "api/club/club-creation-request";
+            public const string GetAll = "api/club";
+        }
+
     }
 }

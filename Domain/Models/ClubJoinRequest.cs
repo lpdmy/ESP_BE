@@ -13,7 +13,8 @@ public partial class ClubJoinRequest
     public int Id { get; set; }
 
     public int ClubId { get; set; }
-
+    [StringLength(255)]
+    public string? ClubName { get; set; }
     public int UserId { get; set; }
 
     [StringLength(20)]

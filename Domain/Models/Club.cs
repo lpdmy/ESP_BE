@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public partial class Club
+public partial class Club : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -15,6 +15,9 @@ public partial class Club
     public string? Name { get; set; }
 
     public string? Description { get; set; }
+    [StringLength(255)]
+    public string? ShortDescription { get; set; } // Mô tả ngắn
+    public int CategoryId { get; set; } // Danh mục
 
     [StringLength(1000)]
     public string? AvatarUrl { get; set; }
@@ -23,18 +26,17 @@ public partial class Club
     public string? CoverUrl { get; set; }
 
     public int CreatedByUserId { get; set; }
+    public string? Requirements { get; set; }
+    public bool AllowAutoJoin { get; set; } = false;
+    public bool AllowMembersToPost { get; set; } = false;
+    [StringLength(255)]
+    public string? ContactEmail { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
-
-    public bool IsDeleted { get; set; }
-
+    [StringLength(20)]
+    public string? ContactPhone { get; set; }
     public byte[] RowVersion { get; set; } = null!;
+
+
 
     [InverseProperty("Club")]
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
@@ -48,6 +50,9 @@ public partial class Club
     [ForeignKey("CreatedByUserId")]
     [InverseProperty("Clubs")]
     public virtual User CreatedByUser { get; set; } = null!;
+    [ForeignKey("CategoryId")]
+    [InverseProperty("Clubs")]
+    public virtual ClubCategory Category { get; set; } = null!;
 
     [InverseProperty("Club")]
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();

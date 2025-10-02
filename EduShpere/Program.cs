@@ -38,6 +38,7 @@ namespace EduShpere
             builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
             builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
+            builder.Services.AddScoped<IClubCreationRepository, ClubCreationRequestRepository>();
 
 
             // Add Configs
@@ -61,6 +62,7 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<ICollectionService, CollectionService>();
+            builder.Services.AddScoped<IClubCreationRequestService, ClubCreationRequestService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -73,6 +75,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubCreationRequestProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

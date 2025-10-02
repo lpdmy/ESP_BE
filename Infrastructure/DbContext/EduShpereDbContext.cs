@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -86,6 +87,8 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<PostMention> PostMentions { get; set; }
     public virtual DbSet<PostHashtag> PostHashtags { get; set; }
     public virtual DbSet<Hashtag> Hashtags { get; set; }
+    public virtual DbSet<ClubCategory> ClubCategory { get; set; }
+    public virtual DbSet<ClubCreationRequest> ClubCreationRequest { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

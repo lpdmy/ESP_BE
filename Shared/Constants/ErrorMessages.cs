@@ -107,6 +107,9 @@
             public const string PostError = "Bài viết đã bị lỗi khi tạo.";
             public const string PostNotFound = "Bài viết không tồn tại.";
         }
-
+        public struct ClubCreationRequest
+        {
+            public const string RecentRequestExists = "Bạn chỉ có thể gửi đơn tạo CLB 1 lần trong vòng 7 ngày.";
+        }
     }
 }
