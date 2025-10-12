@@ -67,8 +67,16 @@
             public const string Posts = "api/post";
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
-        }
+            public const string Like = "api/post/like";
 
+        }
+        public static class Collection
+        {
+            public const string Collections = "api/collection";
+            public const string GetCollectionById = "api/collection/{id}";
+            public const string GetCollectionByUser = "api/collection/user";
+            public const string AddCollectionIteam = "api/collection/add-collection-iteam";
+        }
         public static class ClassGroup
         {
             public const string ClassGroups = "api/classgroup";

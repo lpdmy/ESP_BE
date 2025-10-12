@@ -35,8 +35,11 @@ namespace EduShpere
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
             builder.Services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
-
-
+            builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+            builder.Services.AddScoped<IPostHashTagRepository, PostHashTagRepository>();
+            builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+            builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
+            builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
@@ -57,6 +60,7 @@ namespace EduShpere
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<IPostService, PostService>();
+            builder.Services.AddScoped<ICollectionService, CollectionService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -70,6 +74,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

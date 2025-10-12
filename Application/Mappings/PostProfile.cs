@@ -13,8 +13,14 @@ namespace EduShpere.Application.Mappings
         opt => opt.MapFrom(src => src.Club != null ? src.Club.Name : null))
 
     .ForMember(dest => dest.UserFullName,
-        opt => opt.MapFrom(src => src.User.Username))
-
+    opt => opt.MapFrom(src =>
+        src.User != null
+            ? string.Join(" ",
+                (src.User.LastName ?? "").Trim(),
+                (src.User.FirstName ?? "").Trim()
+              ).Trim()
+            : string.Empty
+    ))
     .ForMember(dest => dest.AttachmentUrls,
         opt => opt.MapFrom(src => src.Attachments.Select(a => a.FileUrl)))
 
@@ -31,7 +37,10 @@ namespace EduShpere.Application.Mappings
         opt => opt.MapFrom(src => src.PostLikes.Count))
 
     .ForMember(dest => dest.ReportCount,
-        opt => opt.MapFrom(src => src.PostReports.Count));
+        opt => opt.MapFrom(src => src.PostReports.Count))
+    .ForMember(dest => dest.IsLikedByCurrentUser,
+                opt => opt.MapFrom((src, dest, destMember, ctx) =>
+                    src.PostLikes.Any(l => l.UserId == (int)ctx.Items["currentUserId"])));
         }
     }
 }
