@@ -77,6 +77,22 @@
             public const string GetCollectionByUser = "api/collection/user";
             public const string AddCollectionIteam = "api/collection/add-collection-iteam";
         }
-        
+        public static class ClassGroup
+        {
+            public const string ClassGroups = "api/classgroup";
+            public const string GetClassGroupById = "api/classgroup/{id}";
+            public const string GetByName = "api/classgroup/by-name";
+            public const string Dashboard = "api/classgroup/dashboard";
+            public const string ByGrade = "api/classgroup/by-grade/{grade}";
+            public const string WithoutGrade = "api/classgroup/without-grade";
+            public const string ByStartYear = "api/classgroup/by-start-year/{startYear}";
+            public const string WithoutStartYear = "api/classgroup/without-start-year";
+            public const string Deleted = "api/classgroup/deleted";
+            public const string Filter = "api/classgroup/filter";
+            public const string CheckNameExists = "api/classgroup/check-name-exists";
+            public const string Create = "api/classgroup";
+            public const string Update = "api/classgroup/{id}";
+            public const string Delete = "api/classgroup/{id}";
+        }
     }
 }

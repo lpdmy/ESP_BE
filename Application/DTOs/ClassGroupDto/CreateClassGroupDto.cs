@@ -1,0 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+using EduShpere.Shared.Constants;
+
+namespace EduShpere.Application.DTOs.ClassGroupDto;
+
+public class CreateClassGroupDto
+{
+    [StringLength(255, ErrorMessage = ErrorMessages.Validation.NameTooLong)]
+    public string? Name { get; set; }
+
+    [StringLength(500, ErrorMessage = ErrorMessages.Validation.DescriptionTooLong)]
+    public string? Description { get; set; }
+
+    [Range(10, 12, ErrorMessage = "Khối học phải từ 10 đến 12")]
+    public int? Grade { get; set; }
+
+    //[Range(2020, 2030, ErrorMessage = "Năm bắt đầu phải từ 2020 đến 2030")]
+    public int? StartYear { get; set; }
+}
