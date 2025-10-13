@@ -55,5 +55,11 @@ namespace EduShpere.Infrastructure
                     .ThenInclude(cgm => cgm.ClassGroup);
         }
 
+        public async Task UpdateRangeAsync(IEnumerable<User> users)
+        {
+            _dbSet.UpdateRange(users);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

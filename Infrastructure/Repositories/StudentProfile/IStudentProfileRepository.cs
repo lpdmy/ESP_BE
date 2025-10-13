@@ -11,7 +11,9 @@ namespace EduShpere.Infrastructure.Repositories
         Task<StudentProfile> CreateStudentProfileAsync(StudentProfile profile, DateTime? birthDate = null, string? phoneNumber = null, string? avatarUrl = null, int? classGroupId = null);
         Task<StudentProfile> UpdateStudentProfileAsync(StudentProfile profile, DateTime? birthDate = null, string? phoneNumber = null, string? avatarUrl = null);
         Task<StudentProfile> AddAsync(StudentProfile profile);
+        Task AddRangeAsync(IEnumerable<StudentProfile> profiles);
         Task UpdateAsync(StudentProfile profile);
+        Task UpdateRangeAsync(IEnumerable<StudentProfile> profiles);
         Task<bool> DeleteStudentProfileAsync(int id);
         Task<bool> StudentProfileExistsAsync(int id);
         Task<bool> StudentProfileExistsByUserIdAsync(int userId);

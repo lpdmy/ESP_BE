@@ -170,9 +170,21 @@ namespace EduShpere.Infrastructure.Repositories
             return profile;
         }
 
+        public async Task AddRangeAsync(IEnumerable<StudentProfile> profiles)
+        {
+            await _dbSet.AddRangeAsync(profiles);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task UpdateAsync(StudentProfile profile)
         {
             _dbSet.Update(profile);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateRangeAsync(IEnumerable<StudentProfile> profiles)
+        {
+            _dbSet.UpdateRange(profiles);
             await _context.SaveChangesAsync();
         }
     }

@@ -108,5 +108,30 @@
             public const string PostNotFound = "Bài viết không tồn tại.";
         }
 
+        public struct StudentImport
+        {
+            public const string StudentsRequired = "Danh sách học sinh không được để trống.";
+            public const string MappingRequired = "Mapping trường không được để trống.";
+            public const string HeadersRequired = "Headers không được để trống.";
+            public const string InvalidImportMode = "Chế độ import phải là insert, upsert hoặc skip.";
+            public const string StudentIdRequired = "Mã học sinh là bắt buộc.";
+            public const string FirstNameRequired = "Tên là bắt buộc.";
+            public const string LastNameRequired = "Họ là bắt buộc.";
+            public const string EmailRequired = "Email là bắt buộc.";
+            public const string InvalidEmailFormat = "Email không hợp lệ.";
+            public const string InvalidPhoneFormat = "Số điện thoại không hợp lệ.";
+            public const string InvalidStudentIdFormat = "Mã học sinh không hợp lệ.";
+            public const string InvalidDateFormat = "Ngày sinh không hợp lệ.";
+            public const string StudentAlreadyExists = "Học sinh đã tồn tại trong hệ thống.";
+            public const string StudentNotFound = "Học sinh không tồn tại.";
+            public const string ImportFailed = "Import học sinh thất bại.";
+            public const string ValidationFailed = "Validation dữ liệu thất bại.";
+            public const string FieldNotMapped = "Trường bắt buộc chưa được mapping.";
+            public const string FieldEmpty = "Trường bắt buộc không được để trống.";
+            public const string CreateStudentFailed = "Tạo học sinh thất bại.";
+            public const string UpdateStudentFailed = "Cập nhật học sinh thất bại.";
+            public const string TemplateGenerationFailed = "Tạo template thất bại.";
+        }
+
     }
 }
