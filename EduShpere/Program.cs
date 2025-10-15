@@ -68,6 +68,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(TeacherProfileMapping).Assembly);
             builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+            builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -75,6 +76,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
