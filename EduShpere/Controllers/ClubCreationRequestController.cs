@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EduShpere.Controllers
 {
-    [ApiController]
+    // [ApiController] // Temporarily commented out due to missing ClubCreationRequest table
     public class ClubCreationRequestController : ControllerBase
     {
         private readonly IClubCreationRequestService _service;
@@ -44,5 +44,31 @@ namespace EduShpere.Controllers
                        statusCode: 200
                    ));
         }
+        [HttpGet(ApiEndpoints.ClubCreationRequest.GetAllByUser)]
+        public async Task<IActionResult> GetAllClubCreationRequestsByUser([FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            var response = await _service.GetAllAsyncByUser(user, paginationRequest, search);
+            return Ok(new ResponseDto<PaginationResponseDto<ClubCreationResponseDto>>(
+                       response,
+                       message: "Lấy bộ sưu tập thành công",
+                       statusCode: 200
+                   ));
+        }
+        [HttpPost(ApiEndpoints.ClubCreationRequest.Approve)]
+        public async Task<IActionResult> ApproveClubCreationRequest(int id)
+        {
+            try
+            {
+                var result = await _service.ApproveCreation(id);
+                return Ok(new ResponseDto<ClubCreationResponseDto>(result, "Duyệt đơn tạo câu lạc bộ thành công", 200));
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+
+            }
+        }
+
     }
 }

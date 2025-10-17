@@ -106,10 +106,34 @@
             public const string PostIsFlaged = "Bài viết đã bị vi phạm nội dung.";
             public const string PostError = "Bài viết đã bị lỗi khi tạo.";
             public const string PostNotFound = "Bài viết không tồn tại.";
+            public const string ListNotFound = "Không tìm thấy bài viết nào.";
         }
         public struct ClubCreationRequest
         {
             public const string RecentRequestExists = "Bạn chỉ có thể gửi đơn tạo CLB 1 lần trong vòng 7 ngày.";
+            public const string RequestNotFound = "Yêu cầu tạo câu lạc bộ không tồn tại.";
+            public const string AlreadyApproved = "Yêu cầu đã được duyệt";
+        }
+        public struct Club
+        {
+            public const string ClubNotFound = "Câu lạc bộ không tồn tại.";
+        }
+        public struct ClubJoinRequest
+        {
+            public const string RequestNotFound = "Yêu cầu tham gia câu lạc bộ không tồn tại.";
+            public const string AlreadyMember = "Bạn đã là thành viên của câu lạc bộ này.";
+            public const string AlreadyPendingRequest = "Bạn đã có yêu cầu tham gia đang chờ xử lý cho câu lạc bộ này.";
+            public const string AlreadyApproved = "Yêu cầu đã được duyệt";
+            public const string NotTeacher = "Người được mời phải là giáo viên.";
+        }
+        public struct ClubMember
+        {
+            public const string NotMember = "Người dùng không phải là thành viên của câu lạc bộ này.";
+            public const string CannotRemovePresident = "Không thể xóa chủ nhiệm câu lạc bộ.";
+            public const string CannotRemoveMentor = "Không thể xóa cố vấn câu lạc bộ.";
+            public const string CannotChangeRoleOfPresident = "Không thể thay đổi vai trò của chủ nhiệm câu lạc bộ.";
+            public const string CannotChangeRoleOfMentor = "Không thể thay đổi vai trò của cố vấn câu lạc bộ.";
+            public const string InvalidRole = "Vai trò không hợp lệ.";
         }
     }
 }

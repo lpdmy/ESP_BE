@@ -30,5 +30,11 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(c => c.RequestedByUser)
                 .Where(c => !c.IsDeleted);
         }
+        public IQueryable<ClubCreationRequest> GetAllWithIncludesByUser(User user)
+        {
+            return _context.ClubCreationRequest
+                .Where(c=> c.RequestedByUserId==user.Id && !c.IsDeleted);
+        }
+
     }
 }

@@ -17,5 +17,6 @@ namespace EduShpere.Infrastructure
         Task DeleteAsync(int id);
         IQueryable<Post> GetAllPostIncluding();
         Task DeleteSoft(int id);
+        IQueryable<Post> GetAllPostIncludingByClubId(int clubid);
     }
 }

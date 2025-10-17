@@ -4,7 +4,9 @@ using System.Net.NetworkInformation;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.DTOs.PostDto;
+using EduShpere.Domain.Enum;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.AIService;
@@ -25,7 +27,8 @@ namespace EduShpere.Application.Services
         private readonly IAttachmentRepository _attachmentRepository;
         private readonly IPostHashTagRepository _hashTagRepository;
         private readonly IPostLikeRepository _postLikeRepository;
-        public PostService(IPostRepository repo, IMapper mapper, IUserRepository userRepo, IHashTagRepository hashTagRepo, Moderation moderation, IAttachmentRepository attachmentRepository, IPostHashTagRepository hashTagRepository, IPostLikeRepository postLikeRepository) {
+        private readonly IClubMemberRepository _clubMemberRepository;
+        public PostService(IPostRepository repo, IMapper mapper, IUserRepository userRepo, IHashTagRepository hashTagRepo, Moderation moderation, IAttachmentRepository attachmentRepository, IPostHashTagRepository hashTagRepository, IPostLikeRepository postLikeRepository, IClubMemberRepository clubMemberRepository) {
             _repo = repo;
             _mapper = mapper;
             _userRepo = userRepo;
@@ -34,10 +37,11 @@ namespace EduShpere.Application.Services
             _attachmentRepository = attachmentRepository;
              _hashTagRepository = hashTagRepository;
             _postLikeRepository = postLikeRepository;
+            _clubMemberRepository = clubMemberRepository;
         }
         private async Task<IEnumerable<PostResponseDto>> GetPostsCore(
     Func<IQueryable<Post>, IQueryable<Post>> filter,
-    int currentUserId,
+    int? currentUserId,
     string sortOrder = "newest")
         {
             var query = filter(_repo.GetAllPostIncluding());
@@ -74,7 +78,8 @@ namespace EduShpere.Application.Services
                 LikeCount = p.PostLikes.Count,
                 ReportCount = p.PostReports.Count,
                 CreatedAt = p.CreatedAt ?? DateTime.Now,
-                IsLikedByCurrentUser = p.PostLikes.Any(l => l.UserId == currentUserId) // ✅ dịch được sang SQL
+                AvatarUrl = p.User.AvatarUrl,
+                IsLikedByCurrentUser = p.PostLikes.Any(l => l.UserId == currentUserId) 
             }).ToListAsync();
         }
 
@@ -104,7 +109,7 @@ namespace EduShpere.Application.Services
             };
             foreach (var tag in (dto.Hashtags ?? new List<string>()).Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                var hashtag = _hashTagRepo.GetByNameAsync(tag).Result;
+                var hashtag = await _hashTagRepo.GetByNameAsync(tag);
 
                 if (hashtag == null)
                 {
@@ -291,8 +296,73 @@ namespace EduShpere.Application.Services
                 opt => opt.Items["currentUserId"] = user.Id
             );
         }
+        public async Task<IEnumerable<PostResponseDto>> GetAllPostsClub(int clubid,User user)
+        {
+            var post = await GetPostsCore(
+                posts => posts.Where(p => p.ClassGroupId == null && p.ClubId == clubid && !p.IsDeleted && p.Status == Domain.Enum.PostStatus.Approved),currentUserId:user.Id
+            );
+            if (post == null || !post.Any())
+            {
+                throw new BadRequestException(ErrorMessages.Post.ListNotFound);
+            }
+            bool isMember = await _clubMemberRepository.IsInClub(user.Id, clubid);
+            if (!isMember)
+            {
+                post = post.Where(p => p.PrivacyLevel == 0);
+            }
+            return post;
+        }
+        public async Task<PaginationResponseDto<PostResponseDto>> GetAllPostsClubPending(int clubid,
+    PaginationRequestDto paginationRequest,
+    string? search = null)
+        {
+            var query = _repo.GetAllPostIncludingByClubId(clubid).Where(p=>p.Status==PostStatus.Pending);
 
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c =>
+                    c.Title.Contains(search));
+            }
 
+            var totalCount = await query.CountAsync();
+
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<PostResponseDto>>(data);
+            var sql = query.ToQueryString();
+            return new PaginationResponseDto<PostResponseDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
+        }
+        public async Task<IEnumerable<PostResponseDto>> GetAllPostsPending(int clubid)
+        {
+            var post = await GetPostsCore(
+                posts => posts.Where(p => p.ClassGroupId == null && p.ClubId == clubid && !p.IsDeleted && p.Status == Domain.Enum.PostStatus.Pending), currentUserId: null
+            );
+
+            if (post == null || !post.Any())
+            {
+                throw new BadRequestException(ErrorMessages.Post.ListNotFound);
+            }
+
+            return post;
+        }
+        public async Task<PostResponseDto>ApprovePost(int id)
+        {
+            var post = await _repo.GetByIdAsync(id);
+            if (post == null)
+                throw new BadRequestException(ErrorMessages.Post.PostNotFound);
+            post.Status = PostStatus.Approved;
+            await _repo.UpdateAsync(post);
+            return _mapper.Map<PostResponseDto>(post);
+        }
 
     }
 }

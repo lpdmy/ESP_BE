@@ -39,6 +39,10 @@ namespace EduShpere
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
             builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             builder.Services.AddScoped<IClubCreationRepository, ClubCreationRequestRepository>();
+            builder.Services.AddScoped<IClubRepository, ClubRepository>();
+            builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
+            builder.Services.AddScoped<IClubJoinRequestRepository, ClubJoinRequestRepository>();
+            builder.Services.AddScoped<IClubCategoryRepository, ClubCategoryRepository>();
 
 
             // Add Configs
@@ -63,6 +67,9 @@ namespace EduShpere
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<ICollectionService, CollectionService>();
             builder.Services.AddScoped<IClubCreationRequestService, ClubCreationRequestService>();
+            builder.Services.AddScoped<IClubService, ClubService>();
+            builder.Services.AddScoped<IClubJoinRequestService, ClubJoinRequestService>();
+            builder.Services.AddScoped<IClubMemberService, ClubMemberService>(); 
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -76,6 +83,8 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ClubCreationRequestProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubJoinRequestProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

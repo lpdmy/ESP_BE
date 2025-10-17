@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using AutoMapper;
+using DocumentFormat.OpenXml.Bibliography;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Models;
@@ -14,11 +15,14 @@ namespace EduShpere.Application.Services
     {
         private readonly IClubCreationRepository _repo;
         private readonly IMapper _mapper;
-
-        public ClubCreationRequestService(IClubCreationRepository repo, IMapper mapper)
+        private readonly IClubRepository _clubRepo;
+        private readonly IClubMemberRepository _clubMemberRepo;
+        public ClubCreationRequestService(IClubCreationRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo)
         {
             _repo = repo;
             _mapper = mapper;
+            _clubRepo = clubRepo;
+            _clubMemberRepo = clubMemberRepo;
         }
 
         public async Task<ClubCreationResponseDto> createClubRequest(CreateClubRequestDto dto,User user)
@@ -97,6 +101,74 @@ namespace EduShpere.Application.Services
                 PageNumber = paginationRequest.PageNumber,
                 PageSize = paginationRequest.PageSize
             };
+        }
+        public async Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsyncByUser( User user,
+    PaginationRequestDto paginationRequest,
+    string? search = null)
+        {
+            var query = _repo.GetAllWithIncludesByUser(user);
+            var totalCount = await query.CountAsync();
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+            var mapped = _mapper.Map<IEnumerable<ClubCreationResponseDto>>(data);
+            return new PaginationResponseDto<ClubCreationResponseDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
+        }
+        public async Task<ClubCreationResponseDto> ApproveCreation(int id)
+        {
+            var request = await _repo.GetByIdAsync(id);
+            if (request == null)
+            {
+                throw new BadRequestException(ErrorMessages.ClubCreationRequest.RequestNotFound);
+            }
+            if (request.Status == "Approved")
+            {
+                throw new BadRequestException(ErrorMessages.ClubCreationRequest.AlreadyApproved);
+            }
+            var club = new Club
+            {
+                Name = request.ClubName,
+                Description = request.Description,
+                ShortDescription = request.ShortDescription,
+                CategoryId = request.CategoryId,
+                AvatarUrl = request.AvatarUrl,
+                CoverUrl = request.CoverUrl,
+                Requirements = request.Requirements,
+                AllowAutoJoin = request.AllowAutoJoin,
+                AllowMembersToPost = request.AllowMembersToPost,
+                ContactEmail = request.ContactEmail,
+                ContactPhone = request.ContactPhone,
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = request.RequestedByUserId,
+                PresidentUserId = request.RequestedByUserId,
+            };
+            await _clubRepo.AddAsync(club);
+
+            var ClubMember = new ClubMember
+            {
+                ClubId = club.Id,
+                UserId = request.RequestedByUserId,
+                Role = "President",
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = request.RequestedByUserId,
+                IsDeleted = false,
+            };
+            await _clubMemberRepo.AddAsync(ClubMember);
+            request.Status = "Approved";
+            await _repo.UpdateAsync(request);
+            var dto = _mapper.Map<ClubCreationResponseDto>(request);
+
+            dto.RequestedByName = $"{request.RequestedByUser?.LastName} {request.RequestedByUser?.FirstName}";
+            dto.RequestedByEmail = request.RequestedByUser?.Email;
+
+            return dto;
         }
 
     }

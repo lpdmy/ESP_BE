@@ -626,7 +626,28 @@ public partial class EduShpereDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserPoint__UserI__73852659");
         });
+        modelBuilder.Entity<Club>()
+    .HasOne(c => c.President)
+    .WithMany(u => u.PresidedClubs)
+    .HasForeignKey(c => c.PresidentUserId)
+    .OnDelete(DeleteBehavior.Restrict)
+    .IsRequired(false);
 
+        modelBuilder.Entity<Club>()
+            .HasIndex(c => c.PresidentUserId)
+            .IsUnique()
+            .HasFilter(null);
+        modelBuilder.Entity<Club>()
+    .HasOne(c => c.Mentor)
+    .WithMany(u => u.MentoredClubs)
+    .HasForeignKey(c => c.MentorUserId)
+    .OnDelete(DeleteBehavior.Restrict)
+    .IsRequired(false);
+
+        modelBuilder.Entity<Club>()
+            .HasIndex(c => c.MentorUserId)
+            .IsUnique()
+            .HasFilter(null);
         modelBuilder.Entity<PostHashtag>()
     .HasKey(ph => new { ph.PostId, ph.HashtagId });
         modelBuilder.Entity<PostMention>()

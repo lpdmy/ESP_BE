@@ -1,0 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Application.DTOs;
+using EduShpere.Domain;
+using EduShpere.Domain.Models;
+
+namespace EduShpere.Application.Services
+{
+    public interface IClubService
+    {
+        Task<PaginationResponseDto<ClubResponseDto>> GetAllAsync(User user,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+        Task<ClubResponseDto> GetClubByID(int id,User user);
+        Task<ClubResponseDto> UpdateClub(UpdateClubDto dto);
+        Task<ClubResponseDto> CreateClub(CreateClubDto dto);
+        Task<bool> DeleteClub(int id);
+        Task<IEnumerable<ClubCategory>> GetAllClubCategory();
+    }
+}

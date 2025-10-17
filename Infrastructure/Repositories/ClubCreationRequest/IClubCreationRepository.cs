@@ -17,5 +17,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task DeleteAsync(int id);
         Task<bool> HasRecentSendCreationRequest(int userid, DateTime oneWeak);
         IQueryable<ClubCreationRequest> GetAllWithIncludes();
+        IQueryable<ClubCreationRequest> GetAllWithIncludesByUser(User user);
     }
 }

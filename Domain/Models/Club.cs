@@ -35,7 +35,8 @@ public partial class Club : BaseEntity
     [StringLength(20)]
     public string? ContactPhone { get; set; }
     public byte[] RowVersion { get; set; } = null!;
-
+    public int? MentorUserId { get; set; } // Người hướng dẫn
+    public int? PresidentUserId { get; set; } // Chủ tịch CLB
 
 
     [InverseProperty("Club")]
@@ -56,4 +57,11 @@ public partial class Club : BaseEntity
 
     [InverseProperty("Club")]
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+    [ForeignKey("MentorUserId")]
+    [InverseProperty("MentoredClubs")]
+    public virtual User? Mentor { get; set; }
+
+    [ForeignKey("PresidentUserId")]
+    [InverseProperty("PresidedClubs")]
+    public virtual User? President { get; set; }
 }

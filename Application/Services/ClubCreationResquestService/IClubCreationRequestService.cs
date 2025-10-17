@@ -10,5 +10,9 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsync(
     PaginationRequestDto paginationRequest,
     string? search = null);
+        Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsyncByUser(User user,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+        Task<ClubCreationResponseDto> ApproveCreation(int id);
     }
 }
