@@ -28,6 +28,8 @@ namespace EduShpere.Application.DTOs
         public List<string> AttachmentUrls { get; set; } = new();
         public int LikeCount { get; set; }
         public int ReportCount { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public bool IsLikedByCurrentUser { get; set; } = false;
     }
 
 }

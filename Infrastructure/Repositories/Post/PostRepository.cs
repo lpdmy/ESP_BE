@@ -9,20 +9,23 @@ namespace EduShpere.Infrastructure.Repositories
         public PostRepository(EduShpereDbContext context) : base(context)
         {
         }
-        public async Task<IEnumerable<Post>> getAllPostIncluding()
+        public IQueryable<Post> GetAllPostIncluding()
         {
-            return await _dbSet
+            return _dbSet
                 .Include(p => p.Club)
                 .Include(p => p.User)
                 .Include(p => p.Attachments)
                 .Include(p => p.PostLikes)
                 .Include(p => p.PostReports)
                 .Include(p => p.Comments)
-                .Include(p => p.PostHashtags)
-                    .ThenInclude(ph => ph.Hashtag)
-                .Include(p => p.PostMentions)
-                    .ThenInclude(pm => pm.MentionedUser)
-                .ToListAsync();
+                .Include(p => p.PostHashtags).ThenInclude(ph => ph.Hashtag)
+                .Include(p => p.PostMentions).ThenInclude(pm => pm.MentionedUser);
+        }
+        public async Task DeleteSoft(int id)
+        {
+            var posts = _dbSet.Where(p => p.Id == id).FirstOrDefault();
+            posts.IsDeleted = true;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<Post>> SearchAsync(string query, int limit = 10)

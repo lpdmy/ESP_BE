@@ -107,19 +107,32 @@ namespace EduShpere.Controllers
         [HttpGet(ApiEndpoints.User.Users)]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers(
-            [FromQuery] PaginationRequestDto? paginationRequest = null,
-            [FromQuery] int? status = null)
+            [FromQuery] UserPaginationRequestDto? paginationRequest = null,
+            [FromQuery] int? status = null,
+            [FromQuery] int? role = null,
+            [FromQuery] string? sortField = null,
+            [FromQuery] string? sortDirection = null)
         {
             try
             {
                 // Set default values if paginationRequest is null
-                paginationRequest ??= new PaginationRequestDto
+                paginationRequest ??= new UserPaginationRequestDto
                 {
                     PageNumber = 1,
                     PageSize = 10
                 };
 
-                var result = await _authService.GetAllUsersAsync(paginationRequest, status);
+                // Override with query parameters if provided
+                if (status.HasValue)
+                    paginationRequest.Status = status;
+                if (role.HasValue)
+                    paginationRequest.Role = role;
+                if (!string.IsNullOrEmpty(sortField))
+                    paginationRequest.SortBy = sortField;
+                if (!string.IsNullOrEmpty(sortDirection))
+                    paginationRequest.SortDescending = sortDirection.ToLower() == "desc";
+
+                var result = await _authService.GetAllUsersAsync(paginationRequest);
 
                 return Ok(new ResponseDto<PaginationResponseDto<UserDto>>(result, "Lấy danh sách người dùng thành công",
                     (int)HttpStatusCode.OK

@@ -166,6 +166,10 @@ namespace EduShpere.Infrastructure
                     result.Append(c);
             }
             return result.ToString();
+        public async Task UpdateRangeAsync(IEnumerable<User> users)
+        {
+            _dbSet.UpdateRange(users);
+            await _context.SaveChangesAsync();
         }
 
     }
