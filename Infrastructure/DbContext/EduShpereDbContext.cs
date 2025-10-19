@@ -86,6 +86,8 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<PostMention> PostMentions { get; set; }
     public virtual DbSet<PostHashtag> PostHashtags { get; set; }
     public virtual DbSet<Hashtag> Hashtags { get; set; }
+    public virtual DbSet<SearchHistory> SearchHistories { get; set; }
+    public virtual DbSet<SearchAnalytics> SearchAnalytics { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -628,6 +630,43 @@ public partial class EduShpereDbContext : DbContext
     .HasKey(ph => new { ph.PostId, ph.HashtagId });
         modelBuilder.Entity<PostMention>()
     .HasKey(pm => new { pm.PostId, pm.MentionedUserId });
+
+        // SearchHistory configuration
+        modelBuilder.Entity<SearchHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.ResultCount).HasDefaultValue(0);
+            entity.Property(e => e.SearchedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.UserId, e.SearchedAt });
+            entity.HasIndex(e => e.Query);
+        });
+
+        // SearchAnalytics configuration
+        modelBuilder.Entity<SearchAnalytics>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.SearchCount).HasDefaultValue(1);
+            entity.Property(e => e.UniqueUsersCount).HasDefaultValue(1);
+            entity.Property(e => e.FirstSearched).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.LastSearched).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.IsTrending).HasDefaultValue(false);
+            entity.Property(e => e.TrendingScore).HasDefaultValue(0.0);
+
+            entity.HasIndex(e => new { e.Query, e.Category }).IsUnique();
+            entity.HasIndex(e => e.TrendingScore);
+            entity.HasIndex(e => e.SearchCount);
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

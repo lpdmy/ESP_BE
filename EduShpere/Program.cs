@@ -24,7 +24,11 @@ namespace EduShpere
 
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
+                options.EnableSensitiveDataLogging(false);
+                options.EnableServiceProviderCaching(false);
+            });
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
@@ -34,6 +38,15 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
+            
+            // Search repositories
+            builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchHistory.ISearchHistoryRepository, EduShpere.Infrastructure.Repositories.SearchHistory.SearchHistoryRepository>();
+            builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchAnalytics.ISearchAnalyticsRepository, EduShpere.Infrastructure.Repositories.SearchAnalytics.SearchAnalyticsRepository>();
+            // Search services
+            builder.Services.AddScoped<EduShpere.Application.Services.RankingService.IRankingService, EduShpere.Application.Services.RankingService.RankingService>();
+            // Background service for trending updates
+            builder.Services.AddHostedService<EduShpere.Infrastructure.Services.TrendingUpdateService>();
+
             builder.Services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
             builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
             builder.Services.AddScoped<IPostHashTagRepository, PostHashTagRepository>();
@@ -52,14 +65,15 @@ namespace EduShpere
             });
 
             // Register KidNet services
-            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
             builder.Services.AddScoped<IAuditService, AuditService>();
             builder.Services.AddScoped<IPaginationService, PaginationService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IPostService, PostService>();
+            builder.Services.AddScoped<EduShpere.Application.Services.SearchService.ISearchService, EduShpere.Application.Services.SearchService.SearchService>();
             builder.Services.AddScoped<ICollectionService, CollectionService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
@@ -67,6 +81,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(TeacherProfileMapping).Assembly);
             builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(EduShpere.Application.Mappings.SearchProfile).Assembly);
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
