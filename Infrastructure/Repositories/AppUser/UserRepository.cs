@@ -9,7 +9,7 @@ namespace EduShpere.Infrastructure
 {
     public class UserRepository : BaseRepository<User>, IUserRepository
     {
-        public UserRepository(EduShpereDbContext context) : base(context) { 
+        public UserRepository(EduShpereDbContext context) : base(context) {
         }
 
         public virtual async Task DeleteAsync(int id)
@@ -33,7 +33,7 @@ namespace EduShpere.Infrastructure
         }
         public async Task<bool> FindUserByEmail(string email)
         {
-          return  await _dbSet.AnyAsync(p => p.Email == email);
+            return await _dbSet.AnyAsync(p => p.Email == email);
         }
         public async Task<User?> GetUserByEmail(string email)
         {
@@ -61,12 +61,12 @@ namespace EduShpere.Infrastructure
             {
                 var trimmedQuery = query.Trim().ToLower();
                 var normalizedQuery = RemoveVietnameseAccents(trimmedQuery);
-                
+
                 // Split query into words for better matching
                 var queryWords = normalizedQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                
+
                 Console.WriteLine($"Searching users with query: '{trimmedQuery}' -> normalized: '{normalizedQuery}', words: [{string.Join(", ", queryWords)}]");
-                
+
                 // Get all users for client-side search
                 var allUsersForSearch = await _dbSet
                     .Where(u => !u.IsDeleted)
@@ -81,25 +81,25 @@ namespace EduShpere.Infrastructure
                     .Where(u => {
                         // Combine all searchable fields
                         var searchableTexts = new List<string>();
-                        
+
                         if (u.FirstName != null) {
                             searchableTexts.Add(RemoveVietnameseAccents(u.FirstName.Trim().ToLower()));
                         }
-                        
+
                         if (u.LastName != null) {
                             searchableTexts.Add(RemoveVietnameseAccents(u.LastName.Trim().ToLower()));
                         }
-                        
+
                         if (u.StudentProfile?.StudentNumber != null) {
                             searchableTexts.Add(RemoveVietnameseAccents(u.StudentProfile.StudentNumber.ToLower()));
                         }
-                        
+
                         if (u.TeacherProfile?.TeacherCode != null) {
                             searchableTexts.Add(RemoveVietnameseAccents(u.TeacherProfile.TeacherCode.ToLower()));
                         }
-                        
+
                         // Check if all query words are found in any of the searchable texts
-                        return queryWords.All(queryWord => 
+                        return queryWords.All(queryWord =>
                             searchableTexts.Any(text => text.Contains(queryWord))
                         );
                     })
@@ -109,23 +109,23 @@ namespace EduShpere.Infrastructure
                 .ToList();
 
                 Console.WriteLine($"Search for '{query}' found {users.Count} users");
-                
+
                 // Log some sample results for debugging
                 if (users.Any())
                 {
-                    var sampleResults = users.Take(3).Select(u => 
+                    var sampleResults = users.Take(3).Select(u =>
                         $"ID:{u.Id}, FirstName:'{u.FirstName}', LastName:'{u.LastName}', Email:'{u.Email}'"
                     );
                     Console.WriteLine($"Sample results: {string.Join("; ", sampleResults)}");
                 }
-                
+
                 return users;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Search failed: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                
+
                 // Fallback: Return empty list instead of all users
                 return new List<User>();
             }
@@ -166,11 +166,12 @@ namespace EduShpere.Infrastructure
                     result.Append(c);
             }
             return result.ToString();
-        public async Task UpdateRangeAsync(IEnumerable<User> users)
-        {
-            _dbSet.UpdateRange(users);
-            await _context.SaveChangesAsync();
         }
+            public async Task UpdateRangeAsync(IEnumerable<User> users)
+            {
+                _dbSet.UpdateRange(users);
+                await _context.SaveChangesAsync();
+            }
 
-    }
-}
+        }
+    } 
