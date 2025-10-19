@@ -13,5 +13,11 @@ namespace EduShpere.Infrastructure.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(h => h.Name == name);
         }
+        public async Task DeleteHashTagByPostId(int postId)
+        {
+            var hashTags = _context.Hashtags.Where(h => h.Id == postId);
+            _context.Hashtags.RemoveRange(hashTags);
+            await _context.SaveChangesAsync();
+        }
     }
 }

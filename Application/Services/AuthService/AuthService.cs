@@ -458,15 +458,22 @@ namespace EduShpere.Application
             return GenerateToken(user);
         }
 
-        public async Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(PaginationRequestDto paginationRequest, int? status = null)
+        public async Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(UserPaginationRequestDto paginationRequest)
         {
             var query = _userRepository.GetQueryable();
 
             // Add status filter
-            if (status.HasValue)
+            if (paginationRequest.Status.HasValue)
             {
-                var statusEnum = (UserStatus)status.Value;
+                var statusEnum = (UserStatus)paginationRequest.Status.Value;
                 query = query.Where(u => u.Status == statusEnum);
+            }
+
+            // Add role filter
+            if (paginationRequest.Role.HasValue)
+            {
+                var roleEnum = (UserRole)paginationRequest.Role.Value;
+                query = query.Where(u => u.Role == roleEnum);
             }
 
             // Add search functionality
@@ -483,7 +490,22 @@ namespace EduShpere.Application
                 );
             }
 
-            var pagedResult = await _paginationService.GetPagedResultAsync(query, paginationRequest);
+            // Apply custom sorting for User entity
+            if (!string.IsNullOrEmpty(paginationRequest.SortBy))
+            {
+                query = ApplyUserSorting(query, paginationRequest.SortBy, paginationRequest.SortDescending);
+            }
+
+            // Create a copy of paginationRequest without SortBy to avoid double sorting
+            var paginationRequestWithoutSort = new PaginationRequestDto
+            {
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize,
+                Search = paginationRequest.Search
+                // SortBy and SortDescending are intentionally omitted
+            };
+
+            var pagedResult = await _paginationService.GetPagedResultAsync(query, paginationRequestWithoutSort);
 
             return new PaginationResponseDto<UserDto>
             {
@@ -491,6 +513,38 @@ namespace EduShpere.Application
                 TotalCount = pagedResult.TotalCount,
                 PageNumber = pagedResult.PageNumber,
                 PageSize = pagedResult.PageSize
+            };
+        }
+
+        private IQueryable<User> ApplyUserSorting(IQueryable<User> query, string sortBy, bool sortDescending)
+        {
+            return sortBy.ToLower() switch
+            {
+                "id" => sortDescending 
+                    ? query.OrderByDescending(u => u.StudentProfile != null ? u.StudentProfile.StudentNumber : 
+                                                  u.TeacherProfile != null ? u.TeacherProfile.TeacherCode : 
+                                                  u.Email)
+                    : query.OrderBy(u => u.StudentProfile != null ? u.StudentProfile.StudentNumber : 
+                                        u.TeacherProfile != null ? u.TeacherProfile.TeacherCode : 
+                                        u.Email),
+                "name" => sortDescending 
+                    ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName)
+                    : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
+                "email" => sortDescending 
+                    ? query.OrderByDescending(u => u.Email)
+                    : query.OrderBy(u => u.Email),
+                "role" => sortDescending 
+                    ? query.OrderByDescending(u => u.Role)
+                    : query.OrderBy(u => u.Role),
+                /*"class" => sortDescending 
+                    ? query.OrderByDescending(u => u.StudentProfile != null ? u.StudentProfile.ClassGroupId : 
+                                                  u.TeacherProfile != null ? u.TeacherProfile.Position : "")
+                    : query.OrderBy(u => u.StudentProfile != null ? u.StudentProfile.ClassGroupId : 
+                                        u.TeacherProfile != null ? u.TeacherProfile.Position : ""),*/
+                "status" => sortDescending 
+                    ? query.OrderByDescending(u => u.Status)
+                    : query.OrderBy(u => u.Status),
+                _ => query.OrderBy(u => u.Id)
             };
         }
 
@@ -541,11 +595,11 @@ namespace EduShpere.Application
             // Cập nhật StudentProfile nếu là Student
             if (dto.Role == UserRole.Student)
             {
-                var profile = await _studentProfileRepository.GetStudentProfileByIdAsync(user.Id);
-                /*if (profile == null)
+                var profile = await _studentProfileRepository.GetStudentProfileByUserIdAsync(user.Id);
+                if (profile == null)
                 {
                     // Nếu chưa có thì tạo mới
-                    profile = new StudentProfile
+                    /*profile = new StudentProfile
                     {
                         UserId = user.Id,
                         StudentNumber = dto.StudentNumber ?? dto.Username,
@@ -555,24 +609,29 @@ namespace EduShpere.Application
                     };
 
                     await _studentProfileRepository.CreateStudentProfileAsync(
-                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);
+                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl, dto.ClassGroupId);*/
+                    throw new BadRequestException(ErrorMessages.UserProfile.ProfileNotFound);
                 }
-                else*/
-                profile.StudentNumber = dto.StudentNumber ?? profile.StudentNumber;
-                profile.EnrollmentYear = dto.EnrollmentYear ?? profile.EnrollmentYear;
-                //profile.Bio = dto.Bio ?? profile.Bio;
-                //profile.ExtraJson = dto.ExtraJson ?? profile.ExtraJson;
-                //profile.ClassGroupId = dto.ClassGroupId ?? profile.ClassGroupId;
+                else
+                {
+                    // Cập nhật profile hiện có
+                    profile.StudentNumber = dto.StudentNumber ?? profile.StudentNumber;
+                    profile.EnrollmentYear = dto.EnrollmentYear ?? profile.EnrollmentYear;
+                    //profile.Bio = dto.Bio ?? profile.Bio;
+                    //profile.ExtraJson = dto.ExtraJson ?? profile.ExtraJson;
+                    //profile.ClassGroupId = dto.ClassGroupId ?? profile.ClassGroupId;
 
-                await _studentProfileRepository.UpdateAsync(profile);
+                    await _studentProfileRepository.UpdateStudentProfileAsync(
+                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+                }
             }
             // Cập nhật TeacherProfile nếu là Teacher
             else if (dto.Role == UserRole.Teacher)
             {
-                var profile = await _teacherProfileRepository.GetTeacherProfileByIdAsync(user.Id);
-                /*if (profile == null)
+                var profile = await _teacherProfileRepository.GetTeacherProfileByUserIdAsync(user.Id);
+                if (profile == null)
                 {
-                    profile = new TeacherProfileEntity
+                    /*profile = new TeacherProfileEntity
                     {
                         UserId = user.Id,
                         TeacherCode = dto.TeacherCode ?? dto.Username,
@@ -583,17 +642,21 @@ namespace EduShpere.Application
                     };
 
                     await _teacherProfileRepository.CreateTeacherProfileAsync(
-                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);*/
+                    throw new BadRequestException(ErrorMessages.UserProfile.ProfileNotFound);
                 }
                 else
-                {*/
+                {
+                    // Cập nhật profile hiện có
                     profile.TeacherCode = dto.TeacherCode ?? profile.TeacherCode;
                     profile.Department = dto.Department ?? profile.Department;
                     profile.Position = dto.Position ?? profile.Position;
                     //profile.Bio = dto.Bio ?? profile.Bio;
                     //profile.ExtraJson = dto.ExtraJson ?? profile.ExtraJson;
 
-                    await _teacherProfileRepository.UpdateAsync(profile);
+                    await _teacherProfileRepository.UpdateTeacherProfileAsync(
+                        profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
+                }
             }
 
             return true;
