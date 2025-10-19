@@ -16,7 +16,7 @@ public partial class EduShpereDbContext : DbContext
         : base(options)
     {
     }
-
+    public virtual DbSet<AcademicYear> AcademicYears { get; set; }
     public virtual DbSet<Activity> Activities { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
@@ -104,6 +104,21 @@ public partial class EduShpereDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AcademicYear>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__AcademicYear__3214EC07");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            entity.HasOne(d => d.School).WithMany(p => p.AcademicYears)
+                .HasForeignKey(d => d.SchoolId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__AcademicYear__SchoolId");
+        });
+
         modelBuilder.Entity<Activity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Activiti__3214EC073E220058");
@@ -174,6 +189,11 @@ public partial class EduShpereDbContext : DbContext
             entity.Property(e => e.RowVersion)
                 .IsRowVersion()
                 .IsConcurrencyToken();
+
+            entity.HasOne(d => d.AcademicYears).WithMany(p => p.ClassGroups)
+                .HasForeignKey(d => d.AcademicYearId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ClassGroup__AcademicYearId");
         });
 
         modelBuilder.Entity<ClassGroupMember>(entity =>
