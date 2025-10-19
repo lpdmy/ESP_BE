@@ -3,11 +3,13 @@ using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Application.Services;
 using EduShpere.Application.Services.ClassGroupService;
+using EduShpere.Application.Services.StarPointService;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.AIService;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
+using EduShpere.Infrastructure.Repositories.StarPoint;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +42,10 @@ namespace EduShpere
             builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
             builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
+            builder.Services.AddScoped<IRewardRuleRepository, RewardRuleRepository>();
+            builder.Services.AddScoped<IRewardRepository, RewardRepository>();
+            builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
+            builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
@@ -61,6 +67,10 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<ICollectionService, CollectionService>();
+            builder.Services.AddScoped<IRewardRuleService, RewardRuleService>();
+            builder.Services.AddScoped<IRewardService, RewardService>();
+            builder.Services.AddScoped<IRewardRedemptionService, RewardRedemptionService>();
+            builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);

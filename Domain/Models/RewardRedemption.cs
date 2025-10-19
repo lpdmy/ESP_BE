@@ -7,22 +7,27 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public class Reward
+public class RewardRedemption
 {
     [Key]
     public int Id { get; set; }
 
-    [Required, MaxLength(200)]
-    public string Name { get; set; }
+    [ForeignKey("Reward")]
+    public int RewardId { get; set; }
 
-    public int PointCost { get; set; }
+    [ForeignKey("User")]
+    public int UserId { get; set; }
 
-    public int Stock { get; set; }
+    public DateTime RedeemedAt { get; set; } = DateTime.UtcNow;
 
-    public RewardCategory Category { get; set; } = RewardCategory.Voucher;
+    public int Quantity { get; set; } = 1;
 
-    [MaxLength(500)]
-    public string ImageUrl { get; set; }
+    public int TotalPointsSpent { get; set; }
+
+    // Navigation properties
+    public Reward Reward { get; set; }
+
+    public User User { get; set; }
 
     // Audit fields
     public int CreatedBy { get; set; }
@@ -35,8 +40,6 @@ public class Reward
 
     [Timestamp]
     public byte[] RowVersion { get; set; }
-    public bool TypeRequiresPickup()
-    {
-        return Category != RewardCategory.Avatar && Category != RewardCategory.Theme;
-    }
+    public RedemptionStatus Status { get; set; } = RedemptionStatus.Pending;
+
 }

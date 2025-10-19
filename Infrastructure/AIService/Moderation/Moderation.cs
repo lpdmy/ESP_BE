@@ -20,7 +20,8 @@ namespace EduShpere.Infrastructure.AIService
             _httpClient = new HttpClient();
             _apiKey = _config["OpenAi:ApiKey"];
             if (string.IsNullOrEmpty(_apiKey))
-                throw new Exception("❌ Không tìm thấy gpt:ApiKey trong appsettings.json");
+                return;
+                //throw new Exception("❌ Không tìm thấy gpt:ApiKey trong appsettings.json");
         }
         public async Task<ModerationResult> Moderate(ModerationRequest request)
         {

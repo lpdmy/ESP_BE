@@ -94,5 +94,27 @@
             public const string Update = "api/classgroup/{id}";
             public const string Delete = "api/classgroup/{id}";
         }
+
+        public static class StarPoint
+        {
+            public const string GetAllRules = "api/admin/rules";
+            public const string UpdateRulePoints = "api/admin/rules/{actionType}/points";
+
+            public const string GetAllRewards = "api/admin/rewards";    
+            public const string GetRewardById = "api/admin/rewards/{id}";  
+            public const string CreateReward = "api/admin/rewards"; 
+            public const string UpdateReward = "api/admin/rewards/{id}"; 
+            public const string DeleteReward = "api/admin/rewards/{id}";   
+
+            public const string RedeemReward = "api/rewards/redeem";
+            public const string GetPointHistory = "api/points/history";
+            public const string CreatePointHistory = "api/points/history";
+            public const string GetCurrentUserPoints = "api/points/current";
+
+            public const string GetAllRedemptionsAdmin = "api/redeems/admin";
+            public const string GetMyRedemptions = "api/redeems/me";
+            public const string PickupRedemption = "api/redeems/{id}/pickup";
+        }
+
     }
 }
