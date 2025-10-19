@@ -77,21 +77,21 @@ public class ClassGroupController : BaseController
         return Ok(new ResponseDto<IEnumerable<ClassGroupDto>>(result, "Lấy danh sách lớp học không có khối thành công"));
     }
 
-    [HttpGet(ApiEndpoints.ClassGroup.ByStartYear)]
+    [HttpGet(ApiEndpoints.ClassGroup.ByAcademicYear)]
     //[Authorize(Roles = "Admin,Teacher")]
-    public async Task<IActionResult> GetByStartYear(int startYear)
+    public async Task<IActionResult> GetByAcademicYear(int academicYearId)
     {
-        var filter = new ClassGroupFilterDto { StartYear = startYear };
+        var filter = new ClassGroupFilterDto { AcademicYearId = academicYearId };
         var result = await _classGroupService.GetClassesByFilterAsync(filter);
-        return Ok(new ResponseDto<IEnumerable<ClassGroupDto>>(result, "Lấy danh sách lớp học theo năm bắt đầu thành công"));
+        return Ok(new ResponseDto<IEnumerable<ClassGroupDto>>(result, "Lấy danh sách lớp học theo năm học thành công"));
     }
 
-    [HttpGet(ApiEndpoints.ClassGroup.WithoutStartYear)]
+    [HttpGet(ApiEndpoints.ClassGroup.WithoutAcademicYear)]
     //[Authorize(Roles = "Admin,Teacher")]
-    public async Task<IActionResult> GetWithoutStartYear()
+    public async Task<IActionResult> GetWithoutAcademicYear()
     {
-        var result = await _classGroupService.GetWithoutStartYearAsync();
-        return Ok(new ResponseDto<IEnumerable<ClassGroupDto>>(result, "Lấy danh sách lớp học không có năm bắt đầu thành công"));
+        var result = await _classGroupService.GetWithoutAcademicYearAsync();
+        return Ok(new ResponseDto<IEnumerable<ClassGroupDto>>(result, "Lấy danh sách lớp học không có năm học thành công"));
     }
 
     [HttpGet(ApiEndpoints.ClassGroup.Deleted)]
@@ -147,9 +147,53 @@ public class ClassGroupController : BaseController
 
     [HttpGet(ApiEndpoints.ClassGroup.CheckNameExists)]
     //[Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CheckNameExists([FromQuery] string name, [FromQuery] int? excludeId = null)
+    public async Task<IActionResult> CheckNameExists([FromQuery] string name, [FromQuery] int? grade = null, [FromQuery] int? academicYearId = null, [FromQuery] int? excludeId = null)
     {
-        var result = await _classGroupService.IsNameExistsAsync(name, excludeId);
-        return Ok(new ResponseDto<bool>(result, "Kiểm tra tên lớp học thành công"));
+        var result = await _classGroupService.IsExistsAsync(name, grade, academicYearId, excludeId);
+        return Ok(new ResponseDto<bool>(result, "Kiểm tra lớp học theo tổ hợp thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetClassGroupDetail)]
+    //[Authorize(Roles = "Admin,Teacher,Student")]
+    public async Task<IActionResult> GetDetailById(int id)
+    {
+        var result = await _classGroupService.GetDetailByIdAsync(id);
+        if (result == null)
+        {
+            return NotFound(new ResponseDto<string>(null, "Không tìm thấy lớp học", 404));
+        }
+        return Ok(new ResponseDto<ClassGroupDetailDto>(result, "Lấy thông tin chi tiết lớp học thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetStudents)]
+    //[Authorize(Roles = "Admin,Teacher")]
+    public async Task<IActionResult> GetStudents(int id)
+    {
+        var result = await _classGroupService.GetStudentsInClassAsync(id);
+        return Ok(new ResponseDto<IEnumerable<ClassGroupStudentDto>>(result, "Lấy danh sách học sinh thành công"));
+    }
+
+    [HttpPost(ApiEndpoints.ClassGroup.AddStudent)]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddStudent(int id, [FromBody] AddStudentToClassDto dto)
+    {
+        var result = await _classGroupService.AddStudentToClassAsync(id, dto);
+        if (!result.Success)
+        {
+            return BadRequest(new ResponseDto<AddStudentToClassResponseDto>(result, result.Message, 400));
+        }
+        return Ok(new ResponseDto<AddStudentToClassResponseDto>(result, result.Message));
+    }
+
+    [HttpDelete(ApiEndpoints.ClassGroup.RemoveStudent)]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> RemoveStudent(int id, int studentId)
+    {
+        var result = await _classGroupService.RemoveStudentFromClassAsync(id, studentId);
+        if (!result)
+        {
+            return BadRequest(new ResponseDto<string>(null, "Không thể xóa học sinh khỏi lớp", 400));
+        }
+        return Ok(new ResponseDto<string>(null, "Xóa học sinh khỏi lớp thành công"));
     }
 }

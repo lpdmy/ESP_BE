@@ -19,7 +19,7 @@ public partial class ClassGroup : BaseEntity
 
     public int? Grade { get; set; } 
 
-    public int? StartYear { get; set; }
+    public int? AcademicYearId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -32,6 +32,9 @@ public partial class ClassGroup : BaseEntity
     public bool IsDeleted { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;
+
+    [InverseProperty("ClassGroups")]
+    public virtual AcademicYear AcademicYears { get; set; }
 
     [InverseProperty("ClassGroup")]
     public virtual ICollection<ClassGroupMember> ClassGroupMembers { get; set; } = new List<ClassGroupMember>();

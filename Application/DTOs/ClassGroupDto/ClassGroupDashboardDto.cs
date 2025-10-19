@@ -26,6 +26,7 @@ public class ClassGroupFilterDto
 {
     public string? Name { get; set; }
     public int? Grade { get; set; }
-    public int? StartYear { get; set; }
+    public int? AcademicYearId { get; set; }
     public bool? IsDeleted { get; set; }
+    public int? AcademicStartYear { get; set; }
 }

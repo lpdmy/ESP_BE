@@ -17,6 +17,5 @@ public class UpdateClassGroupDto
     [Range(10, 12, ErrorMessage = "Khối học phải từ 10 đến 12")]
     public int? Grade { get; set; }
 
-    //[Range(2020, 2030, ErrorMessage = "Năm bắt đầu phải từ 2020 đến 2030")]
-    public int? StartYear { get; set; }
+    public int? AcademicYearId { get; set; }
 }
