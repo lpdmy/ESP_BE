@@ -64,11 +64,10 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<PostReport> PostReports { get; set; }
 
     public virtual DbSet<Reward> Rewards { get; set; }
-
-    public virtual DbSet<RewardRedemptionLog> RewardRedemptionLogs { get; set; }
-
+    public virtual DbSet<RewardRedemption> RewardRedemptions { get; set; }
+    public virtual DbSet<RewardRule> RewardRules { get; set; }
+    public virtual DbSet<PointHistory> PointHistory { get; set; }
     public virtual DbSet<School> Schools { get; set; }
-
     public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
 
     public virtual DbSet<Submission> Submissions { get; set; }
@@ -489,24 +488,6 @@ public partial class EduShpereDbContext : DbContext
                 .IsConcurrencyToken();
         });
 
-        modelBuilder.Entity<RewardRedemptionLog>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__RewardRe__3214EC0726FAC239");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            entity.HasOne(d => d.Reward).WithMany(p => p.RewardRedemptionLogs)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RewardRed__Rewar__76619304");
-
-            entity.HasOne(d => d.User).WithMany(p => p.RewardRedemptionLogs)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RewardRed__UserI__756D6ECB");
-        });
-
         modelBuilder.Entity<School>(entity =>
         {
             entity.HasKey(e => e.SchoolId).HasName("PK__Schools__3DA4675B2FE61093");
@@ -625,6 +606,15 @@ public partial class EduShpereDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserPoint__UserI__73852659");
         });
+
+        modelBuilder.Entity<Reward>()
+            .Property(r => r.RowVersion)
+            .IsRowVersion();
+
+        modelBuilder.Entity<RewardRedemption>()
+            .Property(r => r.RowVersion)
+            .IsRowVersion();
+
 
         modelBuilder.Entity<PostHashtag>()
     .HasKey(ph => new { ph.PostId, ph.HashtagId });
