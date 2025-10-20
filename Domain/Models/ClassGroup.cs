@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public partial class ClassGroup
+public partial class ClassGroup : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -14,7 +14,12 @@ public partial class ClassGroup
     [StringLength(255)]
     public string? Name { get; set; }
 
+    [StringLength(500)]
     public string? Description { get; set; }
+
+    public int? Grade { get; set; } 
+
+    public int? AcademicYearId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -27,6 +32,9 @@ public partial class ClassGroup
     public bool IsDeleted { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;
+
+    [InverseProperty("ClassGroups")]
+    public virtual AcademicYear AcademicYears { get; set; }
 
     [InverseProperty("ClassGroup")]
     public virtual ICollection<ClassGroupMember> ClassGroupMembers { get; set; } = new List<ClassGroupMember>();

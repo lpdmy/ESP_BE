@@ -120,5 +120,50 @@
             public const string GetCommentsByComment = "api/comment/comment/{id}";
             public const string DeleteComment = "api/comment/{id}";
         }
+        public static class ClassGroup
+        {
+            public const string ClassGroups = "api/classgroup";
+            public const string GetClassGroupById = "api/classgroup/{id}";
+            public const string GetClassGroupDetail = "api/classgroup/{id}/detail";
+            public const string GetByName = "api/classgroup/by-name";
+            public const string Dashboard = "api/classgroup/dashboard";
+            public const string ByGrade = "api/classgroup/by-grade/{grade}";
+            public const string WithoutGrade = "api/classgroup/without-grade";
+            public const string ByAcademicYear = "api/classgroup/by-academic-year/{academicYearId}";
+            public const string WithoutAcademicYear = "api/classgroup/without-academic-year";
+            public const string Deleted = "api/classgroup/deleted";
+            public const string Filter = "api/classgroup/filter";
+            public const string CheckNameExists = "api/classgroup/check-name-exists";
+            public const string Create = "api/classgroup";
+            public const string Update = "api/classgroup/{id}";
+            public const string Delete = "api/classgroup/{id}";
+            
+            // Student management endpoints
+            public const string GetStudents = "api/classgroup/{id}/students";
+            public const string AddStudent = "api/classgroup/{id}/students";
+            public const string RemoveStudent = "api/classgroup/{id}/students/{studentId}";
+        }
+
+        public static class StarPoint
+        {
+            public const string GetAllRules = "api/admin/rules";
+            public const string UpdateRulePoints = "api/admin/rules/{actionType}/points";
+
+            public const string GetAllRewards = "api/admin/rewards";    
+            public const string GetRewardById = "api/admin/rewards/{id}";  
+            public const string CreateReward = "api/admin/rewards"; 
+            public const string UpdateReward = "api/admin/rewards/{id}"; 
+            public const string DeleteReward = "api/admin/rewards/{id}";   
+
+            public const string RedeemReward = "api/rewards/redeem";
+            public const string GetPointHistory = "api/points/history";
+            public const string CreatePointHistory = "api/points/history";
+            public const string GetCurrentUserPoints = "api/points/current";
+
+            public const string GetAllRedemptionsAdmin = "api/redeems/admin";
+            public const string GetMyRedemptions = "api/redeems/me";
+            public const string PickupRedemption = "api/redeems/{id}/pickup";
+        }
+
     }
 }

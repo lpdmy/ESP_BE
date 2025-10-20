@@ -16,5 +16,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task DeleteAsync(int id);
         Task AddRangeAsync(IEnumerable<Activity> Activity);
         Task<Activity?> GetByIdWithIncludesAsync(int id);
+        Task<IEnumerable<Activity>> SearchAsync(string query, int limit = 10);
     }
 }

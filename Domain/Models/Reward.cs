@@ -2,39 +2,41 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EduShpere.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-public partial class Reward
+public class Reward
 {
     [Key]
     public int Id { get; set; }
 
-    [StringLength(255)]
-    public string? Title { get; set; }
+    [Required, MaxLength(200)]
+    public string Name { get; set; }
 
-    public string? Description { get; set; }
+    public int PointCost { get; set; }
 
-    public int? PointsCost { get; set; }
+    public int Stock { get; set; }
 
-    [StringLength(50)]
-    public string? RewardType { get; set; }
+    public RewardCategory Category { get; set; } = RewardCategory.Voucher;
 
-    public string? Metadata { get; set; }
+    [MaxLength(500)]
+    public string ImageUrl { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
+    // Audit fields
+    public int CreatedBy { get; set; }
 
     public int? UpdatedBy { get; set; }
 
-    public bool IsDeleted { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public byte[] RowVersion { get; set; } = null!;
+    public DateTime? UpdatedAt { get; set; }
 
-    [InverseProperty("Reward")]
-    public virtual ICollection<RewardRedemptionLog> RewardRedemptionLogs { get; set; } = new List<RewardRedemptionLog>();
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
+    public bool TypeRequiresPickup()
+    {
+        return Category != RewardCategory.Avatar && Category != RewardCategory.Theme;
+    }
 }

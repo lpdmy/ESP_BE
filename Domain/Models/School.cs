@@ -28,4 +28,7 @@ public partial class School
 
     [InverseProperty("School")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+
+    [InverseProperty("School")]
+    public virtual ICollection<AcademicYear> AcademicYears { get; set; } = new List<AcademicYear>();
 }

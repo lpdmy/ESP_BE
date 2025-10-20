@@ -17,7 +17,7 @@ public partial class EduShpereDbContext : DbContext
         : base(options)
     {
     }
-
+    public virtual DbSet<AcademicYear> AcademicYears { get; set; }
     public virtual DbSet<Activity> Activities { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
@@ -65,11 +65,10 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<PostReport> PostReports { get; set; }
 
     public virtual DbSet<Reward> Rewards { get; set; }
-
-    public virtual DbSet<RewardRedemptionLog> RewardRedemptionLogs { get; set; }
-
+    public virtual DbSet<RewardRedemption> RewardRedemptions { get; set; }
+    public virtual DbSet<RewardRule> RewardRules { get; set; }
+    public virtual DbSet<PointHistory> PointHistory { get; set; }
     public virtual DbSet<School> Schools { get; set; }
-
     public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
 
     public virtual DbSet<Submission> Submissions { get; set; }
@@ -90,6 +89,8 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<ClubCategory> ClubCategory { get; set; }
     public virtual DbSet<ClubCreationRequest> ClubCreationRequest { get; set; }
 
+    public virtual DbSet<SearchHistory> SearchHistories { get; set; }
+    public virtual DbSet<SearchAnalytics> SearchAnalytics { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -106,6 +107,21 @@ public partial class EduShpereDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AcademicYear>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__AcademicYear__3214EC07");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            entity.HasOne(d => d.School).WithMany(p => p.AcademicYears)
+                .HasForeignKey(d => d.SchoolId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__AcademicYear__SchoolId");
+        });
+
         modelBuilder.Entity<Activity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Activiti__3214EC073E220058");
@@ -176,6 +192,11 @@ public partial class EduShpereDbContext : DbContext
             entity.Property(e => e.RowVersion)
                 .IsRowVersion()
                 .IsConcurrencyToken();
+
+            entity.HasOne(d => d.AcademicYears).WithMany(p => p.ClassGroups)
+                .HasForeignKey(d => d.AcademicYearId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ClassGroup__AcademicYearId");
         });
 
         modelBuilder.Entity<ClassGroupMember>(entity =>
@@ -490,24 +511,6 @@ public partial class EduShpereDbContext : DbContext
                 .IsConcurrencyToken();
         });
 
-        modelBuilder.Entity<RewardRedemptionLog>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__RewardRe__3214EC0726FAC239");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            entity.HasOne(d => d.Reward).WithMany(p => p.RewardRedemptionLogs)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RewardRed__Rewar__76619304");
-
-            entity.HasOne(d => d.User).WithMany(p => p.RewardRedemptionLogs)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RewardRed__UserI__756D6ECB");
-        });
-
         modelBuilder.Entity<School>(entity =>
         {
             entity.HasKey(e => e.SchoolId).HasName("PK__Schools__3DA4675B2FE61093");
@@ -648,10 +651,57 @@ public partial class EduShpereDbContext : DbContext
             .HasIndex(c => c.MentorUserId)
             .IsUnique()
             .HasFilter(null);
+
+        modelBuilder.Entity<Reward>()
+            .Property(r => r.RowVersion)
+            .IsRowVersion();
+
+        modelBuilder.Entity<RewardRedemption>()
+            .Property(r => r.RowVersion)
+            .IsRowVersion();
+
+
         modelBuilder.Entity<PostHashtag>()
     .HasKey(ph => new { ph.PostId, ph.HashtagId });
         modelBuilder.Entity<PostMention>()
     .HasKey(pm => new { pm.PostId, pm.MentionedUserId });
+
+        // SearchHistory configuration
+        modelBuilder.Entity<SearchHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.ResultCount).HasDefaultValue(0);
+            entity.Property(e => e.SearchedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.UserId, e.SearchedAt });
+            entity.HasIndex(e => e.Query);
+        });
+
+        // SearchAnalytics configuration
+        modelBuilder.Entity<SearchAnalytics>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.SearchCount).HasDefaultValue(1);
+            entity.Property(e => e.UniqueUsersCount).HasDefaultValue(1);
+            entity.Property(e => e.FirstSearched).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.LastSearched).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.IsTrending).HasDefaultValue(false);
+            entity.Property(e => e.TrendingScore).HasDefaultValue(0.0);
+
+            entity.HasIndex(e => new { e.Query, e.Category }).IsUnique();
+            entity.HasIndex(e => e.TrendingScore);
+            entity.HasIndex(e => e.SearchCount);
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

@@ -113,7 +113,7 @@ public partial class User : BaseEntity
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 
     [InverseProperty("User")]
-    public virtual ICollection<RewardRedemptionLog> RewardRedemptionLogs { get; set; } = new List<RewardRedemptionLog>();
+    public virtual ICollection<RewardRedemption> RewardRedemptionLogs { get; set; } = new List<RewardRedemption>();
 
     [ForeignKey("SchoolId")]
     [InverseProperty("Users")]

@@ -19,6 +19,8 @@ namespace EduShpere.Controllers
         private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
 
+        private const string SystemErrorMessage = "Lỗi hệ thống. Vui lòng liên hệ quản trị viên (Admin IT) để được hỗ trợ.";
+
         public AuthController(IAuthService authService, IEmailService emailService)
         {
             _authService = authService;
@@ -70,6 +72,7 @@ namespace EduShpere.Controllers
                 Description = "This is a test endpoint to verify that the API is operational."
             }, "API hoạt động bình thường"));
         }
+
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
         //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
@@ -79,9 +82,9 @@ namespace EduShpere.Controllers
                 var result = await _authService.CreateUserAndGenerateOtlAsync(dto);
                 return Ok(new ResponseDto<bool>(result, "Tạo người dùng thành công"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -90,7 +93,7 @@ namespace EduShpere.Controllers
         {
             if (!env.IsDevelopment())
             {
-                return NotFound(); // hoặc Forbidden
+                return NotFound();
             }
 
             try
@@ -98,9 +101,9 @@ namespace EduShpere.Controllers
                 var result = await _authService.CreateUserAndReturnTokenAsync(dto);
                 return Ok(new ResponseDto<TokenModel>(result, "Tạo người dùng thành công - Development Mode"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -115,14 +118,12 @@ namespace EduShpere.Controllers
         {
             try
             {
-                // Set default values if paginationRequest is null
                 paginationRequest ??= new UserPaginationRequestDto
                 {
                     PageNumber = 1,
                     PageSize = 10
                 };
 
-                // Override with query parameters if provided
                 if (status.HasValue)
                     paginationRequest.Status = status;
                 if (role.HasValue)
@@ -138,12 +139,11 @@ namespace EduShpere.Controllers
                     (int)HttpStatusCode.OK
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new ResponseDto<string>(null, $"Internal Server Error: {ex.Message}", 500));
+                return StatusCode(500, new ResponseDto<string>(null, SystemErrorMessage, 500));
             }
         }
-
 
         [HttpPut(ApiEndpoints.User.Users)]
         //[Authorize(Roles = "Admin")]
@@ -154,12 +154,11 @@ namespace EduShpere.Controllers
                 var result = await _authService.UpdateUserAsync(dto);
                 return Ok(new ResponseDto<bool>(result, "Chỉnh sửa thông tin người dùng thành công"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
-
 
         [HttpGet(ApiEndpoints.Auth.OneTimeLogin)]
         public async Task<IActionResult> OneTimeLogin([FromQuery] string token)
@@ -169,9 +168,9 @@ namespace EduShpere.Controllers
                 var fullName = await _authService.OneTimeLoginAsync(token);
                 return Ok(new ResponseDto<string>(fullName));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -193,7 +192,7 @@ namespace EduShpere.Controllers
             }
             catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -210,7 +209,10 @@ namespace EduShpere.Controllers
             {
                 return BadRequest(new ResponseDto<string>(null, ex.Message, 400));
             }
-
+            catch (Exception)
+            {
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
+            }
         }
 
         [HttpPost(ApiEndpoints.Auth.ForgotPassword)]
@@ -227,7 +229,7 @@ namespace EduShpere.Controllers
             }
             catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -244,9 +246,9 @@ namespace EduShpere.Controllers
             {
                 return NotFound(new ResponseDto<string>(null, ErrorMessages.Auth.UserNotFound, 404));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -259,9 +261,9 @@ namespace EduShpere.Controllers
                 var statistics = await _authService.GetUserStatisticsAsync();
                 return Ok(new ResponseDto<UserStatisticsDto>(statistics, "Lấy thống kê người dùng thành công"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
     }
