@@ -20,5 +20,6 @@ namespace EduShpere.Infrastructure
         Task<Dictionary<int, (int LikesCount, int CommentsCount)>> GetPostEngagementStatsAsync(IEnumerable<int> postIds);
         IQueryable<Post> GetAllPostIncluding();
         Task DeleteSoft(int id);
+        IQueryable<Post> GetAllPostIncludingByClubId(int clubid);
     }
 }

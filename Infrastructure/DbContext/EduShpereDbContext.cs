@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -85,6 +86,9 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<PostMention> PostMentions { get; set; }
     public virtual DbSet<PostHashtag> PostHashtags { get; set; }
     public virtual DbSet<Hashtag> Hashtags { get; set; }
+    public virtual DbSet<ClubCategory> ClubCategory { get; set; }
+    public virtual DbSet<ClubCreationRequest> ClubCreationRequest { get; set; }
+
     public virtual DbSet<SearchHistory> SearchHistories { get; set; }
     public virtual DbSet<SearchAnalytics> SearchAnalytics { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -625,6 +629,28 @@ public partial class EduShpereDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserPoint__UserI__73852659");
         });
+        modelBuilder.Entity<Club>()
+    .HasOne(c => c.President)
+    .WithMany(u => u.PresidedClubs)
+    .HasForeignKey(c => c.PresidentUserId)
+    .OnDelete(DeleteBehavior.Restrict)
+    .IsRequired(false);
+
+        modelBuilder.Entity<Club>()
+            .HasIndex(c => c.PresidentUserId)
+            .IsUnique()
+            .HasFilter(null);
+        modelBuilder.Entity<Club>()
+    .HasOne(c => c.Mentor)
+    .WithMany(u => u.MentoredClubs)
+    .HasForeignKey(c => c.MentorUserId)
+    .OnDelete(DeleteBehavior.Restrict)
+    .IsRequired(false);
+
+        modelBuilder.Entity<Club>()
+            .HasIndex(c => c.MentorUserId)
+            .IsUnique()
+            .HasFilter(null);
 
         modelBuilder.Entity<Reward>()
             .Property(r => r.RowVersion)

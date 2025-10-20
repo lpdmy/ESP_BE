@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EduShpere.Shared;
 using Microsoft.Data.SqlClient;
+using EduShpere.Application.DTOs.CommonDto;
 
 namespace EduShpere.Controllers
 {
@@ -97,6 +98,60 @@ namespace EduShpere.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { message = ex.Message });
+            }
+        }
+        [HttpGet(ApiEndpoints.Post.ClubPending)]
+        public async Task<IActionResult> GetAllPostByClubPending(int clubid, [FromQuery]PaginationRequestDto paginationRequestDto)
+        {
+            try
+            {
+                var result = await _postService.GetAllPostsClubPending(clubid, paginationRequestDto);
+                return Ok(new ResponseDto<PaginationResponseDto<PostResponseDto>>(result, "Lấy danh sách bài viết của câu lạc bộ thành công", 200));
+            }
+            catch(BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
+            }
+            
+        }
+        [HttpGet(ApiEndpoints.Post.Club)]
+        public async Task<IActionResult> GetAllPostByClub(int clubid)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            try
+            {
+                var result = await _postService.GetAllPostsClub(clubid, user);
+                return Ok(new ResponseDto<IEnumerable<PostResponseDto>>(result, "Lấy danh sách bài viết của câu lạc bộ thành công", 200));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
+            }
+        }
+        [HttpPut(ApiEndpoints.Post.ApprovePost)]
+        public async Task<IActionResult> ApprovePost(int id)
+        {
+            try
+            {
+                var result = await _postService.ApprovePost(id);
+                return Ok(new ResponseDto<PostResponseDto>(result, "Duyệt bài viết thành công", 200));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
+            }
+        }
+        [HttpPut(ApiEndpoints.Post.RejectPost)]
+        public async Task<IActionResult> RejectPost(int id)
+        {
+            try
+            {
+                var result = await _postService.RejectPost(id);
+                return Ok(new ResponseDto<PostResponseDto>(result, "Từ chối duyệt bài viết thành công", 200));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
             }
         }
     }

@@ -55,6 +55,14 @@ namespace EduShpere
             builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
             builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
+            builder.Services.AddScoped<IClubCreationRepository, ClubCreationRequestRepository>();
+            builder.Services.AddScoped<IClubRepository, ClubRepository>();
+            builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
+            builder.Services.AddScoped<IClubJoinRequestRepository, ClubJoinRequestRepository>();
+            builder.Services.AddScoped<IClubCategoryRepository, ClubCategoryRepository>();
+            builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
+
             builder.Services.AddScoped<IRewardRuleRepository, RewardRuleRepository>();
             builder.Services.AddScoped<IRewardRepository, RewardRepository>();
             builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
@@ -81,6 +89,11 @@ namespace EduShpere
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<EduShpere.Application.Services.SearchService.ISearchService, EduShpere.Application.Services.SearchService.SearchService>();
             builder.Services.AddScoped<ICollectionService, CollectionService>();
+            builder.Services.AddScoped<IClubCreationRequestService, ClubCreationRequestService>();
+            builder.Services.AddScoped<IClubService, ClubService>();
+            builder.Services.AddScoped<IClubJoinRequestService, ClubJoinRequestService>();
+            builder.Services.AddScoped<IClubMemberService, ClubMemberService>(); 
+            builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<IRewardRuleService, RewardRuleService>();
             builder.Services.AddScoped<IRewardService, RewardService>();
             builder.Services.AddScoped<IRewardRedemptionService, RewardRedemptionService>();
@@ -101,6 +114,10 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubCreationRequestProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubJoinRequestProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(CommentProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
