@@ -182,19 +182,18 @@ public class ClassGroupRepository : IClassGroupRepository
 
     public async Task<bool> AddStudentToClassAsync(int classGroupId, int studentId)
     {
-        // Check if student is already in class
+
         var existingMember = await _context.ClassGroupMembers
             .FirstOrDefaultAsync(m => m.ClassGroupId == classGroupId && m.UserId == studentId && !m.IsDeleted);
 
         if (existingMember != null)
-            return false; // Student already in class
+            return false; 
 
-        // Check if student exists and is a student
         var student = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == studentId && u.Role == UserRole.Student && !u.IsDeleted);
 
         if (student == null)
-            return false; // Student not found or not a student
+            return false;
 
         var member = new ClassGroupMember
         {
@@ -256,7 +255,6 @@ public class ClassGroupRepository : IClassGroupRepository
 
     public async Task<ClassGroup?> GetStudentCurrentClassInSameAcademicYearAsync(int studentId, int academicYearId)
     {
-        // Get all classes the student is currently in with the same academic year (regardless of grade)
         return await _context.ClassGroupMembers
             .Where(m => m.UserId == studentId && !m.IsDeleted)
             .Include(m => m.ClassGroup)
@@ -269,17 +267,14 @@ public class ClassGroupRepository : IClassGroupRepository
 
     public async Task<bool> AddStudentToClassByEmailAsync(int classGroupId, string email)
     {
-        // Find student by email
         var student = await GetStudentByEmailAsync(email);
         if (student == null)
-            return false; // Student not found
+            return false; 
 
-        // Check if student is already in any class
         var currentClass = await GetStudentCurrentClassAsync(student.Id);
         if (currentClass != null)
-            return false; // Student already in a class
+            return false; 
 
-        // Add student to the specified class
         return await AddStudentToClassAsync(classGroupId, student.Id);
     }
 

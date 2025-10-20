@@ -78,14 +78,12 @@ public class ClassGroupService : IClassGroupService
 
     public async Task<ClassGroupDashboardDto> GetDashboardDataAsync(int? academicYearId = null)
     {
-        // Get all classes with members, optionally filtered by academic year
         var allClasses = await _repository.GetAllAsync();
         var allClassesIncludingDeleted = await _repository.GetByFilterAsync(isDeleted: null);
         
         Console.WriteLine($"GetDashboardDataAsync called with academicYearId: {academicYearId}");
         Console.WriteLine($"Total classes before filter: {allClasses.Count()}");
         
-        // Filter by academic year if specified
         if (academicYearId.HasValue)
         {
             allClasses = allClasses.Where(c => c.AcademicYearId == academicYearId.Value);
@@ -93,7 +91,6 @@ public class ClassGroupService : IClassGroupService
             Console.WriteLine($"Total classes after filter by academicYearId {academicYearId}: {allClasses.Count()}");
         }
 
-        // Calculate statistics
         var statistics = new ClassGroupStatisticsDto
         {
             TotalClasses = allClasses.Count(),
@@ -104,7 +101,6 @@ public class ClassGroupService : IClassGroupService
         
         Console.WriteLine($"Statistics calculated: TotalClasses={statistics.TotalClasses}, TotalStudents={statistics.TotalStudents}, TotalTeachers={statistics.TotalTeachers}");
 
-        // Group by grade
         var classesByGrade = allClasses
             .GroupBy(c => c.Grade)
             .Select(g => new ClassGroupByGradeDto
@@ -139,7 +135,6 @@ public class ClassGroupService : IClassGroupService
 
     public async Task<ClassGroupDto> CreateAsync(CreateClassGroupDto dto)
     {
-        // Kiểm tra tồn tại theo tổ hợp Name + Grade + AcademicYearId
         if (!string.IsNullOrEmpty(dto.Name) && await _repository.IsExistsAsync(dto.Name, dto.Grade, dto.AcademicYearId))
         {
             throw new BadRequestException(ErrorMessages.ClassGroup.NameAlreadyExists);
@@ -147,7 +142,6 @@ public class ClassGroupService : IClassGroupService
 
         var classGroup = _mapper.Map<ClassGroup>(dto);
         
-        // Set audit fields
         _auditService.SetAuditFieldsForCreate(classGroup);
         
         await _repository.AddAsync(classGroup);
@@ -163,7 +157,6 @@ public class ClassGroupService : IClassGroupService
             throw new NotFoundException(ErrorMessages.ClassGroup.NotFound);
         }
 
-        // Kiểm tra tồn tại theo tổ hợp Name + Grade + AcademicYearId (trừ chính nó)
         if (!string.IsNullOrEmpty(dto.Name) && 
             await _repository.IsExistsAsync(dto.Name, dto.Grade, dto.AcademicYearId, dto.Id))
         {
@@ -172,7 +165,6 @@ public class ClassGroupService : IClassGroupService
 
         _mapper.Map(dto, classGroup);
         
-        // Set audit fields
         _auditService.SetAuditFieldsForUpdate(classGroup);
         
         await _repository.UpdateAsync(classGroup);
@@ -212,7 +204,6 @@ public class ClassGroupService : IClassGroupService
             isDeleted: filter.IsDeleted
         );
 
-        // Natural sort: by Grade, then alpha prefix then numeric suffix, then name fallback
         (string alpha, int number) SplitNameParts(string? name)
         {
             if (string.IsNullOrWhiteSpace(name)) return (string.Empty, 0);
@@ -295,7 +286,6 @@ public class ClassGroupService : IClassGroupService
 
     public async Task<AddStudentToClassResponseDto> AddStudentToClassAsync(int classGroupId, AddStudentToClassDto dto)
     {
-        // Get the target class to determine academic year
         var targetClass = await _repository.GetByIdAsync(classGroupId);
         if (targetClass == null)
         {
@@ -306,7 +296,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Find student by email
         var student = await _repository.GetStudentByEmailAsync(dto.Email);
         if (student == null)
         {
@@ -317,7 +306,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Check if student is already in this specific class
         var isAlreadyInClass = await _repository.IsStudentInClassAsync(classGroupId, student.Id);
         if (isAlreadyInClass)
         {
@@ -328,7 +316,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Check if student is already in another class of the same academic year (regardless of grade)
         if (targetClass.AcademicYearId.HasValue)
         {
             var currentClassInSameAcademicYear = await _repository.GetStudentCurrentClassInSameAcademicYearAsync(student.Id, targetClass.AcademicYearId.Value);
@@ -344,7 +331,6 @@ public class ClassGroupService : IClassGroupService
             }
         }
 
-        // Add student to class
         var result = await _repository.AddStudentToClassAsync(classGroupId, student.Id);
         if (result)
         {
@@ -384,7 +370,6 @@ public class ClassGroupService : IClassGroupService
 
     public async Task<AssignHomeroomTeacherResponseDto> AssignHomeroomTeacherAsync(int classGroupId, AssignHomeroomTeacherDto dto)
     {
-        // Get the target class to determine academic year
         var targetClass = await _repository.GetByIdAsync(classGroupId);
         if (targetClass == null)
         {
@@ -395,7 +380,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Find teacher by email
         var teacher = await _repository.GetTeacherByEmailAsync(dto.Email);
         if (teacher == null)
         {
@@ -406,7 +390,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Check if teacher is already homeroom teacher of another class in the same academic year
         if (targetClass.AcademicYearId.HasValue)
         {
             var currentClassInSameAcademicYear = await _repository.GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(teacher.Id, targetClass.AcademicYearId.Value);
@@ -422,7 +405,6 @@ public class ClassGroupService : IClassGroupService
             }
         }
 
-        // Assign teacher as homeroom teacher
         var result = await _repository.AssignHomeroomTeacherAsync(classGroupId, teacher.Id);
         if (result)
         {
