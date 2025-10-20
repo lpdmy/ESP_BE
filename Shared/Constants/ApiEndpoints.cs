@@ -99,6 +99,14 @@
             public const string GetStudents = "api/classgroup/{id}/students";
             public const string AddStudent = "api/classgroup/{id}/students";
             public const string RemoveStudent = "api/classgroup/{id}/students/{studentId}";
+            
+            // Homeroom Teacher management endpoints
+            public const string AssignHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string RemoveHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string GetHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            
+            // Academic Year endpoints
+            public const string GetAcademicYears = "api/classgroup/academic-years";
         }
     }
 }

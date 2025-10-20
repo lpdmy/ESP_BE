@@ -1,3 +1,4 @@
+using EduShpere.Application.DTOs.AuthDto;
 using EduShpere.Application.DTOs.ClassGroupDto;
 using EduShpere.Application.DTOs.CommonDto;
 
@@ -9,7 +10,7 @@ public interface IClassGroupService
     Task<ClassGroupDto?> GetByIdAsync(int id);
     Task<ClassGroupDetailDto?> GetDetailByIdAsync(int id);
     Task<ClassGroupDto?> GetByNameAsync(string name);
-    Task<ClassGroupDashboardDto> GetDashboardDataAsync();
+    Task<ClassGroupDashboardDto> GetDashboardDataAsync(int? academicYearId = null);
     Task<ClassGroupDto> CreateAsync(CreateClassGroupDto dto);
     Task<ClassGroupDto> UpdateAsync(UpdateClassGroupDto dto);
     Task<bool> DeleteAsync(int id);
@@ -23,4 +24,12 @@ public interface IClassGroupService
     Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId);
     Task<AddStudentToClassResponseDto> AddStudentToClassAsync(int classGroupId, AddStudentToClassDto dto);
     Task<bool> RemoveStudentFromClassAsync(int classGroupId, int studentId);
+    
+    // Academic Year methods
+    Task<IEnumerable<AcademicYearDto>> GetAllAcademicYearsAsync();
+    
+    // Homeroom Teacher management methods
+    Task<AssignHomeroomTeacherResponseDto> AssignHomeroomTeacherAsync(int classGroupId, AssignHomeroomTeacherDto dto);
+    Task<bool> RemoveHomeroomTeacherAsync(int classGroupId);
+    Task<UserDto?> GetHomeroomTeacherAsync(int classGroupId);
 }

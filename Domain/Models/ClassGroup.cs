@@ -20,6 +20,7 @@ public partial class ClassGroup : BaseEntity
     public int? Grade { get; set; } 
 
     public int? AcademicYearId { get; set; }
+    public int? TeacherId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -35,6 +36,10 @@ public partial class ClassGroup : BaseEntity
 
     [InverseProperty("ClassGroups")]
     public virtual AcademicYear AcademicYears { get; set; }
+
+    [ForeignKey("TeacherId")]
+    [InverseProperty("ClassGroups")]
+    public virtual User? Teacher { get; set; }
 
     [InverseProperty("ClassGroup")]
     public virtual ICollection<ClassGroupMember> ClassGroupMembers { get; set; } = new List<ClassGroupMember>();

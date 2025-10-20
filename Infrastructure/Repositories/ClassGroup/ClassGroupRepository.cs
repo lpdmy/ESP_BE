@@ -1,5 +1,6 @@
 using EduShpere.Domain;
 using EduShpere.Domain.Models;
+using EduShpere.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Infrastructure;
@@ -18,7 +19,12 @@ public class ClassGroupRepository : IClassGroupRepository
     // Basic CRUD operations
     public async Task<IEnumerable<ClassGroup>> GetAllAsync()
     {
-        return await _dbSet.Where(c => !c.IsDeleted).ToListAsync();
+        return await _dbSet
+            .Where(c => !c.IsDeleted)
+            .Include(c => c.ClassGroupMembers.Where(m => !m.IsDeleted))
+            .Include(c => c.Teacher)
+            .Include(c => c.AcademicYears)
+            .ToListAsync();
     }
 
     public async Task<ClassGroup?> GetByIdAsync(int id)
@@ -49,7 +55,7 @@ public class ClassGroupRepository : IClassGroupRepository
         var entity = await GetByIdAsync(id);
         if (entity != null)
         {
-            entity.IsDeleted = true; // Soft delete
+            entity.IsDeleted = true;
             await UpdateAsync(entity);
         }
     }
@@ -135,6 +141,7 @@ public class ClassGroupRepository : IClassGroupRepository
 
         return await query
             .Include(c => c.ClassGroupMembers.Where(m => !m.IsDeleted))
+            .Include(c => c.Teacher)
             .Include(c => c.AcademicYears)
             .OrderBy(c => c.Grade)
             .ThenBy(c => c.Name)
@@ -222,18 +229,6 @@ public class ClassGroupRepository : IClassGroupRepository
             .AnyAsync(m => m.ClassGroupId == classGroupId && m.UserId == studentId && !m.IsDeleted);
     }
 
-    public async Task<User?> GetHomeroomTeacherAsync(int classGroupId)
-    {
-        // For now, we'll return the first teacher found in the class
-        // In a real scenario, you might have a specific field for homeroom teacher
-        return await _context.ClassGroupMembers
-            .Where(m => m.ClassGroupId == classGroupId && !m.IsDeleted)
-            .Include(m => m.User)
-            .Select(m => m.User)
-            .Where(u => u.Role == UserRole.Teacher)
-            .FirstOrDefaultAsync();
-    }
-
     public async Task<User?> GetStudentByEmailAsync(string email)
     {
         return await _context.Users
@@ -259,14 +254,13 @@ public class ClassGroupRepository : IClassGroupRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<ClassGroup?> GetStudentCurrentClassInSameGradeAndAcademicYearAsync(int studentId, int grade, int academicYearId)
+    public async Task<ClassGroup?> GetStudentCurrentClassInSameAcademicYearAsync(int studentId, int academicYearId)
     {
-        // Get all classes the student is currently in with the same grade AND same academic year
+        // Get all classes the student is currently in with the same academic year (regardless of grade)
         return await _context.ClassGroupMembers
             .Where(m => m.UserId == studentId && !m.IsDeleted)
             .Include(m => m.ClassGroup)
-            .Where(m => m.ClassGroup.Grade == grade && 
-                       m.ClassGroup.AcademicYearId == academicYearId && 
+            .Where(m => m.ClassGroup.AcademicYearId == academicYearId && 
                        !m.ClassGroup.IsDeleted)
             .Select(m => m.ClassGroup)
             .FirstOrDefaultAsync();
@@ -287,5 +281,59 @@ public class ClassGroupRepository : IClassGroupRepository
 
         // Add student to the specified class
         return await AddStudentToClassAsync(classGroupId, student.Id);
+    }
+
+    public async Task<IEnumerable<AcademicYear>> GetAllAcademicYearsAsync()
+    {
+        return await _context.AcademicYears
+            .OrderByDescending(ay => ay.StartDate)
+            .ToListAsync();
+    }
+
+    public async Task<User?> GetTeacherByEmailAsync(string email)
+    {
+        return await _context.Users
+            .Where(u => u.Email == email && u.Role == UserRole.Teacher)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> AssignHomeroomTeacherAsync(int classGroupId, int teacherId)
+    {
+        var classGroup = await _context.ClassGroups.FindAsync(classGroupId);
+        if (classGroup == null)
+            return false;
+
+        classGroup.TeacherId = teacherId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveHomeroomTeacherAsync(int classGroupId)
+    {
+        var classGroup = await _context.ClassGroups.FindAsync(classGroupId);
+        if (classGroup == null)
+            return false;
+
+        classGroup.TeacherId = null;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<User?> GetHomeroomTeacherAsync(int classGroupId)
+    {
+        return await _context.ClassGroups
+            .Where(cg => cg.Id == classGroupId && !cg.IsDeleted)
+            .Include(cg => cg.Teacher)
+            .Select(cg => cg.Teacher)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<ClassGroup?> GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(int teacherId, int academicYearId)
+    {
+        return await _context.ClassGroups
+            .Where(cg => cg.TeacherId == teacherId && 
+                        cg.AcademicYearId == academicYearId && 
+                        !cg.IsDeleted)
+            .FirstOrDefaultAsync();
     }
 }
