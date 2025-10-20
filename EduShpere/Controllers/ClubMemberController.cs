@@ -36,10 +36,27 @@ namespace EduShpere.Controllers
             var user = await _httpContextService.GetAppUserAndThrow();
             try
             {
-                var response = await _clubMemberService.OutClub(id, user);
+                var response = await _clubMemberService.OutClub(id, user.Id);
                 return Ok(new ResponseDto<ClubMemberResponseDto>(
                            response,
                            message: "Rời câu lạc bộ thành công",
+                           statusCode: 200
+                       ));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
+            }
+        }
+        [HttpDelete(ApiEndpoints.ClubMember.KickClub)]
+        public async Task<IActionResult> KickClub(int userid,int clubid)
+        {
+            try
+            {
+                var response = await _clubMemberService.OutClub(clubid, userid);
+                return Ok(new ResponseDto<ClubMemberResponseDto>(
+                           response,
+                           message: "xóa khỏi câu lạc bộ thành công",
                            statusCode: 200
                        ));
             }

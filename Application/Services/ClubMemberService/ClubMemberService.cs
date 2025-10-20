@@ -27,9 +27,9 @@ namespace EduShpere.Application.Services
             _clubRepo = clubRepo;
             _clubJoinRequestRepo = clubJoinRequestRepo;
         }
-        public async Task<ClubMemberResponseDto> OutClub(int clubId, User user)
+        public async Task<ClubMemberResponseDto> OutClub(int clubId, int userid)
         {
-            var clubmember = await _repo.GetClubMemberByUserIdAndClubId(user.Id, clubId);
+            var clubmember = await _repo.GetClubMemberByUserIdAndClubId(userid, clubId);
             if (clubmember == null)
             {
                 throw new BadRequestException(ErrorMessages.ClubMember.NotMember);

@@ -14,6 +14,6 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<ClubMemberResponseDto>> GetAllByUserAsync(User user,
     PaginationRequestDto paginationRequest,
     string? search = null);
-        Task<ClubMemberResponseDto> OutClub(int clubId, User user);
+        Task<ClubMemberResponseDto> OutClub(int clubId, int user);
     }
 }

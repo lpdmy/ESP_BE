@@ -71,6 +71,7 @@
             public const string ClubPending = "api/post/club/pending/{clubid}";
             public const string Club = "api/post/club/{clubid}";
             public const string ApprovePost = "api/post/approve/{id}";
+            public const string RejectPost = "api/post/reject/{id}";
 
         }
         public static class Collection
@@ -110,6 +111,14 @@
             public const string ClubMembers = "api/club-member";
             public const string GetClubMemberByUser = "api/club-member/user";
             public const string OutClub = "api/club-member/{id}";
+            public const string KickClub = "api/club-member";
+        }
+        public static class Comment
+        {
+            public const string Comments = "api/comment";
+            public const string GetCommentsByPost = "api/comment/post/{postId}";
+            public const string GetCommentsByComment = "api/comment/comment/{id}";
+            public const string DeleteComment = "api/comment/{id}";
         }
     }
 }

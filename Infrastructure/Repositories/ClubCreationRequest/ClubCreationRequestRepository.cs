@@ -22,12 +22,15 @@ namespace EduShpere.Infrastructure.Repositories
         {
             return await _context.ClubCreationRequest
                 .Where(c => c.Id == id && !c.IsDeleted)
+                .Include(c => c.RequestedByUser)
+                .Include(c => c.Category)
                 .FirstOrDefaultAsync();
         }
         public IQueryable<ClubCreationRequest> GetAllWithIncludes()
         {
             return _context.ClubCreationRequest
                 .Include(c => c.RequestedByUser)
+                .Include(c=>c.Category)
                 .Where(c => !c.IsDeleted);
         }
         public IQueryable<ClubCreationRequest> GetAllWithIncludesByUser(User user)

@@ -22,13 +22,14 @@ namespace EduShpere.Application.DTOs
         [StringLength(255)]
         public string? ShortDescription { get; set; }
         public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
 
         [StringLength(1000)]
         public string? AvatarUrl { get; set; }
 
         [StringLength(1000)]
         public string? CoverUrl { get; set; }
-
+        public string? UserAvatar { get; set; }
         public int CreatedByUserId { get; set; }
         public string? Requirements { get; set; }
         public bool AllowAutoJoin { get; set; } = false;
@@ -41,7 +42,7 @@ namespace EduShpere.Application.DTOs
         public string Status { get; set; } = "Pending"; 
 
         public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
-
+        public string ClubName { get; set; } = string.Empty;
         [StringLength(255)]
         public string? RejectReason { get; set; }
         public string RequestedByName { get; set; } = string.Empty;

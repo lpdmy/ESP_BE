@@ -44,6 +44,7 @@ namespace EduShpere.Application.DTOs
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
 

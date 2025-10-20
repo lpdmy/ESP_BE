@@ -32,7 +32,7 @@ namespace EduShpere.Application.Mappings
         opt => opt.MapFrom(src => src.PostMentions.Select(pm => pm.MentionedUser.Username)))
 
     .ForMember(dest => dest.Comments,
-        opt => opt.MapFrom(src => src.Comments.Select(c => c.Content)))
+        opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted).Select(c => c.Content)))
 
     .ForMember(dest => dest.LikeCount,
         opt => opt.MapFrom(src => src.PostLikes.Count))

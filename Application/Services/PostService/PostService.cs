@@ -73,7 +73,7 @@ namespace EduShpere.Application.Services
                 IsDeleted = p.IsDeleted,
                 Hashtags = p.PostHashtags.Select(ph => ph.Hashtag.Name).ToList(),
                 MentionUsernames = p.PostMentions.Select(m => m.MentionedUser.Username).ToList(),
-                Comments = p.Comments.Select(c => c.Content).ToList(),
+                Comments = p.Comments.Where(p=>p.IsDeleted==false).Select(c => c.Content).ToList(),
                 AttachmentUrls = p.Attachments.Select(a => a.FileUrl).ToList(),
                 LikeCount = p.PostLikes.Count,
                 ReportCount = p.PostReports.Count,
@@ -310,6 +310,7 @@ namespace EduShpere.Application.Services
             {
                 post = post.Where(p => p.PrivacyLevel == 0);
             }
+
             return post;
         }
         public async Task<PaginationResponseDto<PostResponseDto>> GetAllPostsClubPending(int clubid,
@@ -360,6 +361,15 @@ namespace EduShpere.Application.Services
             if (post == null)
                 throw new BadRequestException(ErrorMessages.Post.PostNotFound);
             post.Status = PostStatus.Approved;
+            await _repo.UpdateAsync(post);
+            return _mapper.Map<PostResponseDto>(post);
+        }
+        public async Task<PostResponseDto> RejectPost(int id)
+        {
+            var post = await _repo.GetByIdAsync(id);
+            if (post == null)
+                throw new BadRequestException(ErrorMessages.Post.PostNotFound);
+            post.Status = PostStatus.Reject;
             await _repo.UpdateAsync(post);
             return _mapper.Map<PostResponseDto>(post);
         }

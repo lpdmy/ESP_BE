@@ -19,5 +19,6 @@ namespace EduShpere.Application.Services
    string? search = null);
         Task<IEnumerable<PostResponseDto>> GetAllPostsClub(int clubid, User user);
         Task<PostResponseDto> ApprovePost(int id);
+        Task<PostResponseDto> RejectPost(int id);
     }
 }

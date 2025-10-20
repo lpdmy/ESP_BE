@@ -12,10 +12,15 @@ namespace EduShpere.Application.Mappings
             CreateMap<ClubCreationRequest, ClubCreationResponseDto>()
                 .ForMember(dest => dest.RequestedByUserId,
                     opt => opt.MapFrom(src => src.RequestedByUser.Id))
+                .ForMember(dest => dest.UserAvatar,
+                    opt => opt.MapFrom(src => src.RequestedByUser.AvatarUrl))
                 .ForMember(dest => dest.RequestedByName,
-                    opt => opt.MapFrom(src => src.RequestedByUser.LastName + " " + src.RequestedByUser.FirstName))
+                     opt => opt.MapFrom(src =>
+        $"{src.RequestedByUser.LastName} {src.RequestedByUser.FirstName}".Trim()))
                 .ForMember(dest => dest.RequestedByEmail,
-                    opt => opt.MapFrom(src => src.RequestedByUser.Email));
+                    opt => opt.MapFrom(src => src.RequestedByUser.Email))
+            .ForMember(dest => dest.CategoryName,
+                    opt => opt.MapFrom(src => src.Category.Name));
         }
     }
 }

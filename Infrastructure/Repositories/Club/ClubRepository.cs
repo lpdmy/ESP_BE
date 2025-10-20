@@ -21,6 +21,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(m => m.User)
                 .Include(c => c.Category)
                 .Include(c => c.CreatedByUser)
+                .Include(c => c.President)
+                .Include(c => c.Mentor)
                 .Include(c => c.ClubJoinRequests)
                 .FirstOrDefaultAsync();
         }
@@ -31,6 +33,7 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(c => c.Category)
                 .Include(c => c.Mentor)
                 .Include(c => c.President)
+                .Include(c=>c.Mentor)
                 .Include(c => c.ClubMembers)
                     .ThenInclude(m => m.User);
         }

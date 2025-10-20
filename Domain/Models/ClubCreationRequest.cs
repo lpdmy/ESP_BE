@@ -45,6 +45,8 @@ namespace EduShpere.Domain.Models
 
         [ForeignKey("RequestedByUserId")]
         public virtual User RequestedByUser { get; set; } = null!;
+        [ForeignKey("CategoryId")]
+        public virtual ClubCategory Category { get; set; } = null!;
     }
 
 }

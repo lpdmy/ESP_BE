@@ -135,5 +135,9 @@
             public const string CannotChangeRoleOfMentor = "Không thể thay đổi vai trò của cố vấn câu lạc bộ.";
             public const string InvalidRole = "Vai trò không hợp lệ.";
         }
+        public struct Comment
+        {
+           public const string CommentNotFound = "Bình luận không tồn tại.";
+        }
     }
 }

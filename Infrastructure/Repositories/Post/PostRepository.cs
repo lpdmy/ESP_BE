@@ -28,7 +28,7 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(p => p.Attachments)
                 .Include(p => p.PostLikes)
                 .Include(p => p.PostReports)
-                .Include(p => p.Comments)
+                .Include(p => p.Comments.Where(c => !c.IsDeleted))
                 .Include(p => p.PostHashtags).ThenInclude(ph => ph.Hashtag)
                 .Include(p => p.PostMentions).ThenInclude(pm => pm.MentionedUser);
         }

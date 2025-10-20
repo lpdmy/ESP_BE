@@ -141,5 +141,18 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, err.Message, 400));
             }
         }
+        [HttpPut(ApiEndpoints.Post.RejectPost)]
+        public async Task<IActionResult> RejectPost(int id)
+        {
+            try
+            {
+                var result = await _postService.RejectPost(id);
+                return Ok(new ResponseDto<PostResponseDto>(result, "Từ chối duyệt bài viết thành công", 200));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
+            }
+        }
     }
 }
