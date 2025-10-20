@@ -11,5 +11,6 @@ namespace EduShpere.Domain.Enum
         Pending,
         Approved,
         Reject,
+        Published
     }
 }
