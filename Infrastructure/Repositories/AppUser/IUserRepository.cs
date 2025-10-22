@@ -19,5 +19,6 @@ namespace EduShpere.Infrastructure
         Task<bool> FindUserByUsername(string username);
         IQueryable<User> GetQueryable();
         Task<IEnumerable<User>> SearchAsync(string query, int limit = 10);
+        IQueryable<User> GetAllIncluding();
     }
 }

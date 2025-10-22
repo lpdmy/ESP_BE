@@ -139,6 +139,17 @@ namespace EduShpere.Controllers
                        statusCode: 200
                    ));
         }
+        [HttpGet(ApiEndpoints.ClubJoinRequest.JoinRequestByUser)]
+        public async Task<IActionResult> GetAllClubJoinRequestByUser([FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            var response = await _clubJoinRequestService.GetAllClubJoinRequestByUser(user.Id, paginationRequest, search);
+            return Ok(new ResponseDto<PaginationResponseDto<ClubJoinRequestDto>>(
+                       response,
+                       message: "Lấy danh sách yêu cầu tham gia câu lạc bộ thành công",
+                       statusCode: 200
+                   ));
+        }
 
 
     }

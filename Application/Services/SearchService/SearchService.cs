@@ -161,7 +161,6 @@ namespace EduShpere.Application.Services.SearchService
                 throw new Exception($"User search failed: {ex.Message}", ex);
             }
         }
-
         public async Task<IEnumerable<PostSearchResultDto>> SearchPostsAsync(string query, int pageSize = 10)
         {
             try

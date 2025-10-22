@@ -15,5 +15,6 @@ namespace EduShpere.Application.Services
     PaginationRequestDto paginationRequest,
     string? search = null);
         Task<ClubMemberResponseDto> OutClub(int clubId, int user);
+        Task ChangeRole(int currentUserId, int userId, int cluId);
     }
 }

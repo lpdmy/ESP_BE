@@ -34,5 +34,12 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(r => r.Club)
                 .FirstOrDefaultAsync(r => r.ClubId == clubid && r.UserId==user.Id && !r.IsDeleted);
         }
+        public IQueryable<ClubJoinRequest> GetAllWithIncludesByUser(int userid )
+        {
+            return _context.ClubJoinRequests
+                 .Where(r => !r.IsDeleted && r.UserId == userid && r.Status=="Pending")
+                 .Include(r => r.User)
+                 .Include(r => r.Club).ThenInclude(r => r.Category);
+        }
     }
 }

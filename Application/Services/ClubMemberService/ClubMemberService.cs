@@ -66,6 +66,39 @@ namespace EduShpere.Application.Services
                 PageSize = paginationRequest.PageSize
             };
         }
+        public async Task ChangeRole(int currentUserId , int userId , int cluId)
+        {
+            var user = await _repo.GetClubMemberByUserIdAndClubId(userId, cluId);
+            if (user == null)
+            {
+                throw new BadRequestException(ErrorMessages.ClubMember.NotMember);
+            }
+            if (user.User.Role == Domain.UserRole.Teacher)
+            {
+                throw new BadRequestException(ErrorMessages.ClubMember.CannotChangeRoleForTeacher);
+            }
+            if (user.Role == "Member")
+            {
+                user.Role = "President";
+            }
+            await _repo.UpdateAsync(user);
+
+            var currentUser = await _repo.GetClubMemberByUserIdAndClubId(currentUserId, cluId);
+            if (currentUser == null)
+            {
+                throw new BadRequestException(ErrorMessages.ClubMember.NotMember);
+            }
+            currentUser.Role = "Member";
+            var club = await _clubRepo.GetByIdAsync(cluId);
+            if (club == null)
+            {
+                throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
+            }
+            club.PresidentUserId = userId;
+            await _clubRepo.UpdateAsync(club);
+            await _repo.UpdateAsync(currentUser);
+            await _clubRepo.UpdateAsync(club);
+        }
 
     }
 }

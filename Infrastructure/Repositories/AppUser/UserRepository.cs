@@ -21,6 +21,14 @@ namespace EduShpere.Infrastructure
             _dbSet.Remove(entity);
             await _context.SaveChangesAsync();
         }
+        public IQueryable<User> GetAllIncluding()
+        {
+            return _dbSet
+                .Include(u => u.StudentProfile)
+                .Include(u => u.TeacherProfile)
+                .Include(u => u.ClassGroupMembers)
+                    .ThenInclude(cgm => cgm.ClassGroup);
+        }
 
 
         public virtual async Task<User?> GetByIdAsync(int id)

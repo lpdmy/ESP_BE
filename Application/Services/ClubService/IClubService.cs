@@ -7,6 +7,7 @@ using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.DTOs;
 using EduShpere.Domain;
 using EduShpere.Domain.Models;
+using EduShpere.Application.DTOs.SearchDto;
 
 namespace EduShpere.Application.Services
 {
@@ -20,5 +21,8 @@ namespace EduShpere.Application.Services
         Task<ClubResponseDto> CreateClub(CreateClubDto dto);
         Task<bool> DeleteClub(int id);
         Task<IEnumerable<ClubCategory>> GetAllClubCategory();
+        Task<PaginationResponseDto<UserSearchResultDto>> GetAllAsync(int role,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
     }
 }

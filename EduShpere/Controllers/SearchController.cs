@@ -500,5 +500,6 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, $"Lỗi tìm kiếm nâng cao: {ex.Message}", 400));
             }
         }
+        
     }
 }
