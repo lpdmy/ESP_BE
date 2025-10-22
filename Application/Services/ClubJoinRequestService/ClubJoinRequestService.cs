@@ -205,5 +205,35 @@ namespace EduShpere.Application.Services
             return mapped;
         }
 
+        public async Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByUser( int userid,
+     PaginationRequestDto paginationRequest,
+     string? search = null)
+        {
+            var query = _repo.GetAllWithIncludesByUser(userid);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(c =>
+                    c.Club.Name.Contains(search));
+                   
+            }
+            var totalCount = await query.CountAsync();
+
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<ClubJoinRequestDto>>(data);
+            var sql = query.ToQueryString();
+            Console.WriteLine(sql);
+            return new PaginationResponseDto<ClubJoinRequestDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
+        }
     }
 }

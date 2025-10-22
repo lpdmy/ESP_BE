@@ -18,5 +18,6 @@ namespace EduShpere.Infrastructure.Repositories
         IQueryable<ClubJoinRequest> GetAllWithIncludes();
         Task<ClubJoinRequest?> GetByIdWithIncludesAsync(int id);
         Task<ClubJoinRequest?> GetByUserIdAndClubId(int clubid, User user);
+        IQueryable<ClubJoinRequest> GetAllWithIncludesByUser(int userid);
     }
 }

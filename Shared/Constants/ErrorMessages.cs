@@ -118,6 +118,7 @@
             public const string RecentRequestExists = "Bạn chỉ có thể gửi đơn tạo CLB 1 lần trong vòng 7 ngày.";
             public const string RequestNotFound = "Yêu cầu tạo câu lạc bộ không tồn tại.";
             public const string AlreadyApproved = "Yêu cầu đã được duyệt";
+            public const string NotNullReason = "Lý do không được để trống khi từ chối yêu cầu.";
         }
         public struct Club
         {
@@ -139,6 +140,7 @@
             public const string CannotChangeRoleOfPresident = "Không thể thay đổi vai trò của chủ nhiệm câu lạc bộ.";
             public const string CannotChangeRoleOfMentor = "Không thể thay đổi vai trò của cố vấn câu lạc bộ.";
             public const string InvalidRole = "Vai trò không hợp lệ.";
+            public const string CannotChangeRoleForTeacher = "Không thể chuyển vai trò cho giáo viên.";
         }
         public struct Comment
         {

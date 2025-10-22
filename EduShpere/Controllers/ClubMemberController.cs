@@ -65,5 +65,24 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, err.Message, 400));
             }
         }
+        [HttpPut(ApiEndpoints.ClubMember.ChangeRole )]
+        public async Task<IActionResult> ChangeRole(int userid, int clubid)
+        {
+            var currentUser = await _httpContextService.GetAppUserAndThrow();
+            try
+            {
+                await _clubMemberService.ChangeRole(currentUser.Id, userid, clubid);
+                return Ok(new ResponseDto<string>(
+                           null,
+                           message: "thay đổi vai trò thành công",
+                           statusCode: 200
+                       ));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
+            }
+        }
+
     }
 }

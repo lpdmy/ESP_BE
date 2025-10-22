@@ -21,7 +21,10 @@ namespace EduShpere.Application.Mappings
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src =>
                     src.Category != null ? src.Category.Name : null))
                 .ForMember(dest => dest.Members, opt => opt.MapFrom(src =>
-                    src.ClubMembers.Where(m => !m.IsDeleted))); 
+                    src.ClubMembers
+                    .Where(m => !m.IsDeleted)
+                    .OrderByDescending(m => m.Role == "President")
+                     ));
             CreateMap<ClubMember, ClubMemberDto>()
     .ForMember(dest => dest.FullName, opt => opt.MapFrom(src =>
         $"{src.User.LastName} {src.User.FirstName}".Trim()))
