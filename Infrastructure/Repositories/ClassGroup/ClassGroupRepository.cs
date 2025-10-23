@@ -285,6 +285,42 @@ public class ClassGroupRepository : IClassGroupRepository
             .ToListAsync();
     }
 
+    public async Task<AcademicYear?> GetCurrentAcademicYearAsync()
+    {
+        return await _context.AcademicYears
+            .FirstOrDefaultAsync(ay => ay.IsCurrent);
+    }
+
+    public async Task<ClassGroup?> GetCurrentClassByUserIdAsync(int userId)
+    {
+        // Lấy niên khóa hiện tại
+        var currentAcademicYear = await GetCurrentAcademicYearAsync();
+        if (currentAcademicYear == null) return null;
+
+        // Lấy thông tin user để kiểm tra role
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return null;
+
+        // Nếu là học sinh
+        if (user.Role == UserRole.Student)
+        {
+            return await _context.ClassGroupMembers
+                .Where(cgm => cgm.UserId == userId && cgm.ClassGroup.AcademicYearId == currentAcademicYear.Id)
+                .Select(cgm => cgm.ClassGroup)
+                .FirstOrDefaultAsync();
+        }
+
+        // Nếu là giáo viên
+        if (user.Role == UserRole.Teacher)
+        {
+            return await _context.ClassGroups
+                .Where(cg => cg.TeacherId == userId && cg.AcademicYearId == currentAcademicYear.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        return null;
+    }
+
     public async Task<User?> GetTeacherByEmailAsync(string email)
     {
         return await _context.Users

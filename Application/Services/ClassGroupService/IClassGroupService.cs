@@ -27,6 +27,10 @@ public interface IClassGroupService
     
     // Academic Year methods
     Task<IEnumerable<AcademicYearDto>> GetAllAcademicYearsAsync();
+    Task<AcademicYearDto?> GetCurrentAcademicYearAsync();
+    
+    // Current Class methods
+    Task<CurrentClassDto?> GetCurrentClassByUserIdAsync(int userId);
     
     // Homeroom Teacher management methods
     Task<AssignHomeroomTeacherResponseDto> AssignHomeroomTeacherAsync(int classGroupId, AssignHomeroomTeacherDto dto);

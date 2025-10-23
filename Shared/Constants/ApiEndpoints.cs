@@ -107,6 +107,10 @@
             
             // Academic Year endpoints
             public const string GetAcademicYears = "api/classgroup/academic-years";
+            public const string GetAcademicYearCurrent = "api/classgroup/academic-years-current";
+            
+            // Current Class endpoints
+            public const string GetCurrentClass = "api/classgroup/current-class";
         }
     }
 }

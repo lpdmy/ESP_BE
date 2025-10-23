@@ -368,6 +368,62 @@ public class ClassGroupService : IClassGroupService
         });
     }
 
+    public async Task<AcademicYearDto?> GetCurrentAcademicYearAsync()
+    {
+        var currentAcademicYear = await _repository.GetCurrentAcademicYearAsync();
+        if (currentAcademicYear == null) return null;
+
+        return new AcademicYearDto
+        {
+            Id = currentAcademicYear.Id,
+            Name = currentAcademicYear.Name,
+            StartDate = currentAcademicYear.StartDate,
+            EndDate = currentAcademicYear.EndDate,
+            IsCurrent = currentAcademicYear.IsCurrent
+        };
+    }
+
+    public async Task<CurrentClassDto?> GetCurrentClassByUserIdAsync(int userId)
+    {
+        var classGroup = await _repository.GetCurrentClassByUserIdAsync(userId);
+        if (classGroup == null) return null;
+
+        // Lấy thông tin giáo viên chủ nhiệm
+        var homeroomTeacher = await _repository.GetHomeroomTeacherAsync(classGroup.Id);
+        
+        // Lấy số lượng học sinh
+        var studentCount = await _repository.GetStudentCountAsync(classGroup.Id);
+
+        // Xác định role của user
+        var userRole = homeroomTeacher?.Id == userId ? "Teacher" : "Student";
+
+        return new CurrentClassDto
+        {
+            Id = classGroup.Id,
+            Name = classGroup.Name,
+            Grade = classGroup.Grade,
+            AcademicYear = new AcademicYearDto
+            {
+                Id = classGroup.AcademicYears?.Id ?? 0,
+                Name = classGroup.AcademicYears?.Name ?? string.Empty,
+                StartDate = classGroup.AcademicYears?.StartDate ?? DateTime.MinValue,
+                EndDate = classGroup.AcademicYears?.EndDate ?? DateTime.MinValue,
+                IsCurrent = classGroup.AcademicYears?.IsCurrent ?? false
+            },
+            HomeroomTeacher = homeroomTeacher != null ? new HomeroomTeacherDto
+            {
+                Id = homeroomTeacher.Id,
+                FirstName = homeroomTeacher.FirstName,
+                LastName = homeroomTeacher.LastName,
+                Email = homeroomTeacher.Email
+            } : null,
+            StudentCount = studentCount,
+            UserRole = userRole,
+            JoinedAt = userRole == "Student" ? DateTime.UtcNow : null, // TODO: Lấy từ ClassGroupMember
+            AssignedAt = userRole == "Teacher" ? DateTime.UtcNow : null // TODO: Lấy từ ClassGroup
+        };
+    }
+
     public async Task<AssignHomeroomTeacherResponseDto> AssignHomeroomTeacherAsync(int classGroupId, AssignHomeroomTeacherDto dto)
     {
         var targetClass = await _repository.GetByIdAsync(classGroupId);

@@ -7,6 +7,7 @@ using EduShpere.Application;
 using EduShpere.Application.Services.ClassGroupService;
 using EduShpere.Middlewares;
 using EduShpere.Shared.Constants;
+using EduShpere.Application.Services;
 
 namespace EduShpere.Controllers;
 
@@ -15,10 +16,12 @@ namespace EduShpere.Controllers;
 public class ClassGroupController : BaseController
 {
     private readonly IClassGroupService _classGroupService;
+    private readonly IHttpContextService _httpContextService;
 
-    public ClassGroupController(IClassGroupService classGroupService)
+    public ClassGroupController(IClassGroupService classGroupService, IHttpContextService httpContextService)
     {
         _classGroupService = classGroupService;
+        _httpContextService = httpContextService;
     }
 
     [HttpGet(ApiEndpoints.ClassGroup.ClassGroups)]
@@ -204,6 +207,31 @@ public class ClassGroupController : BaseController
     {
         var result = await _classGroupService.GetAllAcademicYearsAsync();
         return Ok(new ResponseDto<IEnumerable<AcademicYearDto>>(result, "Lấy danh sách niên khóa thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetAcademicYearCurrent)]
+    //[Authorize(Roles = "Admin,Teacher,Student")]
+    public async Task<IActionResult> GetCurrentAcademicYear()
+    {
+        var result = await _classGroupService.GetCurrentAcademicYearAsync();
+        if (result == null)
+        {
+            return NotFound(new ResponseDto<string>(null, "Không tìm thấy niên khóa hiện tại", 404));
+        }
+        return Ok(new ResponseDto<AcademicYearDto>(result, "Lấy niên khóa hiện tại thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetCurrentClass)]
+    //[Authorize(Roles = "Admin,Teacher,Student")]
+    public async Task<IActionResult> GetCurrentClass()
+    {
+        var user = await _httpContextService.GetAppUserAndThrow();
+        var result = await _classGroupService.GetCurrentClassByUserIdAsync(user.Id);
+        if (result == null)
+        {
+            return NotFound(new ResponseDto<string>(null, "Không tìm thấy lớp học hiện tại", 404));
+        }
+        return Ok(new ResponseDto<CurrentClassDto>(result, "Lấy lớp học hiện tại thành công"));
     }
 
     [HttpPut(ApiEndpoints.ClassGroup.AssignHomeroomTeacher)]
