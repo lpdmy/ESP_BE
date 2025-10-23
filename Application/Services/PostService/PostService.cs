@@ -135,7 +135,7 @@ namespace EduShpere.Application.Services
                     });
                 }
             }
-            foreach (var attachment in (dto.AttachmentUrls ?? new List<AttachmentDto>()))
+            foreach (var attachment in (dto.AttachmentUrls ?? new List<PostAttachmentDto>()))
             {
                 if (!string.IsNullOrWhiteSpace(attachment.Url))
                 {
