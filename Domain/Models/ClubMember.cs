@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EduShpere.Domain.Models;
 
 [Index("ClubId", "UserId", Name = "ClubMembers_index_3", IsUnique = true)]
-public partial class ClubMember
+public partial class ClubMember : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -19,16 +19,6 @@ public partial class ClubMember
     [StringLength(50)]
     public string? Role { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
-
-    public bool IsDeleted { get; set; }
-
     public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("ClubId")]
@@ -36,6 +26,5 @@ public partial class ClubMember
     public virtual Club Club { get; set; } = null!;
 
     [ForeignKey("UserId")]
-    [InverseProperty("ClubMembers")]
     public virtual User User { get; set; } = null!;
 }

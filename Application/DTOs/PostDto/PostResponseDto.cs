@@ -26,8 +26,9 @@ namespace EduShpere.Application.DTOs
         public List<string> Hashtags { get; set; } = new();
         public List<string> MentionUsernames { get; set; } = new();
         public List<string> Comments { get; set; } = new();
-        public List<AttachmentDto> Attachments { get; set; } = new();
+        public List<PostAttachmentDto> Attachments { get; set; } = new();
         public List<string> AttachmentUrls { get; set; } = new();
+        public string AvatarUrl { get; set; } = null!;
         public int LikeCount { get; set; }
         public int ReportCount { get; set; }
         public DateTime CreatedAt { get; set; }

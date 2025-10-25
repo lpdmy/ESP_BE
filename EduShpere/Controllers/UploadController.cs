@@ -1,5 +1,6 @@
 ﻿using EduShpere.Application;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.Services;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,9 @@ namespace EduShpere.Controllers
     [CustomModelValidationFilter]
     public class UploadController : BaseController
     {
-        private readonly CloudinaryService _cloudinaryService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public UploadController(CloudinaryService cloudinaryService)
+        public UploadController(ICloudinaryService cloudinaryService)
         {
             _cloudinaryService = cloudinaryService;
         }

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Diagnostics;
+using AutoMapper;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.PostDto;
 using EduShpere.Domain.Models;
@@ -23,7 +24,7 @@ namespace EduShpere.Application.Mappings
             : string.Empty
     ))
     .ForMember(dest => dest.Attachments,
-        opt => opt.MapFrom(src => src.Attachments.Select(a => new AttachmentDto
+        opt => opt.MapFrom(src => src.Attachments.Select(a => new PostAttachmentDto
         {
             Url = a.FileUrl ?? string.Empty,
             FileName = a.FileName ?? string.Empty,
@@ -40,10 +41,16 @@ namespace EduShpere.Application.Mappings
         opt => opt.MapFrom(src => src.PostMentions.Select(pm => pm.MentionedUser.Username)))
 
     .ForMember(dest => dest.Comments,
-        opt => opt.MapFrom(src => src.Comments.Select(c => c.Content)))
+        opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted).Select(c => c.Content)))
 
     .ForMember(dest => dest.LikeCount,
         opt => opt.MapFrom(src => src.PostLikes.Count))
+    .ForMember(dest=> dest.AvatarUrl, 
+      opt => opt.MapFrom(src => src.User.AvatarUrl))
+    .AfterMap((src, dest) =>
+    {
+        Debug.WriteLine($"User.AvatarUrl = {src.User?.AvatarUrl}, Mapped dest.AvatarUrl = {dest.AvatarUrl}");
+    })
 
     .ForMember(dest => dest.ReportCount,
         opt => opt.MapFrom(src => src.PostReports.Count))

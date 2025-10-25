@@ -4,7 +4,7 @@
     {
         public struct Auth
         {
-            public const string InvalidCredentials = "Email or Password is not correct.";
+            public const string InvalidCredentials = "Email hoặc Password không tồn tại";
             public const string InvalidToken = "Token không hợp lệ hoặc đã hết hạn.";
             public const string UserNotFound = "Người dùng không tồn tại.";
             public const string EmailAlreadyExists = "Email đã tồn tại trong hệ thống.";
@@ -48,6 +48,13 @@
             public const string IdRequired = "ID là bắt buộc";
             public const string NameTooLong = "Tên không được vượt quá 255 ký tự";
             public const string DescriptionTooLong = "Mô tả không được vượt quá 500 ký tự";
+            
+            // System Announcement validation
+            public const string TitleRequired = "Tiêu đề là bắt buộc";
+            public const string TitleTooLong = "Tiêu đề không được vượt quá 500 ký tự";
+            public const string ContentRequired = "Nội dung là bắt buộc";
+            public const string AnnouncementTypeRequired = "Loại thông báo là bắt buộc";
+            public const string AnnouncementTypeTooLong = "Loại thông báo không được vượt quá 50 ký tự";
         }
 
         public struct Generic
@@ -111,6 +118,57 @@
             public const string PostIsFlaged = "Bài viết đã bị vi phạm nội dung.";
             public const string PostError = "Bài viết đã bị lỗi khi tạo.";
             public const string PostNotFound = "Bài viết không tồn tại.";
+            public const string ListNotFound = "Không tìm thấy bài viết nào.";
+        }
+
+        public struct SystemAnnouncement
+        {
+            public const string NotFound = "Thông báo hệ thống không tồn tại.";
+            public const string AlreadyExists = "Thông báo hệ thống đã tồn tại.";
+            public const string CreateFailed = "Tạo thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string UpdateFailed = "Cập nhật thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string DeleteFailed = "Xóa thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string GetFailed = "Lấy thông tin thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string InvalidId = "ID thông báo hệ thống không hợp lệ.";
+            public const string ValidationFailed = "Dữ liệu thông báo hệ thống không hợp lệ.";
+            public const string InvalidAnnouncementType = "Loại thông báo không hợp lệ.";
+            public const string ExpiryDateInPast = "Ngày hết hạn không được là ngày trong quá khứ.";
+            public const string FileUploadFailed = "Upload file đính kèm thất bại.";
+            public const string InvalidFileType = "Loại file không được hỗ trợ.";
+            public const string FileTooLarge = "File quá lớn. Kích thước tối đa là 10MB.";
+        }
+        public struct ClubCreationRequest
+        {
+            public const string RecentRequestExists = "Bạn chỉ có thể gửi đơn tạo CLB 1 lần trong vòng 7 ngày.";
+            public const string RequestNotFound = "Yêu cầu tạo câu lạc bộ không tồn tại.";
+            public const string AlreadyApproved = "Yêu cầu đã được duyệt";
+            public const string NotNullReason = "Lý do không được để trống khi từ chối yêu cầu.";
+        }
+        public struct Club
+        {
+            public const string ClubNotFound = "Câu lạc bộ không tồn tại.";
+        }
+        public struct ClubJoinRequest
+        {
+            public const string RequestNotFound = "Yêu cầu tham gia câu lạc bộ không tồn tại.";
+            public const string AlreadyMember = "Bạn đã là thành viên của câu lạc bộ này.";
+            public const string AlreadyPendingRequest = "Bạn đã có yêu cầu tham gia đang chờ xử lý cho câu lạc bộ này.";
+            public const string AlreadyApproved = "Yêu cầu đã được duyệt";
+            public const string NotTeacher = "Người được mời phải là giáo viên.";
+        }
+        public struct ClubMember
+        {
+            public const string NotMember = "Người dùng không phải là thành viên của câu lạc bộ này.";
+            public const string CannotRemovePresident = "Không thể xóa chủ nhiệm câu lạc bộ.";
+            public const string CannotRemoveMentor = "Không thể xóa cố vấn câu lạc bộ.";
+            public const string CannotChangeRoleOfPresident = "Không thể thay đổi vai trò của chủ nhiệm câu lạc bộ.";
+            public const string CannotChangeRoleOfMentor = "Không thể thay đổi vai trò của cố vấn câu lạc bộ.";
+            public const string InvalidRole = "Vai trò không hợp lệ.";
+            public const string CannotChangeRoleForTeacher = "Không thể chuyển vai trò cho giáo viên.";
+        }
+        public struct Comment
+        {
+           public const string CommentNotFound = "Bình luận không tồn tại.";
         }
 
         public struct ClassGroup
@@ -138,6 +196,41 @@
             public const string CannotDeleteWithStudents = "Không thể xóa lớp học có học sinh.";
             public const string CannotDeleteWithPosts = "Không thể xóa lớp học có bài viết.";
         }
+
+        public struct StudentImport
+        {
+            // --- Nhóm: Kiểm tra danh sách và mapping ---
+            public const string StudentsRequired = "Danh sách học sinh không được để trống.";
+            public const string MappingRequired = "Cấu hình mapping trường không được để trống.";
+            public const string HeadersRequired = "Danh sách tiêu đề (headers) không được để trống.";
+            public const string FieldNotMapped = "Một hoặc nhiều trường bắt buộc chưa được mapping.";
+
+            // --- Nhóm: Kiểm tra dữ liệu cơ bản ---
+            public const string FieldEmpty = "Trường bắt buộc không được để trống.";
+            public const string InvalidImportMode = "Chế độ import không hợp lệ. Vui lòng chọn insert, upsert hoặc skip.";
+
+            // --- Nhóm: Kiểm tra thông tin học sinh ---
+            public const string StudentIdRequired = "Mã học sinh là bắt buộc.";
+            public const string InvalidStudentIdFormat = "Định dạng mã học sinh không hợp lệ.";
+            public const string FirstNameRequired = "Tên học sinh là bắt buộc.";
+            public const string LastNameRequired = "Họ học sinh là bắt buộc.";
+            public const string EmailRequired = "Email là bắt buộc.";
+            public const string InvalidEmailFormat = "Định dạng email không hợp lệ.";
+            public const string InvalidPhoneFormat = "Định dạng số điện thoại không hợp lệ.";
+            public const string InvalidDateFormat = "Định dạng ngày sinh không hợp lệ.";
+
+            // --- Nhóm: Kiểm tra tồn tại / trùng lặp ---
+            public const string StudentAlreadyExists = "Học sinh đã tồn tại trong hệ thống.";
+            public const string StudentNotFound = "Không tìm thấy học sinh trong hệ thống.";
+
+            // --- Nhóm: Kết quả xử lý ---
+            public const string ImportFailed = "Quá trình import học sinh thất bại.";
+            public const string ValidationFailed = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
+            public const string CreateStudentFailed = "Không thể tạo mới học sinh.";
+            public const string UpdateStudentFailed = "Không thể cập nhật học sinh.";
+            public const string TemplateGenerationFailed = "Không thể tạo file template import.";
+        }
+
 
     }
 }

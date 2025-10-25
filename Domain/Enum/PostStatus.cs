@@ -8,8 +8,9 @@ namespace EduShpere.Domain.Enum
 {
     public enum PostStatus
     {
-        Draft,
-        Published,
-        Archived,
+        Pending,
+        Approved,
+        Reject,
+        Published
     }
 }

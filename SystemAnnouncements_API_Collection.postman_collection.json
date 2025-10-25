@@ -1,0 +1,330 @@
+{
+   "info": {
+      "name": "EduShpere System Announcements API",
+      "description": "API collection for System Announcements endpoints",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "version": "1.0.0"
+   },
+   "auth": {
+      "type": "bearer",
+      "bearer": [
+         {
+            "key": "token",
+            "value": "{{jwt_token}}",
+            "type": "string"
+         }
+      ]
+   },
+   "variable": [
+      {
+         "key": "BASE_API_URL",
+         "value": "https://localhost:7000",
+         "type": "string"
+      },
+      {
+         "key": "jwt_token",
+         "value": "",
+         "type": "string"
+      }
+   ],
+   "item": [
+      {
+         "name": "📢 System Announcements",
+         "item": [
+            {
+               "name": "Get All System Announcements (Admin)",
+               "request": {
+                  "method": "GET",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement?pageNumber=1&pageSize=10&search=&sortBy=createdAt&sortDescending=true",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement"
+                     ],
+                     "query": [
+                        {
+                           "key": "pageNumber",
+                           "value": "1"
+                        },
+                        {
+                           "key": "pageSize",
+                           "value": "10"
+                        },
+                        {
+                           "key": "search",
+                           "value": ""
+                        },
+                        {
+                           "key": "sortBy",
+                           "value": "createdAt"
+                        },
+                        {
+                           "key": "sortDescending",
+                           "value": "true"
+                        }
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Get System Announcement by ID",
+               "request": {
+                  "method": "GET",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement/1",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement",
+                        "1"
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Create System Announcement (Admin)",
+               "request": {
+                  "method": "POST",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "body": {
+                     "mode": "formdata",
+                     "formdata": [
+                        {
+                           "key": "title",
+                           "value": "Thông báo lịch thi cuối kỳ 1",
+                           "type": "text"
+                        },
+                        {
+                           "key": "content",
+                           "value": "<h1>Lịch thi cuối kỳ 1</h1><p>Lịch thi cuối kỳ 1 sẽ diễn ra từ ngày <strong>15/11 đến 30/11/2024</strong>. Các em vui lòng chuẩn bị tốt cho kỳ thi này.</p><h2>Chi tiết lịch thi:</h2><p><strong>Ngày 15/11:</strong> Toán, Lý</p><p><strong>Ngày 16/11:</strong> Hóa, Sinh</p><p><strong>Ngày 17/11:</strong> Văn, Sử</p><p><strong>Ngày 18/11:</strong> Địa, GDCD</p><h3>Các em học sinh cần:</h3><p>1. Chuẩn bị đầy đủ dụng cụ học tập</p><p>2. Có mặt tại phòng thi trước <u>15 phút</u></p><p>3. Tuân thủ quy định thi cử</p><hr><p><em>Chúc các em thi tốt!</em></p>",
+                           "type": "text"
+                        },
+                        {
+                           "key": "announcementType",
+                           "value": "exam",
+                           "type": "text"
+                        },
+                        {
+                           "key": "isUrgent",
+                           "value": "false",
+                           "type": "text"
+                        },
+                        {
+                           "key": "expiryDate",
+                           "value": "2024-11-30T23:59:59Z",
+                           "type": "text"
+                        },
+                        {
+                           "key": "files",
+                           "type": "file",
+                           "src": []
+                        }
+                     ]
+                  },
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement"
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Update System Announcement (Admin)",
+               "request": {
+                  "method": "PUT",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "body": {
+                     "mode": "formdata",
+                     "formdata": [
+                        {
+                           "key": "id",
+                           "value": "1",
+                           "type": "text"
+                        },
+                        {
+                           "key": "title",
+                           "value": "Thông báo lịch thi cuối kỳ 1 - Cập nhật",
+                           "type": "text"
+                        },
+                        {
+                           "key": "content",
+                           "value": "<h1>Lịch thi cuối kỳ 1 - Cập nhật</h1><p>Lịch thi cuối kỳ 1 sẽ diễn ra từ ngày <strong>15/11 đến 30/11/2024</strong>. Các em vui lòng chuẩn bị tốt cho kỳ thi này.</p><h2>Chi tiết lịch thi:</h2><p><strong>Ngày 15/11:</strong> Toán, Lý</p><p><strong>Ngày 16/11:</strong> Hóa, Sinh</p><p><strong>Ngày 17/11:</strong> Văn, Sử</p><p><strong>Ngày 18/11:</strong> Địa, GDCD</p><h3>Các em học sinh cần:</h3><p>1. Chuẩn bị đầy đủ dụng cụ học tập</p><p>2. Có mặt tại phòng thi trước <u>15 phút</u></p><p>3. Tuân thủ quy định thi cử</p><p>4. <strong>Mang theo CMND/CCCD</strong></p><hr><p><em>Chúc các em thi tốt!</em></p>",
+                           "type": "text"
+                        },
+                        {
+                           "key": "announcementType",
+                           "value": "exam",
+                           "type": "text"
+                        },
+                        {
+                           "key": "isUrgent",
+                           "value": "true",
+                           "type": "text"
+                        },
+                        {
+                           "key": "expiryDate",
+                           "value": "2024-11-30T23:59:59Z",
+                           "type": "text"
+                        },
+                        {
+                           "key": "isVisible",
+                           "value": "true",
+                           "type": "text"
+                        },
+                        {
+                           "key": "files",
+                           "type": "file",
+                           "src": []
+                        }
+                     ]
+                  },
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement"
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Delete System Announcement (Admin)",
+               "request": {
+                  "method": "DELETE",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement/1",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement",
+                        "1"
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Toggle Visibility (Admin)",
+               "request": {
+                  "method": "PUT",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement/1/toggle-visibility",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement",
+                        "1",
+                        "toggle-visibility"
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Get Public Announcements",
+               "request": {
+                  "method": "GET",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement/public",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement",
+                        "public"
+                     ]
+                  }
+               },
+               "response": []
+            },
+            {
+               "name": "Mark as Viewed",
+               "request": {
+                  "method": "POST",
+                  "header": [
+                     {
+                        "key": "Authorization",
+                        "value": "Bearer {{jwt_token}}"
+                     }
+                  ],
+                  "url": {
+                     "raw": "{{BASE_API_URL}}/api/systemannouncement/1/mark-viewed",
+                     "host": [
+                        "{{BASE_API_URL}}"
+                     ],
+                     "path": [
+                        "api",
+                        "systemannouncement",
+                        "1",
+                        "mark-viewed"
+                     ]
+                  }
+               },
+               "response": []
+            }
+         ]
+      }
+   ]
+}

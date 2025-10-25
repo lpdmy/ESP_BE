@@ -7,29 +7,21 @@ using Microsoft.EntityFrameworkCore;
 namespace EduShpere.Domain.Models;
 
 [Index("ClubId", "UserId", Name = "ClubJoinRequests_index_4", IsUnique = true)]
-public partial class ClubJoinRequest
+public partial class ClubJoinRequest : BaseEntity
 {
     [Key]
     public int Id { get; set; }
 
     public int ClubId { get; set; }
-
+    [StringLength(255)]
     public int UserId { get; set; }
 
     [StringLength(20)]
     public string? Status { get; set; }
 
     public DateTime? RespondedAt { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public int? CreatedBy { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? UpdatedBy { get; set; }
-
-    public bool IsDeleted { get; set; }
+    public string? ReasonToJoin { get; set; }
+    public string ? Experience { get; set; }
 
     public byte[] RowVersion { get; set; } = null!;
 

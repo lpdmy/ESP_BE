@@ -113,7 +113,7 @@ public partial class User : BaseEntity
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 
     [InverseProperty("User")]
-    public virtual ICollection<RewardRedemptionLog> RewardRedemptionLogs { get; set; } = new List<RewardRedemptionLog>();
+    public virtual ICollection<RewardRedemption> RewardRedemptionLogs { get; set; } = new List<RewardRedemption>();
 
     [ForeignKey("SchoolId")]
     [InverseProperty("Users")]
@@ -143,4 +143,10 @@ public partial class User : BaseEntity
     public virtual ICollection<PostMention> MentionsInPosts { get; set; } = new List<PostMention>();
     [InverseProperty("Teacher")]
     public virtual ICollection<ClassGroup> ClassGroups { get; set; } = new List<ClassGroup>();
+    [InverseProperty("Mentor")]
+    public virtual ICollection<Club> MentoredClubs { get; set; } = new List<Club>();
+
+    [InverseProperty("President")]
+    public virtual ICollection<Club> PresidedClubs { get; set; } = new List<Club>();
+
 }

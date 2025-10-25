@@ -3,11 +3,14 @@ using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Application.Services;
 using EduShpere.Application.Services.ClassGroupService;
+using EduShpere.Application.Services.StarPointService;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.AIService;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
+using EduShpere.Infrastructure.Repositories.StarPoint;
+using EduShpere.Infrastructure.Services;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +27,11 @@ namespace EduShpere
 
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
+                options.EnableSensitiveDataLogging(false);
+                options.EnableServiceProviderCaching(false);
+            });
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
@@ -34,17 +41,38 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
+            
+            // Search repositories
+            builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchHistory.ISearchHistoryRepository, EduShpere.Infrastructure.Repositories.SearchHistory.SearchHistoryRepository>();
+            builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchAnalytics.ISearchAnalyticsRepository, EduShpere.Infrastructure.Repositories.SearchAnalytics.SearchAnalyticsRepository>();
+            // Search services
+            builder.Services.AddScoped<EduShpere.Application.Services.RankingService.IRankingService, EduShpere.Application.Services.RankingService.RankingService>();
+            // Background service for trending updates
+            builder.Services.AddHostedService<EduShpere.Infrastructure.Services.TrendingUpdateService>();
+
             builder.Services.AddScoped<IClassGroupRepository, ClassGroupRepository>();
             builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
             builder.Services.AddScoped<IPostHashTagRepository, PostHashTagRepository>();
             builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
             builder.Services.AddScoped<ICollectionIteamRepository, CollectionIteamRepository>();
             builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
+            builder.Services.AddScoped<IClubCreationRepository, ClubCreationRequestRepository>();
+            builder.Services.AddScoped<IClubRepository, ClubRepository>();
+            builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
+            builder.Services.AddScoped<IClubJoinRequestRepository, ClubJoinRequestRepository>();
+            builder.Services.AddScoped<IClubCategoryRepository, ClubCategoryRepository>();
+            builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
+
+            builder.Services.AddScoped<IRewardRuleRepository, RewardRuleRepository>();
+            builder.Services.AddScoped<IRewardRepository, RewardRepository>();
+            builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
+            builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
             builder.Services.AddScoped<IEmailService, EmailService>();
-            builder.Services.AddSingleton<CloudinaryService>();
+            builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddControllers(options =>
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
@@ -52,29 +80,50 @@ namespace EduShpere
             });
 
             // Register KidNet services
-            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
             builder.Services.AddScoped<IAuditService, AuditService>();
             builder.Services.AddScoped<IPaginationService, PaginationService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IPostService, PostService>();
+            builder.Services.AddScoped<EduShpere.Application.Services.SearchService.ISearchService, EduShpere.Application.Services.SearchService.SearchService>();
             builder.Services.AddScoped<ICollectionService, CollectionService>();
+            builder.Services.AddScoped<IClubCreationRequestService, ClubCreationRequestService>();
+            builder.Services.AddScoped<IClubService, ClubService>();
+            builder.Services.AddScoped<IClubJoinRequestService, ClubJoinRequestService>();
+            builder.Services.AddScoped<IClubMemberService, ClubMemberService>(); 
+            builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<IRewardRuleService, RewardRuleService>();
+            builder.Services.AddScoped<IRewardService, RewardService>();
+            builder.Services.AddScoped<IRewardRedemptionService, RewardRedemptionService>();
+            builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(TeacherProfileMapping).Assembly);
             builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(EduShpere.Application.Mappings.SearchProfile).Assembly);
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+            builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
+            
+            // System Announcement Service
+            builder.Services.AddScoped<EduShpere.Application.Services.SystemAnnouncementService.ISystemAnnouncementService, EduShpere.Application.Services.SystemAnnouncementService.SystemAnnouncementService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(SystemAnnouncementProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubCreationRequestProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ClubJoinRequestProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(CommentProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
