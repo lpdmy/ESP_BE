@@ -11,6 +11,7 @@ using EduShpere.Shared.Constants;
 using EduShpere.Shared;
 using EduShpere.Application.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Application.Services.SystemAnnouncementService;
 
@@ -226,15 +227,15 @@ public class SystemAnnouncementService : ISystemAnnouncementService
     {
         try
         {
-            var posts = await _postRepository.GetAllAsync();
-            var publicAnnouncements = posts
+            var publicAnnouncements = await _postRepository.GetQueryable()
+                .Include(p => p.Attachments)
                 .Where(p => p.IsSystemAnnouncement && 
                         !p.IsDeleted && 
                         p.Status == Domain.Enum.PostStatus.Published &&
                         (!p.ExpiryDate.HasValue || p.ExpiryDate.Value > DateTime.UtcNow))
                 .OrderByDescending(p => p.IsUrgent)
                 .ThenByDescending(p => p.CreatedAt)
-                .ToList();
+                .ToListAsync();
 
             return _mapper.Map<List<SystemAnnouncementDto>>(publicAnnouncements);
         }
