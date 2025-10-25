@@ -12,5 +12,6 @@ namespace EduShpere.Infrastructure.Repositories
         public UserRightRepository(EduShpereDbContext context) : base(context)
         {
         }
+
     }
 }
