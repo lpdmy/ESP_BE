@@ -21,7 +21,7 @@ public interface IClassGroupService
     Task<IEnumerable<ClassGroupDto>> GetWithoutGradeAsync();
     
     // Student management methods
-    Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId);
+    Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId, string? sortBy = null, string? sortOrder = "asc");
     Task<AddStudentToClassResponseDto> AddStudentToClassAsync(int classGroupId, AddStudentToClassDto dto);
     Task<bool> RemoveStudentFromClassAsync(int classGroupId, int studentId);
     

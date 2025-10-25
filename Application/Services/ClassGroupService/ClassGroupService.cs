@@ -271,16 +271,42 @@ public class ClassGroupService : IClassGroupService
         };
     }
 
-    public async Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId)
+    public async Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId, string? sortBy = null, string? sortOrder = "asc")
     {
         var students = await _repository.GetStudentsInClassAsync(classGroupId);
-        return students.Select(s => new ClassGroupStudentDto
+        
+        // Apply sorting at database level for better performance
+        var sortedStudents = students.AsQueryable();
+        
+        if (!string.IsNullOrEmpty(sortBy))
+        {
+            sortedStudents = sortBy.ToLower() switch
+            {
+                "name" => sortOrder?.ToLower() == "desc" 
+                    ? sortedStudents.OrderByDescending(s => s.LastName).ThenByDescending(s => s.FirstName)
+                    : sortedStudents.OrderBy(s => s.LastName).ThenBy(s => s.FirstName),
+                "email" => sortOrder?.ToLower() == "desc"
+                    ? sortedStudents.OrderByDescending(s => s.Email)
+                    : sortedStudents.OrderBy(s => s.Email),
+                "studentcode" => sortOrder?.ToLower() == "desc"
+                    ? sortedStudents.OrderByDescending(s => s.StudentProfile != null ? s.StudentProfile.StudentNumber : "")
+                    : sortedStudents.OrderBy(s => s.StudentProfile != null ? s.StudentProfile.StudentNumber : ""),
+                _ => sortedStudents.OrderBy(s => s.LastName).ThenBy(s => s.FirstName)
+            };
+        }
+        else
+        {
+            sortedStudents = sortedStudents.OrderBy(s => s.LastName).ThenBy(s => s.FirstName);
+        }
+        
+        return sortedStudents.Select(s => new ClassGroupStudentDto
         {
             Id = s.Id,
             FirstName = s.FirstName,
             LastName = s.LastName,
             Email = s.Email,
-            Birthdate = s.Birthdate
+            Birthdate = s.Birthdate,
+            StudentCode = s.StudentProfile != null ? s.StudentProfile.StudentNumber : null
         });
     }
 
@@ -467,7 +493,7 @@ public class ClassGroupService : IClassGroupService
             return new AssignHomeroomTeacherResponseDto
             {
                 Success = true,
-                Message = $"Đã gán giáo viên {teacher.FirstName} {teacher.LastName} làm chủ nhiệm lớp thành công."
+                Message = $"Đã thêm giáo viên {teacher.FirstName} {teacher.LastName} làm chủ nhiệm lớp thành công."
             };
         }
         else
@@ -475,7 +501,7 @@ public class ClassGroupService : IClassGroupService
             return new AssignHomeroomTeacherResponseDto
             {
                 Success = false,
-                Message = "Có lỗi xảy ra khi gán giáo viên chủ nhiệm. Vui lòng thử lại."
+                Message = "Có lỗi xảy ra khi thêm giáo viên chủ nhiệm. Vui lòng thử lại."
             };
         }
     }

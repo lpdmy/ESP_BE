@@ -73,6 +73,29 @@ namespace EduShpere.Controllers
             }
 
         }
+
+        [HttpGet(ApiEndpoints.Post.GetPostsByClassGroup)]
+        public async Task<IActionResult> GetPostsByClassGroup(int id)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            try
+            {
+                var result = await _postService.GetPostsByClassGroup(id, user);
+                return Ok(new ResponseDto<IEnumerable<PostResponseDto>>(result, "Lấy danh sách bài viết của lớp học thành công", 200));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi khi lấy danh sách bài viết của lớp học",
+                    error = ex.Message
+                });
+            }
+        }
         [HttpDelete(ApiEndpoints.Post.Posts)]
         public async Task<IActionResult> deletePost(int id)
         {

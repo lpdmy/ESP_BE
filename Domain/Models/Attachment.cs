@@ -18,6 +18,9 @@ public partial class Attachment
     [StringLength(1000)]
     public string? FileUrl { get; set; }
 
+    [StringLength(255)]
+    public string? FileName { get; set; }
+
     [StringLength(100)]
     public string? FileType { get; set; }
 

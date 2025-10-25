@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.PostDto;
 using EduShpere.Domain.Models;
 
 namespace EduShpere.Application.Mappings
@@ -21,6 +22,14 @@ namespace EduShpere.Application.Mappings
               ).Trim()
             : string.Empty
     ))
+    .ForMember(dest => dest.Attachments,
+        opt => opt.MapFrom(src => src.Attachments.Select(a => new AttachmentDto
+        {
+            Url = a.FileUrl ?? string.Empty,
+            FileName = a.FileName ?? string.Empty,
+            FileType = a.FileType ?? string.Empty
+        })))
+
     .ForMember(dest => dest.AttachmentUrls,
         opt => opt.MapFrom(src => src.Attachments.Select(a => a.FileUrl)))
 

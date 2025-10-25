@@ -25,12 +25,12 @@ namespace EduShpere.Application.Services
         private readonly IAttachmentRepository _attachmentRepository;
         private readonly IPostHashTagRepository _hashTagRepository;
         private readonly IPostLikeRepository _postLikeRepository;
-        public PostService(IPostRepository repo, IMapper mapper, IUserRepository userRepo, IHashTagRepository hashTagRepo, Moderation moderation, IAttachmentRepository attachmentRepository, IPostHashTagRepository hashTagRepository, IPostLikeRepository postLikeRepository) {
+        public PostService(IPostRepository repo, IMapper mapper, IUserRepository userRepo, IHashTagRepository hashTagRepo, /*Moderation moderation,*/ IAttachmentRepository attachmentRepository, IPostHashTagRepository hashTagRepository, IPostLikeRepository postLikeRepository) {
             _repo = repo;
             _mapper = mapper;
             _userRepo = userRepo;
             _hashTagRepo = hashTagRepo;
-            _moderation = moderation;
+            //_moderation = moderation;
             _attachmentRepository = attachmentRepository;
              _hashTagRepository = hashTagRepository;
             _postLikeRepository = postLikeRepository;
@@ -70,6 +70,12 @@ namespace EduShpere.Application.Services
                 Hashtags = p.PostHashtags.Select(ph => ph.Hashtag.Name).ToList(),
                 MentionUsernames = p.PostMentions.Select(m => m.MentionedUser.Username).ToList(),
                 Comments = p.Comments.Select(c => c.Content).ToList(),
+                Attachments = p.Attachments.Select(a => new AttachmentDto
+                {
+                    Url = a.FileUrl ?? string.Empty,
+                    FileName = a.FileName ?? string.Empty, // Chỉ trả về khi có giá trị
+                    FileType = a.FileType ?? string.Empty
+                }).ToList(),
                 AttachmentUrls = p.Attachments.Select(a => a.FileUrl).ToList(),
                 LikeCount = p.PostLikes.Count,
                 ReportCount = p.PostReports.Count,
@@ -137,6 +143,7 @@ namespace EduShpere.Application.Services
                     post.Attachments.Add(new Attachment
                     {
                         FileUrl = attachment.Url,
+                        FileName = !string.IsNullOrWhiteSpace(attachment.FileName) ? attachment.FileName : null,
                         FileType = attachment.FileType,
                         Post = post
                     });
@@ -166,6 +173,14 @@ namespace EduShpere.Application.Services
                 posts => posts.Where(p => p.UserId == user.Id && !p.IsDeleted),
                 user.Id,
                 sortOrder
+            );
+        }
+
+        public Task<IEnumerable<PostResponseDto>> GetPostsByClassGroup(int classGroupId, User currentUser)
+        {
+            return GetPostsCore(
+                posts => posts.Where(p => p.ClassGroupId == classGroupId && !p.IsDeleted),
+                currentUser.Id
             );
         }
 
@@ -250,6 +265,7 @@ namespace EduShpere.Application.Services
                         post.Attachments.Add(new Attachment
                         {
                             FileUrl = attachment.Url,
+                            FileName = !string.IsNullOrWhiteSpace(attachment.FileName) ? attachment.FileName : null,
                             FileType = attachment.FileType,
                             Post = post
                         });

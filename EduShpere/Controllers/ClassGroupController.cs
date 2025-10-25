@@ -171,9 +171,9 @@ public class ClassGroupController : BaseController
 
     [HttpGet(ApiEndpoints.ClassGroup.GetStudents)]
     //[Authorize(Roles = "Admin,Teacher")]
-    public async Task<IActionResult> GetStudents(int id)
+    public async Task<IActionResult> GetStudents(int id, [FromQuery] string? sortBy = null, [FromQuery] string? sortOrder = "asc")
     {
-        var result = await _classGroupService.GetStudentsInClassAsync(id);
+        var result = await _classGroupService.GetStudentsInClassAsync(id, sortBy, sortOrder);
         return Ok(new ResponseDto<IEnumerable<ClassGroupStudentDto>>(result, "Lấy danh sách học sinh thành công"));
     }
 

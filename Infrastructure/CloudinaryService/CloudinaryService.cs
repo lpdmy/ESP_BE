@@ -38,5 +38,21 @@ namespace EduShpere.Infrastructure
             var result = await _cloudinary.UploadAsync(uploadParams);
             return result.SecureUrl.ToString();
         }
+
+        public async Task<string> UploadFileAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams()
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = "esp_folder/files",
+                PublicId = $"{Guid.NewGuid()}_{file.FileName}"
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+            return result.SecureUrl.ToString();
+        }
     }
 }

@@ -27,6 +27,7 @@
         public static class Upload
         {
             public const string UploadUrl = "api/upload";
+            public const string UploadFile = "api/upload/file";
         }
         public static class UserProfile
         {
@@ -67,6 +68,7 @@
             public const string Posts = "api/post";
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
+            public const string GetPostsByClassGroup = "api/post/classgroup/{Id}";
             public const string Like = "api/post/like";
 
         }

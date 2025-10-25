@@ -27,5 +27,16 @@ namespace EduShpere.Controllers
 
             return Ok(new ResponseDto<string>(url, null));
         }
+
+        [HttpPost("api/upload/file")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+        {
+            var url = await _cloudinaryService.UploadFileAsync(file);
+            if (url == null)
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Upload.UploadFailed, 400));
+
+            return Ok(new ResponseDto<string>(url, null));
+        }
     }
 }

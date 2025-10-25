@@ -175,6 +175,7 @@ public class ClassGroupRepository : IClassGroupRepository
         return await _context.ClassGroupMembers
             .Where(m => m.ClassGroupId == classGroupId && !m.IsDeleted)
             .Include(m => m.User)
+                .ThenInclude(u => u.StudentProfile)
             .Select(m => m.User)
             .Where(u => u.Role == UserRole.Student)
             .ToListAsync();
