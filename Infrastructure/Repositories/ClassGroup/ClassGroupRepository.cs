@@ -306,7 +306,7 @@ public class ClassGroupRepository : IClassGroupRepository
         if (user.Role == UserRole.Student)
         {
             return await _context.ClassGroupMembers
-                .Where(cgm => cgm.UserId == userId && cgm.ClassGroup.AcademicYearId == currentAcademicYear.Id)
+                .Where(cgm => cgm.UserId == userId && cgm.ClassGroup.AcademicYearId == currentAcademicYear.Id && !cgm.IsDeleted)
                 .Select(cgm => cgm.ClassGroup)
                 .FirstOrDefaultAsync();
         }
