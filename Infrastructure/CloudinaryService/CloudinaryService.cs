@@ -2,15 +2,11 @@
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EduShpere.Infrastructure.Services;
 
-namespace EduShpere.Infrastructure
+namespace EduShpere.Infrastructure.Services
 {
-    public class CloudinaryService
+    public class CloudinaryService : ICloudinaryService
     {
         private readonly Cloudinary _cloudinary;
 
@@ -30,6 +26,21 @@ namespace EduShpere.Infrastructure
 
             using var stream = file.OpenReadStream();
             var uploadParams = new ImageUploadParams()
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = "esp_folder"
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+            return result.SecureUrl.ToString();
+        }
+
+        public async Task<string?> UploadFileAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams()
             {
                 File = new FileDescription(file.FileName, stream),
                 Folder = "esp_folder"

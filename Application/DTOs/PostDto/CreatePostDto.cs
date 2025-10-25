@@ -27,6 +27,6 @@ namespace EduShpere.Application.DTOs.PostDto
 
       public List<int> MentionUsernames { get; set; } = new();
 
-      public List<AttachmentDto> AttachmentUrls { get; set; } = new();
+      public List<PostAttachmentDto> AttachmentUrls { get; set; } = new();
     }
 }

@@ -89,5 +89,10 @@ namespace EduShpere.Infrastructure.Repositories
             return await SearchAsync("", 10);
         }
 
+        public IQueryable<Post> GetQueryable()
+        {
+            return _dbSet.AsQueryable();
+        }
+
     }
 }

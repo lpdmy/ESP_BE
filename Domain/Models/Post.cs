@@ -26,6 +26,14 @@ public partial class Post : BaseEntity
     public PostStatus Status { get; set; } 
     [StringLength(20)]
     public string? CallToAction { get; set; } 
+    
+    // System Announcement fields
+    public bool IsSystemAnnouncement { get; set; } = false;
+    public bool IsUrgent { get; set; } = false;
+    public DateTime? ExpiryDate { get; set; }
+    [StringLength(50)]
+    public string? AnnouncementType { get; set; }
+    
     public bool IsDeleted { get; set; } = false;
     public byte[] RowVersion { get; set; } = null!;
     [InverseProperty("Post")]
