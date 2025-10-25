@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Models;
+using EduShpere.Application.DTOs;
 
 namespace EduShpere.Controllers
 {
@@ -30,14 +31,27 @@ namespace EduShpere.Controllers
         [HttpPost(ApiEndpoints.Auth.Login)]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
-            if (loginRequest == null)
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
+            try
+            {
+                if (loginRequest == null)
+                    return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
 
-            var result = await _authService.Login(loginRequest);
-            if (result == null)
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
+                var result = await _authService.Login(loginRequest);
+                if (result == null)
+                    return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
 
-            return Ok(new ResponseDto<TokenModel>(result, "Đăng nhập thành công"));
+                return Ok(new ResponseDto<TokenModel>(result, "Đăng nhập thành công"));
+            }
+
+            catch (Exception ex) { 
+                return StatusCode(500, new
+                {
+                    message = ex.Message,
+                    detail = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+
         }
 
         [HttpGet(ApiEndpoints.Auth.GetMe)]
@@ -264,6 +278,18 @@ namespace EduShpere.Controllers
             catch (Exception)
             {
                 return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
+            }
+        }
+        [HttpPost(ApiEndpoints.Auth.CreateStaff)]
+        public async Task<IActionResult> CreateStaff(CreateStaffDto dto)
+        {
+            try {  
+                var result = await _authService.CreateStaff(dto);
+                return Ok(new ResponseDto<UserResponseDto>(result, "Tạo nhân viên thành công"));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
             }
         }
     }

@@ -25,6 +25,13 @@ namespace EduShpere.Application.Mappings
                 .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.TeacherProfile != null ? src.TeacherProfile.Position : null));
             
             CreateMap<UserDto, User>();
+            CreateMap<User, UserResponseDto>()
+                .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src =>
+                src.UserRights
+                    .Where(ur => !ur.IsDeleted)
+                    .Select(ur => ur.Right.Code)
+                    .ToList()
+            ));
         }
     }
 }

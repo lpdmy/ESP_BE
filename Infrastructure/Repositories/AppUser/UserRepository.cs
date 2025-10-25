@@ -21,7 +21,18 @@ namespace EduShpere.Infrastructure
             _dbSet.Remove(entity);
             await _context.SaveChangesAsync();
         }
-
+        public virtual async Task<User?> GetByIdIncludeAsync(int id)
+        {
+            return await _dbSet.Include(p=>p.UserRights).ThenInclude(p=>p.Right).FirstOrDefaultAsync(p=>p.Id==id);
+        }
+        public IQueryable<User> GetAllByStaffIncluding()
+        {
+            return  _dbSet.Include(p => p.UserRights).ThenInclude(p => p.Right).Where(p => p.Role == UserRole.Staff);
+        }
+        public async Task<User> GetByStaffIdIncluding(int staffId)
+        {
+            return await _dbSet.Include(p => p.UserRights).ThenInclude(p => p.Right).Where(p => p.Role == UserRole.Staff && p.Id==staffId).FirstOrDefaultAsync();
+        }
 
         public virtual async Task<User?> GetByIdAsync(int id)
         {
@@ -31,6 +42,7 @@ namespace EduShpere.Infrastructure
         {
             return await _dbSet.FirstOrDefaultAsync(p => p.Username == userName || p.Email.Equals(userName));
         }
+
         public async Task<bool> FindUserByEmail(string email)
         {
             return await _dbSet.AnyAsync(p => p.Email == email);
