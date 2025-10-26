@@ -276,7 +276,5 @@ namespace EduShpere.Application
             var teacher = await _teacherProfileRepository.UpdateTeacherProfileAsync(profile, dto.BirthDate, dto.PhoneNumber, dto.AvatarUrl);
             return _mapper.Map<TeacherProfileDto>(teacher);
         }
-
-
     }
 }
