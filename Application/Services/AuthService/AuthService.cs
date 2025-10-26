@@ -113,10 +113,7 @@ namespace EduShpere.Application
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(60),
-                SigningCredentials = new SigningCredentials(
-        new SymmetricSecurityKey(secretKeyBytes),
-        SecurityAlgorithms.HmacSha256Signature
-    )
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
             var accessTokenString = jwtTokenHandler.WriteToken(token);
