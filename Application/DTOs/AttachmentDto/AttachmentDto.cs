@@ -1,4 +1,4 @@
-namespace EduShpere.Application.DTOs.AttachmentDto;
+namespace EduShpere.Application.DTOs;
 
 public class SystemAttachmentDto
 {

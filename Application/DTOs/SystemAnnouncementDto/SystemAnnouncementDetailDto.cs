@@ -1,4 +1,4 @@
-using EduShpere.Application.DTOs.AttachmentDto;
+using EduShpere.Application.DTOs;
 
 namespace EduShpere.Application.DTOs.SystemAnnouncementDto;
 

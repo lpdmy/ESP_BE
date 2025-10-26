@@ -35,6 +35,10 @@ public class ClassGroupProfile : Profile
         // Response mapping
         CreateMap<ClassGroup, ClassGroupDto>()
             .ForMember(dest => dest.CurrentStudentCount, opt => opt.MapFrom(src => 
-                src.ClassGroupMembers != null ? src.ClassGroupMembers.Count(m => !m.IsDeleted) : 0));
+                src.ClassGroupMembers != null ? src.ClassGroupMembers.Count(m => !m.IsDeleted) : 0))
+            .ForMember(dest => dest.AcademicYearName, opt => opt.MapFrom(src => src.AcademicYears != null ? src.AcademicYears.Name : null));
+
+        // Academic Year mapping
+        CreateMap<AcademicYear, AcademicYearDto>();
     }
 }
