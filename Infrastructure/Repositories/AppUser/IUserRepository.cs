@@ -22,5 +22,6 @@ namespace EduShpere.Infrastructure
         Task<User?> GetByIdIncludeAsync(int id);
         IQueryable<User> GetAllByStaffIncluding();
         Task<User> GetByStaffIdIncluding(int staffId);
+        Task DeleteSoft(int id);
     }
 }

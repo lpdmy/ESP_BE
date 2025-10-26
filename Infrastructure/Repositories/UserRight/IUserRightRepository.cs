@@ -15,5 +15,7 @@ namespace EduShpere.Infrastructure.Repositories
         Task AddRangeAsync(IEnumerable<UserRight> entities);
         Task UpdateAsync(UserRight entity);
         Task DeleteAsync(int id);
+        Task DeleteByUserIdAsync(int userId);
+        Task<bool> HasRight(int userId);
     }
 }

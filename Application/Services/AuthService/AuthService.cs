@@ -60,7 +60,8 @@ namespace EduShpere.Application
         public async Task<UserDto> GetMe()
         {
             var user = await _httpContextService.GetAppUserAndThrow();
-            return _mapper.Map<UserDto>(user);
+            var fullUser = await _userRepository.GetByIdIncludeAsync(user.Id);
+            return _mapper.Map<UserDto>(fullUser);
         }
 
         private string GenerateRefreshToken()

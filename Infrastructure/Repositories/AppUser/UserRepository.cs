@@ -29,6 +29,16 @@ namespace EduShpere.Infrastructure
         {
             return  _dbSet.Include(p => p.UserRights).ThenInclude(p => p.Right).Where(p => p.Role == UserRole.Staff);
         }
+        public async Task DeleteSoft(int id)
+        {
+            var entity = await _dbSet.FindAsync(id);
+            if (entity == null || entity.IsDeleted)
+            {
+                throw new KeyNotFoundException("Entity not found or already deleted");
+            }
+            entity.IsDeleted = true;
+            await _context.SaveChangesAsync();
+        }
         public async Task<User> GetByStaffIdIncluding(int staffId)
         {
             return await _dbSet.Include(p => p.UserRights).ThenInclude(p => p.Right).Where(p => p.Role == UserRole.Staff && p.Id==staffId).FirstOrDefaultAsync();

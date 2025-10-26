@@ -14,7 +14,8 @@ namespace EduShpere.Controllers
     public class StaffController : ControllerBase
     {
         private readonly IStaffService _staffService;
-        public StaffController(IStaffService staffService) {
+        public StaffController(IStaffService staffService)
+        {
             _staffService = staffService;
         }
         [HttpGet(ApiEndpoints.Staff.Staffs)]
@@ -29,7 +30,7 @@ namespace EduShpere.Controllers
                     ));
         }
         [HttpGet(ApiEndpoints.Staff.GetStaffById)]
-        public async Task<IActionResult>GetStaffById (int id)
+        public async Task<IActionResult> GetStaffById(int id)
         {
             try
             {
@@ -44,8 +45,61 @@ namespace EduShpere.Controllers
             {
                 throw new BadRequestException(ex.Message);
             }
-            
-        }
 
+        }
+        [HttpPut]
+        [Route(ApiEndpoints.Staff.Staffs)]
+        public async Task<IActionResult> UpdateStaff([FromBody] UpdateStaffDto dto)
+        {
+            try
+            {
+                var result = await _staffService.UpdateStaff(dto);
+                return Ok(new ResponseDto<UserResponseDto>(
+                            result,
+                            message: "Cập nhật thông tin staff thành công",
+                            statusCode: 200
+                        ));
+            }
+            catch (BadRequestException ex)
+            {
+                throw new BadRequestException(ex.Message);
+            }
+        }
+        [HttpDelete(ApiEndpoints.Staff.GetStaffById)]
+        public async Task<IActionResult> DeleteStaff(int id)
+        {
+            try
+            {
+                await _staffService.DeleteSoft(id);
+                return Ok(new ResponseDto<string>(
+                            null,
+                            message: "Xóa staff thành công",
+                            statusCode: 200
+                        ));
+            }
+            catch (BadRequestException ex)
+            {
+                throw new BadRequestException(ex.Message);
+            }
+        }
+        [HttpPut]
+        [Route(ApiEndpoints.Staff.GetStaffById)]
+        public async Task<IActionResult> RecoveryStaff(int id)
+        {
+            try
+            {
+                await _staffService.RecoveryStaff(id);
+                return Ok(new ResponseDto<string>(
+                            null,
+                            message: "Phục hồi staff thành công",
+                            statusCode: 200
+                        ));
+            }
+            catch (BadRequestException ex)
+            {
+                throw new BadRequestException(ex.Message);
+            }
+
+        }
     }
 }

@@ -19,5 +19,6 @@ namespace EduShpere.Application.DTOs
         public DateTime UpdatedAt { get; set; }
         public List<string> Permissions { get; set; } = new List<string>();
         public bool IsDeleted { get; set; }
+        public string Password { get; set; }
     }
 }
