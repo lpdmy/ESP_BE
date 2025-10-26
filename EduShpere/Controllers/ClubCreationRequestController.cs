@@ -1,4 +1,5 @@
-﻿using EduShpere.Application;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using EduShpere.Application;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.Services;
@@ -35,9 +36,9 @@ namespace EduShpere.Controllers
             }
         }
         [HttpGet(ApiEndpoints.ClubCreationRequest.GetAll)]
-        public async Task<IActionResult> GetAllClubCreationRequests([FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        public async Task<IActionResult> GetAllClubCreationRequests([FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null, int ? status =null)
         {
-            var response = await _service.GetAllAsync(paginationRequest, search);
+            var response = await _service.GetAllAsync(paginationRequest, search, status);
             return Ok(new ResponseDto<PaginationResponseDto<ClubCreationResponseDto>>(
                        response,
                        message: "Lấy bộ sưu tập thành công",
@@ -55,12 +56,26 @@ namespace EduShpere.Controllers
                        statusCode: 200
                    ));
         }
-        [HttpPost(ApiEndpoints.ClubCreationRequest.Approve)]
+        [HttpPut(ApiEndpoints.ClubCreationRequest.Approve)]
         public async Task<IActionResult> ApproveClubCreationRequest(int id)
         {
             try
             {
                 var result = await _service.ApproveCreation(id);
+                return Ok(new ResponseDto<ClubCreationResponseDto>(result, "Duyệt đơn tạo câu lạc bộ thành công", 200));
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+
+            }
+        }
+        [HttpPut(ApiEndpoints.ClubCreationRequest.Reject)]
+        public async Task<IActionResult> RejectClubCreationRequest([FromBody]RejectCreationDto dto)
+        {
+            try
+            {
+                var result = await _service.RejectCreation(dto);
                 return Ok(new ResponseDto<ClubCreationResponseDto>(result, "Duyệt đơn tạo câu lạc bộ thành công", 200));
             }
             catch (BadRequestException ex)

@@ -43,6 +43,15 @@ namespace EduShpere.Infrastructure
         {
             return await _dbSet.Include(p => p.UserRights).ThenInclude(p => p.Right).Where(p => p.Role == UserRole.Staff && p.Id==staffId).FirstOrDefaultAsync();
         }
+        public IQueryable<User> GetAllIncluding()
+        {
+            return _dbSet
+                .Include(u => u.StudentProfile)
+                .Include(u => u.TeacherProfile)
+                .Include(u => u.ClassGroupMembers)
+                    .ThenInclude(cgm => cgm.ClassGroup);
+        }
+
 
         public virtual async Task<User?> GetByIdAsync(int id)
         {
@@ -52,7 +61,6 @@ namespace EduShpere.Infrastructure
         {
             return await _dbSet.FirstOrDefaultAsync(p => p.Username == userName || p.Email.Equals(userName));
         }
-
         public async Task<bool> FindUserByEmail(string email)
         {
             return await _dbSet.AnyAsync(p => p.Email == email);

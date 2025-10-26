@@ -22,5 +22,7 @@ namespace EduShpere.Application.DTOs
 
         public DateTime? RespondedAt { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public string ClubName { get; set; }
     }
 }

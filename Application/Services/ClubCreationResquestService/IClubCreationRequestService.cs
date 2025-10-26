@@ -9,10 +9,11 @@ namespace EduShpere.Application.Services
         Task<ClubCreationResponseDto> createClubRequest(CreateClubRequestDto dto, User user);
         Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsync(
     PaginationRequestDto paginationRequest,
-    string? search = null);
+    string? search = null, int? status = null);
         Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsyncByUser(User user,
     PaginationRequestDto paginationRequest,
     string? search = null);
         Task<ClubCreationResponseDto> ApproveCreation(int id);
+        Task<ClubCreationResponseDto> RejectCreation(RejectCreationDto rejectCreation);
     }
 }

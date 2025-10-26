@@ -12,6 +12,8 @@ using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using EduShpere.Domain.Models;
 using EduShpere.Domain;
+using EduShpere.Infrastructure;
+using EduShpere.Application.DTOs.SearchDto;
 
 namespace EduShpere.Application.Services
 {
@@ -22,12 +24,14 @@ namespace EduShpere.Application.Services
         private readonly IClubJoinRequestRepository _clubJoinRequestRepo;
         private readonly IClubCategoryRepository _clubCategoryRepo;
         private readonly IClubMemberRepository _clubMemberRepo;
-        public ClubService(IClubRepository repo, IMapper mapper, IClubJoinRequestRepository clubJoinRequestRepo, IClubCategoryRepository clubCategoryRepo, IClubMemberRepository clubMemberRepo) {
+        private readonly IUserRepository _userRepository;
+        public ClubService(IClubRepository repo, IMapper mapper, IClubJoinRequestRepository clubJoinRequestRepo, IClubCategoryRepository clubCategoryRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepository) {
             _repo = repo;
             _mapper = mapper;
             _clubJoinRequestRepo = clubJoinRequestRepo;
             _clubCategoryRepo = clubCategoryRepo;
             _clubMemberRepo = clubMemberRepo;
+            _userRepository = userRepository;
         }
         public async Task<PaginationResponseDto<ClubResponseDto>> GetAllAsync(User user,
     PaginationRequestDto paginationRequest,
@@ -140,6 +144,47 @@ namespace EduShpere.Application.Services
         }
         public async Task<IEnumerable<ClubCategory>> GetAllClubCategory() { 
         return await _clubCategoryRepo.GetAllAsync();
-        } 
+        }
+        public async Task<PaginationResponseDto<UserSearchResultDto>> GetAllAsync(int role,
+    PaginationRequestDto paginationRequest,
+    string? search = null)
+        {
+
+            var roleEnum = role switch
+            {
+                1 => UserRole.Admin,
+                2 => UserRole.Teacher,
+                4 => UserRole.Student,
+                _ => throw new ArgumentException("Role không hợp lệ")
+            };
+            var users = _userRepository.GetAllIncluding();
+            var query = users.Where(p => p.Role == roleEnum);
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c =>
+                    c.FirstName.Contains(search) ||
+                    c.LastName.Contains(search) || 
+                    c.Username.Contains(search) ||
+                    c.Email.Contains(search)) ;
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<UserSearchResultDto>>(data);
+            
+            var sql = query.ToQueryString();
+            return new PaginationResponseDto<UserSearchResultDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
+        }
     }
 }

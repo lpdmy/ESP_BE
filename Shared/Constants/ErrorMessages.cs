@@ -49,6 +49,13 @@
             public const string IdRequired = "ID là bắt buộc";
             public const string NameTooLong = "Tên không được vượt quá 255 ký tự";
             public const string DescriptionTooLong = "Mô tả không được vượt quá 500 ký tự";
+            
+            // System Announcement validation
+            public const string TitleRequired = "Tiêu đề là bắt buộc";
+            public const string TitleTooLong = "Tiêu đề không được vượt quá 500 ký tự";
+            public const string ContentRequired = "Nội dung là bắt buộc";
+            public const string AnnouncementTypeRequired = "Loại thông báo là bắt buộc";
+            public const string AnnouncementTypeTooLong = "Loại thông báo không được vượt quá 50 ký tự";
         }
 
         public struct Generic
@@ -114,11 +121,29 @@
             public const string PostNotFound = "Bài viết không tồn tại.";
             public const string ListNotFound = "Không tìm thấy bài viết nào.";
         }
+
+        public struct SystemAnnouncement
+        {
+            public const string NotFound = "Thông báo hệ thống không tồn tại.";
+            public const string AlreadyExists = "Thông báo hệ thống đã tồn tại.";
+            public const string CreateFailed = "Tạo thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string UpdateFailed = "Cập nhật thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string DeleteFailed = "Xóa thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string GetFailed = "Lấy thông tin thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string InvalidId = "ID thông báo hệ thống không hợp lệ.";
+            public const string ValidationFailed = "Dữ liệu thông báo hệ thống không hợp lệ.";
+            public const string InvalidAnnouncementType = "Loại thông báo không hợp lệ.";
+            public const string ExpiryDateInPast = "Ngày hết hạn không được là ngày trong quá khứ.";
+            public const string FileUploadFailed = "Upload file đính kèm thất bại.";
+            public const string InvalidFileType = "Loại file không được hỗ trợ.";
+            public const string FileTooLarge = "File quá lớn. Kích thước tối đa là 10MB.";
+        }
         public struct ClubCreationRequest
         {
             public const string RecentRequestExists = "Bạn chỉ có thể gửi đơn tạo CLB 1 lần trong vòng 7 ngày.";
             public const string RequestNotFound = "Yêu cầu tạo câu lạc bộ không tồn tại.";
             public const string AlreadyApproved = "Yêu cầu đã được duyệt";
+            public const string NotNullReason = "Lý do không được để trống khi từ chối yêu cầu.";
         }
         public struct Club
         {
@@ -140,6 +165,7 @@
             public const string CannotChangeRoleOfPresident = "Không thể thay đổi vai trò của chủ nhiệm câu lạc bộ.";
             public const string CannotChangeRoleOfMentor = "Không thể thay đổi vai trò của cố vấn câu lạc bộ.";
             public const string InvalidRole = "Vai trò không hợp lệ.";
+            public const string CannotChangeRoleForTeacher = "Không thể chuyển vai trò cho giáo viên.";
         }
         public struct Comment
         {

@@ -90,6 +90,7 @@ namespace EduShpere.Shared.Constants
             public const string GetAll = "api/club-creation-request";
             public const string GetAllByUser = "api/club-creation-request/user";
             public const string Approve = "api/club-creation-request/approve/{id}";
+            public const string Reject = "api/club-creation-request/reject";
         }
         public static class Club
         {
@@ -99,6 +100,7 @@ namespace EduShpere.Shared.Constants
             public const string Categories = "api/club/categories";
             public const string Members = "api/club/members";
             public const string RemoveMember = "api/club/members/remove/{id}";
+            public const string SearchUsers = "api/club/search-users";
         }
         public static class ClubJoinRequest
         {
@@ -108,6 +110,7 @@ namespace EduShpere.Shared.Constants
             public const string RejectJoinRequest = "api/join-request/reject/{id}";
             public const string InviteMentor = "api/join-request/invite-mentor";
             public const string JoinRequestByClub = "api/join-request/club/{id}";
+            public const string JoinRequestByUser = "api/join-request/user";
         }
         public static class ClubMember
         {
@@ -115,6 +118,7 @@ namespace EduShpere.Shared.Constants
             public const string GetClubMemberByUser = "api/club-member/user";
             public const string OutClub = "api/club-member/{id}";
             public const string KickClub = "api/club-member";
+            public const string ChangeRole = "api/club-member/change-role";
         }
         public static class Comment
         {
