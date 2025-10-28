@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EduShpere.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Infrastructure.Repositories
 {
@@ -16,6 +17,17 @@ namespace EduShpere.Infrastructure.Repositories
         {
             var attachments = _context.Attachments.Where(a => a.PostId == postId);
             _context.Attachments.RemoveRange(attachments);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<Attachment>> GetAttachmentsByPostIdAsync(int postId)
+        {
+            return await _dbSet.Where(a => a.PostId == postId && !a.IsDeleted).ToListAsync();
+        }
+
+        public async Task DeleteRangeAsync(IEnumerable<Attachment> attachments)
+        {
+            _dbSet.RemoveRange(attachments);
             await _context.SaveChangesAsync();
         }
     }

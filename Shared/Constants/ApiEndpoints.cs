@@ -27,6 +27,7 @@
         public static class Upload
         {
             public const string UploadUrl = "api/upload";
+            public const string UploadFile = "api/upload/file";
         }
         public static class UserProfile
         {
@@ -67,6 +68,7 @@
             public const string Posts = "api/post";
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
+            public const string GetPostsByClassGroup = "api/post/classgroup/{Id}";
             public const string Like = "api/post/like";
             public const string ClubPending = "api/post/club/pending/{clubid}";
             public const string Club = "api/post/club/{clubid}";
@@ -146,6 +148,18 @@
             public const string GetStudents = "api/classgroup/{id}/students";
             public const string AddStudent = "api/classgroup/{id}/students";
             public const string RemoveStudent = "api/classgroup/{id}/students/{studentId}";
+            
+            // Homeroom Teacher management endpoints
+            public const string AssignHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string RemoveHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string GetHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            
+            // Academic Year endpoints
+            public const string GetAcademicYears = "api/classgroup/academic-years";
+            public const string GetAcademicYearCurrent = "api/classgroup/academic-years-current";
+            
+            // Current Class endpoints
+            public const string GetCurrentClass = "api/classgroup/current-class";
         }
 
         public static class StarPoint

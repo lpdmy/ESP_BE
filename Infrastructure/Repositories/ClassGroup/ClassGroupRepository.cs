@@ -1,5 +1,6 @@
 using EduShpere.Domain;
 using EduShpere.Domain.Models;
+using EduShpere.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Infrastructure;
@@ -18,7 +19,12 @@ public class ClassGroupRepository : IClassGroupRepository
     // Basic CRUD operations
     public async Task<IEnumerable<ClassGroup>> GetAllAsync()
     {
-        return await _dbSet.Where(c => !c.IsDeleted).ToListAsync();
+        return await _dbSet
+            .Where(c => !c.IsDeleted)
+            .Include(c => c.ClassGroupMembers.Where(m => !m.IsDeleted))
+            .Include(c => c.Teacher)
+            .Include(c => c.AcademicYears)
+            .ToListAsync();
     }
 
     public async Task<ClassGroup?> GetByIdAsync(int id)
@@ -49,7 +55,7 @@ public class ClassGroupRepository : IClassGroupRepository
         var entity = await GetByIdAsync(id);
         if (entity != null)
         {
-            entity.IsDeleted = true; // Soft delete
+            entity.IsDeleted = true;
             await UpdateAsync(entity);
         }
     }
@@ -135,6 +141,7 @@ public class ClassGroupRepository : IClassGroupRepository
 
         return await query
             .Include(c => c.ClassGroupMembers.Where(m => !m.IsDeleted))
+            .Include(c => c.Teacher)
             .Include(c => c.AcademicYears)
             .OrderBy(c => c.Grade)
             .ThenBy(c => c.Name)
@@ -168,6 +175,7 @@ public class ClassGroupRepository : IClassGroupRepository
         return await _context.ClassGroupMembers
             .Where(m => m.ClassGroupId == classGroupId && !m.IsDeleted)
             .Include(m => m.User)
+                .ThenInclude(u => u.StudentProfile)
             .Select(m => m.User)
             .Where(u => u.Role == UserRole.Student)
             .ToListAsync();
@@ -175,19 +183,18 @@ public class ClassGroupRepository : IClassGroupRepository
 
     public async Task<bool> AddStudentToClassAsync(int classGroupId, int studentId)
     {
-        // Check if student is already in class
+
         var existingMember = await _context.ClassGroupMembers
             .FirstOrDefaultAsync(m => m.ClassGroupId == classGroupId && m.UserId == studentId && !m.IsDeleted);
 
         if (existingMember != null)
-            return false; // Student already in class
+            return false; 
 
-        // Check if student exists and is a student
         var student = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == studentId && u.Role == UserRole.Student && !u.IsDeleted);
 
         if (student == null)
-            return false; // Student not found or not a student
+            return false;
 
         var member = new ClassGroupMember
         {
@@ -222,18 +229,6 @@ public class ClassGroupRepository : IClassGroupRepository
             .AnyAsync(m => m.ClassGroupId == classGroupId && m.UserId == studentId && !m.IsDeleted);
     }
 
-    public async Task<User?> GetHomeroomTeacherAsync(int classGroupId)
-    {
-        // For now, we'll return the first teacher found in the class
-        // In a real scenario, you might have a specific field for homeroom teacher
-        return await _context.ClassGroupMembers
-            .Where(m => m.ClassGroupId == classGroupId && !m.IsDeleted)
-            .Include(m => m.User)
-            .Select(m => m.User)
-            .Where(u => u.Role == UserRole.Teacher)
-            .FirstOrDefaultAsync();
-    }
-
     public async Task<User?> GetStudentByEmailAsync(string email)
     {
         return await _context.Users
@@ -259,14 +254,12 @@ public class ClassGroupRepository : IClassGroupRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<ClassGroup?> GetStudentCurrentClassInSameGradeAndAcademicYearAsync(int studentId, int grade, int academicYearId)
+    public async Task<ClassGroup?> GetStudentCurrentClassInSameAcademicYearAsync(int studentId, int academicYearId)
     {
-        // Get all classes the student is currently in with the same grade AND same academic year
         return await _context.ClassGroupMembers
             .Where(m => m.UserId == studentId && !m.IsDeleted)
             .Include(m => m.ClassGroup)
-            .Where(m => m.ClassGroup.Grade == grade && 
-                       m.ClassGroup.AcademicYearId == academicYearId && 
+            .Where(m => m.ClassGroup.AcademicYearId == academicYearId && 
                        !m.ClassGroup.IsDeleted)
             .Select(m => m.ClassGroup)
             .FirstOrDefaultAsync();
@@ -275,17 +268,104 @@ public class ClassGroupRepository : IClassGroupRepository
 
     public async Task<bool> AddStudentToClassByEmailAsync(int classGroupId, string email)
     {
-        // Find student by email
         var student = await GetStudentByEmailAsync(email);
         if (student == null)
-            return false; // Student not found
+            return false; 
 
-        // Check if student is already in any class
         var currentClass = await GetStudentCurrentClassAsync(student.Id);
         if (currentClass != null)
-            return false; // Student already in a class
+            return false; 
 
-        // Add student to the specified class
         return await AddStudentToClassAsync(classGroupId, student.Id);
+    }
+
+    public async Task<IEnumerable<AcademicYear>> GetAllAcademicYearsAsync()
+    {
+        return await _context.AcademicYears
+            .OrderByDescending(ay => ay.StartDate)
+            .ToListAsync();
+    }
+
+    public async Task<AcademicYear?> GetCurrentAcademicYearAsync()
+    {
+        return await _context.AcademicYears
+            .FirstOrDefaultAsync(ay => ay.IsCurrent);
+    }
+
+    public async Task<ClassGroup?> GetCurrentClassByUserIdAsync(int userId)
+    {
+        // Lấy niên khóa hiện tại
+        var currentAcademicYear = await GetCurrentAcademicYearAsync();
+        if (currentAcademicYear == null) return null;
+
+        // Lấy thông tin user để kiểm tra role
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return null;
+
+        // Nếu là học sinh
+        if (user.Role == UserRole.Student)
+        {
+            return await _context.ClassGroupMembers
+                .Where(cgm => cgm.UserId == userId && cgm.ClassGroup.AcademicYearId == currentAcademicYear.Id && !cgm.IsDeleted)
+                .Select(cgm => cgm.ClassGroup)
+                .FirstOrDefaultAsync();
+        }
+
+        // Nếu là giáo viên
+        if (user.Role == UserRole.Teacher)
+        {
+            return await _context.ClassGroups
+                .Where(cg => cg.TeacherId == userId && cg.AcademicYearId == currentAcademicYear.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        return null;
+    }
+
+    public async Task<User?> GetTeacherByEmailAsync(string email)
+    {
+        return await _context.Users
+            .Where(u => u.Email == email && u.Role == UserRole.Teacher)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> AssignHomeroomTeacherAsync(int classGroupId, int teacherId)
+    {
+        var classGroup = await _context.ClassGroups.FindAsync(classGroupId);
+        if (classGroup == null)
+            return false;
+
+        classGroup.TeacherId = teacherId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveHomeroomTeacherAsync(int classGroupId)
+    {
+        var classGroup = await _context.ClassGroups.FindAsync(classGroupId);
+        if (classGroup == null)
+            return false;
+
+        classGroup.TeacherId = null;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<User?> GetHomeroomTeacherAsync(int classGroupId)
+    {
+        return await _context.ClassGroups
+            .Where(cg => cg.Id == classGroupId && !cg.IsDeleted)
+            .Include(cg => cg.Teacher)
+            .Select(cg => cg.Teacher)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<ClassGroup?> GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(int teacherId, int academicYearId)
+    {
+        return await _context.ClassGroups
+            .Where(cg => cg.TeacherId == teacherId && 
+                        cg.AcademicYearId == academicYearId && 
+                        !cg.IsDeleted)
+            .FirstOrDefaultAsync();
     }
 }

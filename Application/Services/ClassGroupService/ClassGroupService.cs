@@ -6,6 +6,7 @@ using EduShpere.Shared.Constants;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using EduShpere.Shared;
+using EduShpere.Application.DTOs.AuthDto;
 
 namespace EduShpere.Application.Services.ClassGroupService;
 
@@ -75,21 +76,31 @@ public class ClassGroupService : IClassGroupService
         return _mapper.Map<ClassGroupDto>(classGroup);
     }
 
-    public async Task<ClassGroupDashboardDto> GetDashboardDataAsync()
+    public async Task<ClassGroupDashboardDto> GetDashboardDataAsync(int? academicYearId = null)
     {
-        // Get all classes with members
         var allClasses = await _repository.GetAllAsync();
         var allClassesIncludingDeleted = await _repository.GetByFilterAsync(isDeleted: null);
+        
+        Console.WriteLine($"GetDashboardDataAsync called with academicYearId: {academicYearId}");
+        Console.WriteLine($"Total classes before filter: {allClasses.Count()}");
+        
+        if (academicYearId.HasValue)
+        {
+            allClasses = allClasses.Where(c => c.AcademicYearId == academicYearId.Value);
+            allClassesIncludingDeleted = allClassesIncludingDeleted.Where(c => c.AcademicYearId == academicYearId.Value);
+            Console.WriteLine($"Total classes after filter by academicYearId {academicYearId}: {allClasses.Count()}");
+        }
 
-        // Calculate statistics
         var statistics = new ClassGroupStatisticsDto
         {
             TotalClasses = allClasses.Count(),
             TotalStudents = allClasses.Sum(c => c.ClassGroupMembers?.Count ?? 0),
+            TotalTeachers = allClasses.Count(c => c.TeacherId.HasValue),
             DeletedClasses = allClassesIncludingDeleted.Count(c => c.IsDeleted)
         };
+        
+        Console.WriteLine($"Statistics calculated: TotalClasses={statistics.TotalClasses}, TotalStudents={statistics.TotalStudents}, TotalTeachers={statistics.TotalTeachers}");
 
-        // Group by grade
         var classesByGrade = allClasses
             .GroupBy(c => c.Grade)
             .Select(g => new ClassGroupByGradeDto
@@ -124,7 +135,6 @@ public class ClassGroupService : IClassGroupService
 
     public async Task<ClassGroupDto> CreateAsync(CreateClassGroupDto dto)
     {
-        // Kiểm tra tồn tại theo tổ hợp Name + Grade + AcademicYearId
         if (!string.IsNullOrEmpty(dto.Name) && await _repository.IsExistsAsync(dto.Name, dto.Grade, dto.AcademicYearId))
         {
             throw new BadRequestException(ErrorMessages.ClassGroup.NameAlreadyExists);
@@ -132,7 +142,6 @@ public class ClassGroupService : IClassGroupService
 
         var classGroup = _mapper.Map<ClassGroup>(dto);
         
-        // Set audit fields
         _auditService.SetAuditFieldsForCreate(classGroup);
         
         await _repository.AddAsync(classGroup);
@@ -148,7 +157,6 @@ public class ClassGroupService : IClassGroupService
             throw new NotFoundException(ErrorMessages.ClassGroup.NotFound);
         }
 
-        // Kiểm tra tồn tại theo tổ hợp Name + Grade + AcademicYearId (trừ chính nó)
         if (!string.IsNullOrEmpty(dto.Name) && 
             await _repository.IsExistsAsync(dto.Name, dto.Grade, dto.AcademicYearId, dto.Id))
         {
@@ -157,7 +165,6 @@ public class ClassGroupService : IClassGroupService
 
         _mapper.Map(dto, classGroup);
         
-        // Set audit fields
         _auditService.SetAuditFieldsForUpdate(classGroup);
         
         await _repository.UpdateAsync(classGroup);
@@ -197,7 +204,6 @@ public class ClassGroupService : IClassGroupService
             isDeleted: filter.IsDeleted
         );
 
-        // Natural sort: by Grade, then alpha prefix then numeric suffix, then name fallback
         (string alpha, int number) SplitNameParts(string? name)
         {
             if (string.IsNullOrWhiteSpace(name)) return (string.Empty, 0);
@@ -265,22 +271,47 @@ public class ClassGroupService : IClassGroupService
         };
     }
 
-    public async Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId)
+    public async Task<IEnumerable<ClassGroupStudentDto>> GetStudentsInClassAsync(int classGroupId, string? sortBy = null, string? sortOrder = "asc")
     {
         var students = await _repository.GetStudentsInClassAsync(classGroupId);
-        return students.Select(s => new ClassGroupStudentDto
+        
+        // Apply sorting at database level for better performance
+        var sortedStudents = students.AsQueryable();
+        
+        if (!string.IsNullOrEmpty(sortBy))
+        {
+            sortedStudents = sortBy.ToLower() switch
+            {
+                "name" => sortOrder?.ToLower() == "desc" 
+                    ? sortedStudents.OrderByDescending(s => s.LastName).ThenByDescending(s => s.FirstName)
+                    : sortedStudents.OrderBy(s => s.LastName).ThenBy(s => s.FirstName),
+                "email" => sortOrder?.ToLower() == "desc"
+                    ? sortedStudents.OrderByDescending(s => s.Email)
+                    : sortedStudents.OrderBy(s => s.Email),
+                "studentcode" => sortOrder?.ToLower() == "desc"
+                    ? sortedStudents.OrderByDescending(s => s.StudentProfile != null ? s.StudentProfile.StudentNumber : "")
+                    : sortedStudents.OrderBy(s => s.StudentProfile != null ? s.StudentProfile.StudentNumber : ""),
+                _ => sortedStudents.OrderBy(s => s.LastName).ThenBy(s => s.FirstName)
+            };
+        }
+        else
+        {
+            sortedStudents = sortedStudents.OrderBy(s => s.LastName).ThenBy(s => s.FirstName);
+        }
+        
+        return sortedStudents.Select(s => new ClassGroupStudentDto
         {
             Id = s.Id,
             FirstName = s.FirstName,
             LastName = s.LastName,
             Email = s.Email,
-            Birthdate = s.Birthdate
+            Birthdate = s.Birthdate,
+            StudentCode = s.StudentProfile != null ? s.StudentProfile.StudentNumber : null
         });
     }
 
     public async Task<AddStudentToClassResponseDto> AddStudentToClassAsync(int classGroupId, AddStudentToClassDto dto)
     {
-        // Get the target class to determine academic year
         var targetClass = await _repository.GetByIdAsync(classGroupId);
         if (targetClass == null)
         {
@@ -291,7 +322,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Find student by email
         var student = await _repository.GetStudentByEmailAsync(dto.Email);
         if (student == null)
         {
@@ -302,7 +332,6 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Check if student is already in this specific class
         var isAlreadyInClass = await _repository.IsStudentInClassAsync(classGroupId, student.Id);
         if (isAlreadyInClass)
         {
@@ -313,23 +342,21 @@ public class ClassGroupService : IClassGroupService
             };
         }
 
-        // Check if student is already in another class of the same grade AND same academic year
-        if (targetClass.Grade.HasValue && targetClass.AcademicYearId.HasValue)
+        if (targetClass.AcademicYearId.HasValue)
         {
-            var currentClassInSameGradeAndYear = await _repository.GetStudentCurrentClassInSameGradeAndAcademicYearAsync(student.Id, targetClass.Grade.Value, targetClass.AcademicYearId.Value);
-            if (currentClassInSameGradeAndYear != null)
+            var currentClassInSameAcademicYear = await _repository.GetStudentCurrentClassInSameAcademicYearAsync(student.Id, targetClass.AcademicYearId.Value);
+            if (currentClassInSameAcademicYear != null)
             {
                 return new AddStudentToClassResponseDto
                 {
                     Success = false,
-                    Message = $"Học sinh {student.FirstName} {student.LastName} đã có trong lớp {targetClass.Grade.Value}{currentClassInSameGradeAndYear.Name}",
-                    CurrentClassName = currentClassInSameGradeAndYear.Name,
-                    CurrentClassId = currentClassInSameGradeAndYear.Id
+                    Message = $"Học sinh {student.FirstName} {student.LastName} đã có trong lớp {currentClassInSameAcademicYear.Grade.Value}{currentClassInSameAcademicYear.Name}",
+                    CurrentClassName = currentClassInSameAcademicYear.Name,
+                    CurrentClassId = currentClassInSameAcademicYear.Id
                 };
             }
         }
 
-        // Add student to class
         var result = await _repository.AddStudentToClassAsync(classGroupId, student.Id);
         if (result)
         {
@@ -352,5 +379,155 @@ public class ClassGroupService : IClassGroupService
     public async Task<bool> RemoveStudentFromClassAsync(int classGroupId, int studentId)
     {
         return await _repository.RemoveStudentFromClassAsync(classGroupId, studentId);
+    }
+
+    public async Task<IEnumerable<AcademicYearDto>> GetAllAcademicYearsAsync()
+    {
+        var academicYears = await _repository.GetAllAcademicYearsAsync();
+        return academicYears.Select(ay => new AcademicYearDto
+        {
+            Id = ay.Id,
+            Name = ay.Name,
+            StartDate = ay.StartDate,
+            EndDate = ay.EndDate,
+            IsCurrent = ay.IsCurrent
+        });
+    }
+
+    public async Task<AcademicYearDto?> GetCurrentAcademicYearAsync()
+    {
+        var currentAcademicYear = await _repository.GetCurrentAcademicYearAsync();
+        if (currentAcademicYear == null) return null;
+
+        return new AcademicYearDto
+        {
+            Id = currentAcademicYear.Id,
+            Name = currentAcademicYear.Name,
+            StartDate = currentAcademicYear.StartDate,
+            EndDate = currentAcademicYear.EndDate,
+            IsCurrent = currentAcademicYear.IsCurrent
+        };
+    }
+
+    public async Task<CurrentClassDto?> GetCurrentClassByUserIdAsync(int userId)
+    {
+        var classGroup = await _repository.GetCurrentClassByUserIdAsync(userId);
+        if (classGroup == null) return null;
+
+        // Lấy thông tin giáo viên chủ nhiệm
+        var homeroomTeacher = await _repository.GetHomeroomTeacherAsync(classGroup.Id);
+        
+        // Lấy số lượng học sinh
+        var studentCount = await _repository.GetStudentCountAsync(classGroup.Id);
+
+        // Xác định role của user
+        var userRole = homeroomTeacher?.Id == userId ? "Teacher" : "Student";
+
+        return new CurrentClassDto
+        {
+            Id = classGroup.Id,
+            Name = classGroup.Name,
+            Grade = classGroup.Grade,
+            AcademicYear = new AcademicYearDto
+            {
+                Id = classGroup.AcademicYears?.Id ?? 0,
+                Name = classGroup.AcademicYears?.Name ?? string.Empty,
+                StartDate = classGroup.AcademicYears?.StartDate ?? DateTime.MinValue,
+                EndDate = classGroup.AcademicYears?.EndDate ?? DateTime.MinValue,
+                IsCurrent = classGroup.AcademicYears?.IsCurrent ?? false
+            },
+            HomeroomTeacher = homeroomTeacher != null ? new HomeroomTeacherDto
+            {
+                Id = homeroomTeacher.Id,
+                FirstName = homeroomTeacher.FirstName,
+                LastName = homeroomTeacher.LastName,
+                Email = homeroomTeacher.Email
+            } : null,
+            StudentCount = studentCount,
+            UserRole = userRole,
+            JoinedAt = userRole == "Student" ? DateTime.UtcNow : null, // TODO: Lấy từ ClassGroupMember
+            AssignedAt = userRole == "Teacher" ? DateTime.UtcNow : null // TODO: Lấy từ ClassGroup
+        };
+    }
+
+    public async Task<AssignHomeroomTeacherResponseDto> AssignHomeroomTeacherAsync(int classGroupId, AssignHomeroomTeacherDto dto)
+    {
+        var targetClass = await _repository.GetByIdAsync(classGroupId);
+        if (targetClass == null)
+        {
+            return new AssignHomeroomTeacherResponseDto
+            {
+                Success = false,
+                Message = "Không tìm thấy lớp học này."
+            };
+        }
+
+        var teacher = await _repository.GetTeacherByEmailAsync(dto.Email);
+        if (teacher == null)
+        {
+            return new AssignHomeroomTeacherResponseDto
+            {
+                Success = false,
+                Message = $"Không tìm thấy giáo viên với email: {dto.Email}. Vui lòng kiểm tra lại email hoặc giáo viên chưa được đăng ký trong hệ thống."
+            };
+        }
+
+        if (targetClass.AcademicYearId.HasValue)
+        {
+            var currentClassInSameAcademicYear = await _repository.GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(teacher.Id, targetClass.AcademicYearId.Value);
+            if (currentClassInSameAcademicYear != null)
+            {
+                return new AssignHomeroomTeacherResponseDto
+                {
+                    Success = false,
+                    Message = $"Giáo viên {teacher.FirstName} {teacher.LastName} đã là giáo viên chủ nhiệm lớp {currentClassInSameAcademicYear.Grade.Value}{currentClassInSameAcademicYear.Name}",
+                    CurrentClassName = currentClassInSameAcademicYear.Name,
+                    CurrentClassId = currentClassInSameAcademicYear.Id
+                };
+            }
+        }
+
+        var result = await _repository.AssignHomeroomTeacherAsync(classGroupId, teacher.Id);
+        if (result)
+        {
+            return new AssignHomeroomTeacherResponseDto
+            {
+                Success = true,
+                Message = $"Đã thêm giáo viên {teacher.FirstName} {teacher.LastName} làm chủ nhiệm lớp thành công."
+            };
+        }
+        else
+        {
+            return new AssignHomeroomTeacherResponseDto
+            {
+                Success = false,
+                Message = "Có lỗi xảy ra khi thêm giáo viên chủ nhiệm. Vui lòng thử lại."
+            };
+        }
+    }
+
+    public async Task<bool> RemoveHomeroomTeacherAsync(int classGroupId)
+    {
+        return await _repository.RemoveHomeroomTeacherAsync(classGroupId);
+    }
+
+    public async Task<UserDto?> GetHomeroomTeacherAsync(int classGroupId)
+    {
+        var teacher = await _repository.GetHomeroomTeacherAsync(classGroupId);
+        if (teacher == null)
+            return null;
+
+        return new UserDto
+        {
+            Id = teacher.Id,
+            Username = teacher.Username,
+            FirstName = teacher.FirstName,
+            LastName = teacher.LastName,
+            Email = teacher.Email,
+            PhoneNumber = teacher.PhoneNumber,
+            Role = teacher.Role,
+            AvatarUrl = teacher.AvatarUrl,
+            Status = teacher.Status
+        };
     }
 }

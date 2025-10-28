@@ -15,6 +15,7 @@ using EduShpere.Infrastructure.Repositories.Chat;
 using EduShpere.Infrastructure.Repositories.Notifications;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using EduShpere.Infrastructure.Repositories.StarPoint;
+using EduShpere.Infrastructure.Services;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -81,6 +82,7 @@ namespace EduShpere
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddSingleton<CloudinaryService>();
             builder.Services.AddSignalR();
             builder.Services.AddControllers(options =>
@@ -120,6 +122,9 @@ namespace EduShpere
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
             
+            // System Announcement Service
+            builder.Services.AddScoped<EduShpere.Application.Services.SystemAnnouncementService.ISystemAnnouncementService, EduShpere.Application.Services.SystemAnnouncementService.SystemAnnouncementService>();
+            
             builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -128,6 +133,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(SystemAnnouncementProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ClubCreationRequestProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ClubProfile).Assembly);
