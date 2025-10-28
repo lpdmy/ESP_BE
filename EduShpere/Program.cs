@@ -182,6 +182,8 @@ namespace EduShpere
         }
     });
             });
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -229,7 +231,7 @@ namespace EduShpere
 
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("http://localhost:3000") // React dev origin
+                    policy.WithOrigins(allowedOrigins) // React dev origin
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
