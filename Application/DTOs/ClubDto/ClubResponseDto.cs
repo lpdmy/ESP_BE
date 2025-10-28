@@ -35,7 +35,6 @@ namespace EduShpere.Application.DTOs
 
         public int? PresidentUserId { get; set; }
         public string? PresidentName { get; set; }
-        
         public bool? IsMember { get; set; }
         public bool? IsPresident { get; set; }
 

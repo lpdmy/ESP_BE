@@ -41,7 +41,7 @@ namespace EduShpere.Application.DTOs
 
         public string Status { get; set; } = "Pending"; 
 
-        public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
         public string ClubName { get; set; } = string.Empty;
         [StringLength(255)]
         public string? RejectReason { get; set; }

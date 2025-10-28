@@ -8,6 +8,7 @@ using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EduShpere.Application.Services
 {
@@ -55,13 +56,14 @@ namespace EduShpere.Application.Services
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = user.Id,
                 IsDeleted = false,
+                
             };
             await _repo.AddAsync(clubRequest);
           return  _mapper.Map<ClubCreationResponseDto>(clubRequest);
         }
         public async Task<PaginationResponseDto<ClubCreationResponseDto>> GetAllAsync(
     PaginationRequestDto paginationRequest,
-    string? search = null)
+    string? search = null,int ? status = null)
         {
             var query = _repo.GetAllWithIncludes();
 
@@ -74,6 +76,10 @@ namespace EduShpere.Application.Services
                     c.ClubName.Contains(search)); 
             }
 
+            if (status.HasValue)
+            {
+                query = query.Where(c => c.Status == (status.Value == 1 ? "Pending" : status.Value == 2 ? "Approved" : "Rejected"));
+            }
             var totalCount = await query.CountAsync();
 
             var data = await query
@@ -168,6 +174,25 @@ namespace EduShpere.Application.Services
             dto.RequestedByName = $"{request.RequestedByUser?.LastName} {request.RequestedByUser?.FirstName}";
             dto.RequestedByEmail = request.RequestedByUser?.Email;
 
+            return dto;
+        }
+        public async Task<ClubCreationResponseDto> RejectCreation(RejectCreationDto rejectCreation)
+        {
+            var request = await _repo.GetByIdAsync(rejectCreation.Id);
+            if (request == null)
+            {
+                throw new BadRequestException(ErrorMessages.ClubCreationRequest.RequestNotFound);
+            }
+            if (rejectCreation.Reason.IsNullOrEmpty())
+            {
+                throw new BadRequestException(ErrorMessages.ClubCreationRequest.NotNullReason);
+            }
+            request.Status = "Rejected";
+            request.RejectReason = rejectCreation.Reason;
+            await _repo.UpdateAsync(request);
+            var dto = _mapper.Map<ClubCreationResponseDto>(request);
+            dto.RequestedByName = $"{request.RequestedByUser?.LastName} {request.RequestedByUser?.FirstName}";
+            dto.RequestedByEmail = request.RequestedByUser?.Email;
             return dto;
         }
 

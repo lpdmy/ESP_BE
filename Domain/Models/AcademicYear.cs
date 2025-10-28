@@ -11,14 +11,14 @@ namespace EduShpere.Domain.Models
     public class AcademicYear
     {
         public int Id { get; set; }
-        public long SchoolId { get; set; }
+        public long? SchoolId { get; set; }
         [StringLength(100)]
         public string Name { get; set; }
-        public DateTime? StartDate { get; set; }
+        public DateTime StartDate { get; set; }
 
-        public DateTime? EndDate { get; set; }
-        public bool? IsCurrent { get; set; }
-        public DateTime? CreatedAt { get; set; }
+        public DateTime EndDate { get; set; }
+        public bool IsCurrent { get; set; }
+        public DateTime CreatedAt { get; set; }
         public byte[] RowVersion { get; set; }
 
         [InverseProperty("AcademicYears")]

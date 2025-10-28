@@ -17,7 +17,8 @@ namespace EduShpere.Application
             .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src =>
         $"{src.User.LastName} {src.User.FirstName}".Trim()))
             .ForMember(dest => dest.StudentCode, opt => opt.MapFrom(src => src.User.Username))
-            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.User.AvatarUrl));
+            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.User.AvatarUrl))
+            .ForMember(dest => dest.ClubName,opt => opt.MapFrom(src=>src.Club.Name)) ;
             CreateMap<ClubJoinRequestDto, ClubJoinRequest>();
         }
     }

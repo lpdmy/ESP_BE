@@ -13,7 +13,9 @@ namespace EduShpere.Application.Mappings
     {
         public AttachmentProfile()
         {
-            CreateMap<Attachment, AttachmentDto>();
+            CreateMap<Attachment, PostAttachmentDto>()
+                .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.FileUrl))
+                .ForMember(dest => dest.FileType, opt => opt.MapFrom(src => src.FileType));
         }
     }
 }

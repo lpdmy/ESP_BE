@@ -93,6 +93,7 @@ namespace EduShpere.Application
                     new Claim("Id", appUser.Id.ToString()),
                     new Claim("UserName", appUser.Username),
                     new Claim("UserRole", appUser.Role.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
                     new Claim(ClaimTypes.Role, roleName) // Add role claim for authorization
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(60),

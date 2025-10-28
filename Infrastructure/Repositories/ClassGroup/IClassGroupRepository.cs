@@ -32,5 +32,16 @@ public interface IClassGroupRepository
     Task<User?> GetStudentByEmailAsync(string email);
     Task<ClassGroup?> GetStudentCurrentClassAsync(int studentId);
     Task<ClassGroup?> GetStudentCurrentClassInAcademicYearAsync(int studentId, int academicStartYear);
-    Task<ClassGroup?> GetStudentCurrentClassInSameGradeAndAcademicYearAsync(int studentId, int grade, int academicYearId);
+    Task<ClassGroup?> GetStudentCurrentClassInSameAcademicYearAsync(int studentId, int academicYearId);
+    Task<IEnumerable<AcademicYear>> GetAllAcademicYearsAsync();
+    Task<AcademicYear?> GetCurrentAcademicYearAsync();
+    
+    // Current Class operations
+    Task<ClassGroup?> GetCurrentClassByUserIdAsync(int userId);
+    
+    // Homeroom Teacher management operations
+    Task<User?> GetTeacherByEmailAsync(string email);
+    Task<bool> AssignHomeroomTeacherAsync(int classGroupId, int teacherId);
+    Task<bool> RemoveHomeroomTeacherAsync(int classGroupId);
+    Task<ClassGroup?> GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(int teacherId, int academicYearId);
 }

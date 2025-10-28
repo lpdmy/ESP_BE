@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EduShpere.Domain;
 using EduShpere.Shared;
+using EduShpere.Application.DTOs.SearchDto;
 
 namespace EduShpere.Controllers
 {
@@ -89,6 +90,16 @@ namespace EduShpere.Controllers
                 throw new BadRequestException(error.Message);
             }
             
+        }
+        [HttpGet(ApiEndpoints.Club.SearchUsers)]
+        public async Task<IActionResult> GetAllUserByRole([FromQuery] int role, [FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        {
+            var response = await _clubService.GetAllAsync(role, paginationRequest, search);
+            return Ok(new ResponseDto<PaginationResponseDto<UserSearchResultDto>>(
+                       response,
+                       message: "Lấy danh sách người dùng theo vai trò thành công",
+                       statusCode: 200
+                   ));
         }
     }
 }

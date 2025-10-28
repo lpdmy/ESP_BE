@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EduShpere.Application.DTOs.ClassGroupDto;
 using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Application.DTOs.AuthDto;
 using EduShpere.Application;
 using EduShpere.Application.Services.ClassGroupService;
 using EduShpere.Middlewares;
 using EduShpere.Shared.Constants;
+using EduShpere.Application.Services;
 
 namespace EduShpere.Controllers;
 
@@ -14,10 +16,12 @@ namespace EduShpere.Controllers;
 public class ClassGroupController : BaseController
 {
     private readonly IClassGroupService _classGroupService;
+    private readonly IHttpContextService _httpContextService;
 
-    public ClassGroupController(IClassGroupService classGroupService)
+    public ClassGroupController(IClassGroupService classGroupService, IHttpContextService httpContextService)
     {
         _classGroupService = classGroupService;
+        _httpContextService = httpContextService;
     }
 
     [HttpGet(ApiEndpoints.ClassGroup.ClassGroups)]
@@ -54,9 +58,9 @@ public class ClassGroupController : BaseController
 
     [HttpGet(ApiEndpoints.ClassGroup.Dashboard)]
     //[Authorize(Roles = "Admin,Teacher")]
-    public async Task<IActionResult> GetDashboardData()
+    public async Task<IActionResult> GetDashboardData([FromQuery] int? academicYearId = null)
     {
-        var result = await _classGroupService.GetDashboardDataAsync();
+        var result = await _classGroupService.GetDashboardDataAsync(academicYearId);
         return Ok(new ResponseDto<ClassGroupDashboardDto>(result, "Lấy dữ liệu dashboard thành công"));
     }
 
@@ -167,9 +171,9 @@ public class ClassGroupController : BaseController
 
     [HttpGet(ApiEndpoints.ClassGroup.GetStudents)]
     //[Authorize(Roles = "Admin,Teacher")]
-    public async Task<IActionResult> GetStudents(int id)
+    public async Task<IActionResult> GetStudents(int id, [FromQuery] string? sortBy = null, [FromQuery] string? sortOrder = "asc")
     {
-        var result = await _classGroupService.GetStudentsInClassAsync(id);
+        var result = await _classGroupService.GetStudentsInClassAsync(id, sortBy, sortOrder);
         return Ok(new ResponseDto<IEnumerable<ClassGroupStudentDto>>(result, "Lấy danh sách học sinh thành công"));
     }
 
@@ -195,5 +199,74 @@ public class ClassGroupController : BaseController
             return BadRequest(new ResponseDto<string>(null, "Không thể xóa học sinh khỏi lớp", 400));
         }
         return Ok(new ResponseDto<string>(null, "Xóa học sinh khỏi lớp thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetAcademicYears)]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAcademicYears()
+    {
+        var result = await _classGroupService.GetAllAcademicYearsAsync();
+        return Ok(new ResponseDto<IEnumerable<AcademicYearDto>>(result, "Lấy danh sách niên khóa thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetAcademicYearCurrent)]
+    //[Authorize(Roles = "Admin,Teacher,Student")]
+    public async Task<IActionResult> GetCurrentAcademicYear()
+    {
+        var result = await _classGroupService.GetCurrentAcademicYearAsync();
+        if (result == null)
+        {
+            return NotFound(new ResponseDto<string>(null, "Không tìm thấy niên khóa hiện tại", 404));
+        }
+        return Ok(new ResponseDto<AcademicYearDto>(result, "Lấy niên khóa hiện tại thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetCurrentClass)]
+    //[Authorize(Roles = "Admin,Teacher,Student")]
+    public async Task<IActionResult> GetCurrentClass()
+    {
+        var user = await _httpContextService.GetAppUserAndThrow();
+        var result = await _classGroupService.GetCurrentClassByUserIdAsync(user.Id);
+        if (result == null)
+        {
+            return NotFound(new ResponseDto<string>(null, "Không tìm thấy lớp học hiện tại", 404));
+        }
+        return Ok(new ResponseDto<CurrentClassDto>(result, "Lấy lớp học hiện tại thành công"));
+    }
+
+    [HttpPut(ApiEndpoints.ClassGroup.AssignHomeroomTeacher)]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AssignHomeroomTeacher(int id, [FromBody] AssignHomeroomTeacherDto dto)
+    {
+        var result = await _classGroupService.AssignHomeroomTeacherAsync(id, dto);
+        if (!result.Success)
+        {
+            return BadRequest(new ResponseDto<AssignHomeroomTeacherResponseDto>(result, result.Message, 400));
+        }
+        return Ok(new ResponseDto<AssignHomeroomTeacherResponseDto>(result, result.Message));
+    }
+
+    [HttpDelete(ApiEndpoints.ClassGroup.RemoveHomeroomTeacher)]
+    //[Authorize(Roles = "Admin")]
+    public async Task<IActionResult> RemoveHomeroomTeacher(int id)
+    {
+        var result = await _classGroupService.RemoveHomeroomTeacherAsync(id);
+        if (!result)
+        {
+            return BadRequest(new ResponseDto<string>(null, "Không thể bỏ gán giáo viên chủ nhiệm", 400));
+        }
+        return Ok(new ResponseDto<string>(null, "Bỏ gán giáo viên chủ nhiệm thành công"));
+    }
+
+    [HttpGet(ApiEndpoints.ClassGroup.GetHomeroomTeacher)]
+    //[Authorize(Roles = "Admin,Teacher")]
+    public async Task<IActionResult> GetHomeroomTeacher(int id)
+    {
+        var result = await _classGroupService.GetHomeroomTeacherAsync(id);
+        if (result == null)
+        {
+            return NotFound(new ResponseDto<string>(null, "Không tìm thấy giáo viên chủ nhiệm", 404));
+        }
+        return Ok(new ResponseDto<UserDto>(result, "Lấy thông tin giáo viên chủ nhiệm thành công"));
     }
 }

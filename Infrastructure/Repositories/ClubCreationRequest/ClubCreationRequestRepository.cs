@@ -31,7 +31,7 @@ namespace EduShpere.Infrastructure.Repositories
             return _context.ClubCreationRequest
                 .Include(c => c.RequestedByUser)
                 .Include(c=>c.Category)
-                .Where(c => !c.IsDeleted);
+                .Where(c => !c.IsDeleted).OrderByDescending(c=>c.CreatedAt);
         }
         public IQueryable<ClubCreationRequest> GetAllWithIncludesByUser(User user)
         {

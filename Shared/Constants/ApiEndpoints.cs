@@ -27,6 +27,7 @@
         public static class Upload
         {
             public const string UploadUrl = "api/upload";
+            public const string UploadFile = "api/upload/file";
         }
         public static class UserProfile
         {
@@ -67,6 +68,7 @@
             public const string Posts = "api/post";
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
+            public const string GetPostsByClassGroup = "api/post/classgroup/{Id}";
             public const string Like = "api/post/like";
             public const string ClubPending = "api/post/club/pending/{clubid}";
             public const string Club = "api/post/club/{clubid}";
@@ -87,6 +89,7 @@
             public const string GetAll = "api/club-creation-request";
             public const string GetAllByUser = "api/club-creation-request/user";
             public const string Approve = "api/club-creation-request/approve/{id}";
+            public const string Reject = "api/club-creation-request/reject";
         }
         public static class Club
         {
@@ -96,6 +99,7 @@
             public const string Categories = "api/club/categories";
             public const string Members = "api/club/members";
             public const string RemoveMember = "api/club/members/remove/{id}";
+            public const string SearchUsers = "api/club/search-users";
         }
         public static class ClubJoinRequest
         {
@@ -105,6 +109,7 @@
             public const string RejectJoinRequest = "api/join-request/reject/{id}";
             public const string InviteMentor = "api/join-request/invite-mentor";
             public const string JoinRequestByClub = "api/join-request/club/{id}";
+            public const string JoinRequestByUser = "api/join-request/user";
         }
         public static class ClubMember
         {
@@ -112,6 +117,7 @@
             public const string GetClubMemberByUser = "api/club-member/user";
             public const string OutClub = "api/club-member/{id}";
             public const string KickClub = "api/club-member";
+            public const string ChangeRole = "api/club-member/change-role";
         }
         public static class Comment
         {
@@ -142,6 +148,18 @@
             public const string GetStudents = "api/classgroup/{id}/students";
             public const string AddStudent = "api/classgroup/{id}/students";
             public const string RemoveStudent = "api/classgroup/{id}/students/{studentId}";
+            
+            // Homeroom Teacher management endpoints
+            public const string AssignHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string RemoveHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string GetHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            
+            // Academic Year endpoints
+            public const string GetAcademicYears = "api/classgroup/academic-years";
+            public const string GetAcademicYearCurrent = "api/classgroup/academic-years-current";
+            
+            // Current Class endpoints
+            public const string GetCurrentClass = "api/classgroup/current-class";
         }
 
         public static class StarPoint
@@ -165,5 +183,21 @@
             public const string PickupRedemption = "api/redeems/{id}/pickup";
         }
 
+        public static class Notification
+        {
+            public const string Notifications = "api/notification";
+            public const string GetByUser = "api/notification/user";
+            public const string MarkAsRead = "api/notification/{id}/read";
+            public const string AddNotification = "api/notification";
+            public const string AddTestNotification = "api/notification/test";
+        }
+
+        public static class Chat
+        {
+            public const string Rooms = "api/chat/rooms";
+            public const string Messages = "api/chat/messages";
+            public const string MarkAsRead = "api/chat/messages/{roomId}/read";
+            public const string GetMessages = "api/chat/messages/{roomId}";
+        }
     }
 }
