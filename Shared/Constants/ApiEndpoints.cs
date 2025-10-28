@@ -183,5 +183,21 @@
             public const string PickupRedemption = "api/redeems/{id}/pickup";
         }
 
+        public static class Notification
+        {
+            public const string Notifications = "api/notification";
+            public const string GetByUser = "api/notification/user";
+            public const string MarkAsRead = "api/notification/{id}/read";
+            public const string AddNotification = "api/notification";
+            public const string AddTestNotification = "api/notification/test";
+        }
+
+        public static class Chat
+        {
+            public const string Rooms = "api/chat/rooms";
+            public const string Messages = "api/chat/messages";
+            public const string MarkAsRead = "api/chat/messages/{roomId}/read";
+            public const string GetMessages = "api/chat/messages/{roomId}";
+        }
     }
 }
