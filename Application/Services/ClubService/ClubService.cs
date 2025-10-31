@@ -14,6 +14,7 @@ using EduShpere.Domain.Models;
 using EduShpere.Domain;
 using EduShpere.Infrastructure;
 using EduShpere.Application.DTOs.SearchDto;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EduShpere.Application.Services
 {
@@ -89,6 +90,13 @@ namespace EduShpere.Application.Services
             if (club == null)
             {
                 throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
+            }
+            if (dto.CoverUrl.IsNullOrEmpty()) { 
+            dto.CoverUrl = club.CoverUrl;
+            }
+            if (dto.AvatarUrl.IsNullOrEmpty())
+            {
+                dto.AvatarUrl = club.AvatarUrl;
             }
             club.Name = dto.Name;
             club.Description = dto.Description;
