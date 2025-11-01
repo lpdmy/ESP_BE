@@ -17,6 +17,7 @@
             public const string OldPasswordContainsSpacesOrVietnamese = "Mật khẩu cũ không được chứa dấu cách hoặc ký tự tiếng Việt";
             public const string NewPasswordContainsSpacesOrVietnamese = "Mật khẩu mới không được chứa dấu cách hoặc ký tự tiếng Việt";
             public const string ConfirmPasswordContainsSpacesOrVietnamese = "Mật khẩu xác nhận không được chứa dấu cách hoặc ký tự tiếng Việt";
+            public const string ExistByEmail = "Email đã được sử dụng";
         }
 
         public struct Password
@@ -230,7 +231,9 @@
             public const string UpdateStudentFailed = "Không thể cập nhật học sinh.";
             public const string TemplateGenerationFailed = "Không thể tạo file template import.";
         }
-
-
+        public struct Staff
+        {
+            public const string StaffNotFound = "Nhân viên không tồn tại.";
+        }
     }
 }

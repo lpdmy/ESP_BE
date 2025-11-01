@@ -91,6 +91,8 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<SearchHistory> SearchHistories { get; set; }
     public virtual DbSet<SearchAnalytics> SearchAnalytics { get; set; }
+    public virtual DbSet<Right> Rights { get; set; }
+    public virtual DbSet<UserRight> UserRights { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

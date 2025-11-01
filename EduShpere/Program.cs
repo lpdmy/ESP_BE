@@ -51,7 +51,7 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
-            
+            builder.Services.AddScoped<IUserRightRepository, UserRightRepository>();
             // Search repositories
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchHistory.ISearchHistoryRepository, EduShpere.Infrastructure.Repositories.SearchHistory.SearchHistoryRepository>();
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchAnalytics.ISearchAnalyticsRepository, EduShpere.Infrastructure.Repositories.SearchAnalytics.SearchAnalyticsRepository>();
@@ -72,8 +72,6 @@ namespace EduShpere
             builder.Services.AddScoped<IClubJoinRequestRepository, ClubJoinRequestRepository>();
             builder.Services.AddScoped<IClubCategoryRepository, ClubCategoryRepository>();
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-
-
             builder.Services.AddScoped<IRewardRuleRepository, RewardRuleRepository>();
             builder.Services.AddScoped<IRewardRepository, RewardRepository>();
             builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
@@ -111,6 +109,7 @@ namespace EduShpere
             builder.Services.AddScoped<IRewardService, RewardService>();
             builder.Services.AddScoped<IRewardRedemptionService, RewardRedemptionService>();
             builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
+            builder.Services.AddScoped<IStaffService, StaffService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
