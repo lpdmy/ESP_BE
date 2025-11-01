@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using EduShpere.Application.DTOs.PostDto;
 using EduShpere.Domain.Enum;
 
 namespace EduShpere.Application.DTOs
@@ -25,6 +26,7 @@ namespace EduShpere.Application.DTOs
         public List<string> Hashtags { get; set; } = new();
         public List<string> MentionUsernames { get; set; } = new();
         public List<string> Comments { get; set; } = new();
+        public List<PostAttachmentDto> Attachments { get; set; } = new();
         public List<string> AttachmentUrls { get; set; } = new();
         public string AvatarUrl { get; set; } = null!;
         public int LikeCount { get; set; }

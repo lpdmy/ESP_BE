@@ -34,7 +34,6 @@ namespace EduShpere.Infrastructure.Services
             var result = await _cloudinary.UploadAsync(uploadParams);
             return result.SecureUrl.ToString();
         }
-
         public async Task<string?> UploadFileAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
@@ -43,7 +42,8 @@ namespace EduShpere.Infrastructure.Services
             var uploadParams = new RawUploadParams()
             {
                 File = new FileDescription(file.FileName, stream),
-                Folder = "esp_folder"
+                Folder = "esp_folder/files",
+                PublicId = $"{Guid.NewGuid()}_{file.FileName}"
             };
 
             var result = await _cloudinary.UploadAsync(uploadParams);

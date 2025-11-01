@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-[Index("ClassGroupId", "UserId", Name = "ClassGroupMembers_index_2", IsUnique = true)]
 public partial class ClassGroupMember
 {
     [Key]

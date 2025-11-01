@@ -1,5 +1,5 @@
 using AutoMapper;
-using EduShpere.Application.DTOs.AttachmentDto;
+using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.SystemAnnouncementDto;
 using EduShpere.Domain.Models;
 

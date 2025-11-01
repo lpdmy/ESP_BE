@@ -4,6 +4,7 @@ public class ClassGroupStatisticsDto
 {
     public int TotalClasses { get; set; }
     public int TotalStudents { get; set; }
+    public int TotalTeachers { get; set; }
     public int DeletedClasses { get; set; }
 }
 
