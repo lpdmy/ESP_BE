@@ -24,7 +24,8 @@ namespace EduShpere.Application.Mappings
                     src.ClubMembers
                     .Where(m => !m.IsDeleted)
                     .OrderByDescending(m => m.Role == "President")
-                     ));
+                     ))
+                ;
             CreateMap<ClubMember, ClubMemberDto>()
     .ForMember(dest => dest.FullName, opt => opt.MapFrom(src =>
         $"{src.User.LastName} {src.User.FirstName}".Trim()))
@@ -32,7 +33,10 @@ namespace EduShpere.Application.Mappings
     .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.User.AvatarUrl))
     .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
     .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-    .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+    .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+    .ForMember(dest => dest.UserRole,
+    opt => opt.MapFrom(src => (int?)src.User.Role))
+    ;
             CreateMap<ClubCreationRequest, ClubCreationResponseDto>()
                 .ForMember(dest => dest.RequestedByName, opt => opt.MapFrom(src =>
                     src.RequestedByUser != null ? src.RequestedByUser.LastName + " " + src.RequestedByUser.FirstName : null))

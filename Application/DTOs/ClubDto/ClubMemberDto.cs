@@ -14,5 +14,6 @@ namespace EduShpere.Application.DTOs
         public string? AvatarUrl { get; set; }
         public string? Role { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int? UserRole { get; set; }
     }
 }
