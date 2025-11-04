@@ -86,6 +86,25 @@ namespace EduShpere.Controllers
             }
         }
 
+        [HttpGet(ApiEndpoints.UserProfile.ProfileByUserId)]
+        public async Task<IActionResult> GetProfileByUserId(int id)
+        {
+            try
+            {
+                var profile = await _userService.GetStudentProfileByUserIdAsync(id);
+
+                if (profile == null)
+                {
+                    return NotFound(new ResponseDto<string>(null, ErrorMessages.UserProfile.ProfileNotFound, 404));
+                }
+
+                return Ok(new ResponseDto<GetStudentProfileDto>(profile, "Lấy thông tin profile thành công"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.UserProfile.GetFailed, 400));
+            }
+        }
         /// <summary>
         /// Lấy tất cả student profiles (Admin only)
         /// </summary>
@@ -107,7 +126,6 @@ namespace EduShpere.Controllers
         /// <summary>
         /// Lấy profile theo ID (Admin only)
         /// </summary>
-        [Authorize(Roles = "Admin")]
         [HttpGet(ApiEndpoints.UserProfile.ProfileById)]
         public async Task<IActionResult> GetStudentProfileById(int id)
         {
@@ -327,7 +345,6 @@ namespace EduShpere.Controllers
         /// <summary>
         /// Lấy teacher profile theo ID (Admin only)
         /// </summary>
-        [Authorize(Roles = "Admin")]
         [HttpGet(ApiEndpoints.UserProfile.TeacherProfileById)]
         public async Task<IActionResult> GetTeacherProfileById(int id)
         {
@@ -352,7 +369,30 @@ namespace EduShpere.Controllers
                 return BadRequest(new ResponseDto<string>(null, ErrorMessages.UserProfile.GetFailed, 400));
             }
         }
+        [HttpGet(ApiEndpoints.UserProfile.TeacherProfileByUserId)]
+        public async Task<IActionResult> GetTeacherProfileByUserId(int id)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    return BadRequest(new ResponseDto<string>(null, ErrorMessages.UserProfile.InvalidId, 400));
+                }
 
+                var profile = await _userService.GetTeacherProfileByUserIdAsync(id);
+
+                if (profile == null)
+                {
+                    return NotFound(new ResponseDto<string>(null, ErrorMessages.UserProfile.ProfileNotFound, 404));
+                }
+
+                return Ok(new ResponseDto<GetTeacherProfileDto>(profile, "Lấy thông tin teacher profile thành công"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.UserProfile.GetFailed, 400));
+            }
+        }
         /// <summary>
         /// Tạo teacher profile mới (Admin only)
         /// </summary>

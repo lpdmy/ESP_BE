@@ -38,6 +38,7 @@ namespace EduShpere.Shared.Constants
             public const string MyProfile = "api/userprofile/my-profile";
             public const string AllProfiles = "api/userprofile/all";
             public const string ProfileById = "api/userprofile/{id}";
+            public const string ProfileByUserId = "api/userprofile/user/{id}";
             public const string CreateProfile = "api/userprofile";
             public const string UpdateProfile = "api/userprofile/{id}";
             public const string DeleteProfile = "api/userprofile/{id}";
@@ -47,6 +48,7 @@ namespace EduShpere.Shared.Constants
             public const string MyTeacherProfile = "api/userprofile/my-teacher-profile";
             public const string AllTeacherProfiles = "api/userprofile/teachers";
             public const string TeacherProfileById = "api/userprofile/teachers/{id}";
+            public const string TeacherProfileByUserId = "api/userprofile/teachers/user/{id}";
             public const string CreateTeacherProfile = "api/userprofile/teachers";
             public const string UpdateTeacherProfile = "api/userprofile/teachers/{id}";
             public const string DeleteTeacherProfile = "api/userprofile/teachers/{id}";

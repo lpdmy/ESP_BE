@@ -14,8 +14,8 @@ namespace EduShpere.Application.Mappings
         public ClubMemberProfile()
         {
             CreateMap<ClubMember, ClubMemberResponseDto>()
-                .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src =>string.IsNullOrEmpty(src.Club.Name) ? "" : src.Club.Name))
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src =>string.IsNullOrEmpty(src.Club.Category.Name) ? "": src.Club.Category.Name));
+                .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => string.IsNullOrEmpty(src.Club.Name) ? "" : src.Club.Name))
+                .ForMember(dest => dest.CategoryName,opt => opt.MapFrom(src => src.Club.Category.Name ?? ""));
         } 
     }
 }
