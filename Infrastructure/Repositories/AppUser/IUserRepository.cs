@@ -20,5 +20,9 @@ namespace EduShpere.Infrastructure
         IQueryable<User> GetQueryable();
         Task<IEnumerable<User>> SearchAsync(string query, int limit = 10);
         IQueryable<User> GetAllIncluding();
+        Task<User?> GetByIdIncludeAsync(int id);
+        IQueryable<User> GetAllByStaffIncluding();
+        Task<User> GetByStaffIdIncluding(int staffId);
+        Task DeleteSoft(int id);
     }
 }

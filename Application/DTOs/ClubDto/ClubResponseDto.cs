@@ -37,7 +37,7 @@ namespace EduShpere.Application.DTOs
         public string? PresidentName { get; set; }
         public bool? IsMember { get; set; }
         public bool? IsPresident { get; set; }
-
+        public bool? IsMentorInvite { get; set; }
         public bool IsRequestToJoin {get;set;}
         public List<ClubMemberDto> Members { get; set; } = new();
 

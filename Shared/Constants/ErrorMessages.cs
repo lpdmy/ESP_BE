@@ -17,6 +17,7 @@
             public const string OldPasswordContainsSpacesOrVietnamese = "Mật khẩu cũ không được chứa dấu cách hoặc ký tự tiếng Việt";
             public const string NewPasswordContainsSpacesOrVietnamese = "Mật khẩu mới không được chứa dấu cách hoặc ký tự tiếng Việt";
             public const string ConfirmPasswordContainsSpacesOrVietnamese = "Mật khẩu xác nhận không được chứa dấu cách hoặc ký tự tiếng Việt";
+            public const string ExistByEmail = "Email đã được sử dụng";
         }
 
         public struct Password
@@ -155,6 +156,8 @@
             public const string AlreadyPendingRequest = "Bạn đã có yêu cầu tham gia đang chờ xử lý cho câu lạc bộ này.";
             public const string AlreadyApproved = "Yêu cầu đã được duyệt";
             public const string NotTeacher = "Người được mời phải là giáo viên.";
+            public const string AlreadyMentor = "Người được mời đã là cố vấn của một câu lạc bộ rồi.";
+            public const string AlreadyInvite = "Câu lạc bộ đã mời giáo viên làm cố vấn";
         }
         public struct ClubMember
         {
@@ -230,7 +233,9 @@
             public const string UpdateStudentFailed = "Không thể cập nhật học sinh.";
             public const string TemplateGenerationFailed = "Không thể tạo file template import.";
         }
-
-
+        public struct Staff
+        {
+            public const string StaffNotFound = "Nhân viên không tồn tại.";
+        }
     }
 }

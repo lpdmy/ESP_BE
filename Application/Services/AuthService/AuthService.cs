@@ -1,5 +1,12 @@
-﻿using AutoMapper;
+﻿using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using AutoMapper;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.InkML;
+using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.AuthDto;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.DTOs.UserDto;
@@ -18,11 +25,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System.Globalization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using TeacherProfileEntity = EduShpere.Domain.Models.TeacherProfile;
 namespace EduShpere.Application
 {
@@ -38,8 +40,9 @@ namespace EduShpere.Application
         private readonly ITeacherProfileRepository _teacherProfileRepository;
         private readonly IAuditService _auditService;
         private readonly IPaginationService _paginationService;
+        private readonly IUserRightRepository _userRightRepository;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, ITeacherProfileRepository teacherProfileRepository, IAuditService auditService, IPaginationService paginationService)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, ITeacherProfileRepository teacherProfileRepository, IAuditService auditService, IPaginationService paginationService, IUserRightRepository userRightRepository)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -51,12 +54,14 @@ namespace EduShpere.Application
             _teacherProfileRepository = teacherProfileRepository;
             _auditService = auditService;
             _paginationService = paginationService;
+            _userRightRepository = userRightRepository;
         }
 
         public async Task<UserDto> GetMe()
         {
             var user = await _httpContextService.GetAppUserAndThrow();
-            return _mapper.Map<UserDto>(user);
+            var fullUser = await _userRepository.GetByIdIncludeAsync(user.Id);
+            return _mapper.Map<UserDto>(fullUser);
         }
 
         private string GenerateRefreshToken()
@@ -74,32 +79,42 @@ namespace EduShpere.Application
             var jwtTokenHandler = new JwtSecurityTokenHandler();
             var secretKey = _configuration["AppSetting:SecretKey"];
             var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
-
+            var user = _userRepository.GetQueryable()
+                .Include(u => u.UserRights)
+                .ThenInclude(ur => ur.Right)
+                .FirstOrDefault(u => u.Id == appUser.Id);
             // Convert role number to role name
             var roleName = appUser.Role switch
             {
                 UserRole.Admin => "Admin",
                 UserRole.Teacher => "Teacher",
                 UserRole.Student => "Student",
+                UserRole.Staff=>"Staff",
                 _ => "Student"
             };
-
+            var permissions = user.UserRights
+            .Where(ur => !ur.IsDeleted)
+            .Select(ur => ur.Right.Code)
+            .ToList();
+            var claims = new List<Claim>
+            {
+               new Claim("Email", appUser.Email),
+               new Claim("FullName", appUser.FirstName),
+               new Claim("Id", appUser.Id.ToString()),
+               new Claim("UserName", appUser.Username?? string.Empty),
+               new Claim("UserRole", appUser.Role.ToString()),
+               new Claim(ClaimTypes.Role, roleName)
+            };
+            foreach (var permission in permissions)
+            {
+                claims.Add(new Claim("Permission", permission));
+            }
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("Email", appUser.Email),
-                    new Claim("FullName", appUser.FirstName),
-                    new Claim("Id", appUser.Id.ToString()),
-                    new Claim("UserName", appUser.Username),
-                    new Claim("UserRole", appUser.Role.ToString()),
-                    new Claim(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
-                    new Claim(ClaimTypes.Role, roleName) // Add role claim for authorization
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), SecurityAlgorithms.HmacSha256Signature)
             };
-
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
             var accessTokenString = jwtTokenHandler.WriteToken(token);
             var refreshToken = GenerateRefreshToken();
@@ -481,7 +496,7 @@ namespace EduShpere.Application
             if (!string.IsNullOrEmpty(paginationRequest.Search))
             {
                 var searchTerm = paginationRequest.Search.ToLower();
-                query = query.Where(u => 
+                query = query.Where(u =>
                     (u.FirstName != null && u.FirstName.ToLower().Contains(searchTerm)) ||
                     (u.LastName != null && u.LastName.ToLower().Contains(searchTerm)) ||
                     (u.Email != null && u.Email.ToLower().Contains(searchTerm)) ||
@@ -521,20 +536,20 @@ namespace EduShpere.Application
         {
             return sortBy.ToLower() switch
             {
-                "id" => sortDescending 
-                    ? query.OrderByDescending(u => u.StudentProfile != null ? u.StudentProfile.StudentNumber : 
-                                                  u.TeacherProfile != null ? u.TeacherProfile.TeacherCode : 
+                "id" => sortDescending
+                    ? query.OrderByDescending(u => u.StudentProfile != null ? u.StudentProfile.StudentNumber :
+                                                  u.TeacherProfile != null ? u.TeacherProfile.TeacherCode :
                                                   u.Email)
-                    : query.OrderBy(u => u.StudentProfile != null ? u.StudentProfile.StudentNumber : 
-                                        u.TeacherProfile != null ? u.TeacherProfile.TeacherCode : 
+                    : query.OrderBy(u => u.StudentProfile != null ? u.StudentProfile.StudentNumber :
+                                        u.TeacherProfile != null ? u.TeacherProfile.TeacherCode :
                                         u.Email),
-                "name" => sortDescending 
+                "name" => sortDescending
                     ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName)
                     : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
-                "email" => sortDescending 
+                "email" => sortDescending
                     ? query.OrderByDescending(u => u.Email)
                     : query.OrderBy(u => u.Email),
-                "role" => sortDescending 
+                "role" => sortDescending
                     ? query.OrderByDescending(u => u.Role)
                     : query.OrderBy(u => u.Role),
                 /*"class" => sortDescending 
@@ -542,7 +557,7 @@ namespace EduShpere.Application
                                                   u.TeacherProfile != null ? u.TeacherProfile.Position : "")
                     : query.OrderBy(u => u.StudentProfile != null ? u.StudentProfile.ClassGroupId : 
                                         u.TeacherProfile != null ? u.TeacherProfile.Position : ""),*/
-                "status" => sortDescending 
+                "status" => sortDescending
                     ? query.OrderByDescending(u => u.Status)
                     : query.OrderBy(u => u.Status),
                 _ => query.OrderBy(u => u.Id)
@@ -797,6 +812,33 @@ namespace EduShpere.Application
 
             return statistics;
         }
+        public async Task<UserResponseDto> CreateStaff(CreateStaffDto dto)
+        {
+            var user = await _userRepository.FindUserByEmail(dto.Email);
+            if (user)
+            {
+                throw new BadRequestException(ErrorMessages.Auth.ExistByEmail);
+            }
+            var staff = new User
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                Role = UserRole.Staff,
+                Password = PasswordHelper.HashPassword(new User(), dto.Password),
+                PhoneNumber = dto.PhoneNumber,
+            };
+            await _userRepository.AddAsync(staff);
+            var userRights = dto.Permission.Select(rid => new UserRight
+            {
+                UserId = staff.Id,
+                RightId = rid,
+                IsDeleted = false
+            }).ToList();
+            await _userRightRepository.AddRangeAsync(userRights);
 
+            var CreatedUster = await _userRepository.GetByIdIncludeAsync(staff.Id);
+            return _mapper.Map<UserResponseDto>(CreatedUster);
+        }
     }
 }

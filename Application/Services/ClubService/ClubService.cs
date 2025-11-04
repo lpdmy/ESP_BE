@@ -14,6 +14,7 @@ using EduShpere.Domain.Models;
 using EduShpere.Domain;
 using EduShpere.Infrastructure;
 using EduShpere.Application.DTOs.SearchDto;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EduShpere.Application.Services
 {
@@ -81,6 +82,7 @@ namespace EduShpere.Application.Services
             mapped.IsPresident = club.PresidentUserId == user.Id;
             mapped.IsMember = club.ClubMembers.Any(m => m.UserId == user.Id);
             mapped.IsRequestToJoin = club.ClubJoinRequests.Any(r => r.UserId == user.Id && r.Status == "Pending");
+            mapped.IsMentorInvite = club.ClubJoinRequests.Any(r => r.UserId == user.Id && r.IsMentor== true && r.Status == "Pending");
             return mapped;
         }
         public async Task<ClubResponseDto> UpdateClub(UpdateClubDto dto)
@@ -89,6 +91,13 @@ namespace EduShpere.Application.Services
             if (club == null)
             {
                 throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
+            }
+            if (dto.CoverUrl.IsNullOrEmpty()) { 
+            dto.CoverUrl = club.CoverUrl;
+            }
+            if (dto.AvatarUrl.IsNullOrEmpty())
+            {
+                dto.AvatarUrl = club.AvatarUrl;
             }
             club.Name = dto.Name;
             club.Description = dto.Description;

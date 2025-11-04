@@ -1,4 +1,6 @@
-﻿namespace EduShpere.Shared.Constants
+﻿using System.Net.NetworkInformation;
+
+namespace EduShpere.Shared.Constants
 {
     public static class ApiEndpoints
     {
@@ -15,6 +17,7 @@
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
             public const string ChangePassword = "api/auth/change-password";
             public const string ForgotPassword = "api/auth/forgot-password";
+            public const string CreateStaff = "api/auth/create-staff";
         }
 
         public static class User
@@ -183,6 +186,11 @@
             public const string GetAllRedemptionsAdmin = "api/redeems/admin";
             public const string GetMyRedemptions = "api/redeems/me";
             public const string PickupRedemption = "api/redeems/{id}/pickup";
+        }
+        public static class Staff
+        {
+            public const string Staffs = "api/staff";
+            public const string GetStaffById = "api/staff/{id}";
         }
 
         public static class Notification
