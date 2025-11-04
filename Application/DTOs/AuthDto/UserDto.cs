@@ -16,7 +16,7 @@ namespace EduShpere.Application.DTOs.AuthDto
         public string? Username { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
-        public string? FullName => $"{FirstName} {LastName}".Trim();
+        public string? FullName => $"{LastName} {FirstName}".Trim();
 
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
@@ -42,5 +42,6 @@ namespace EduShpere.Application.DTOs.AuthDto
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; }
+        public List<string> Permissions { get; set; } = new List<string>();
     }
 }

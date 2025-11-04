@@ -1,4 +1,6 @@
-﻿namespace EduShpere.Shared.Constants
+﻿using System.Net.NetworkInformation;
+
+namespace EduShpere.Shared.Constants
 {
     public static class ApiEndpoints
     {
@@ -15,6 +17,7 @@
             public const string ChangePasswordOtl = "api/auth/change-password-otl";
             public const string ChangePassword = "api/auth/change-password";
             public const string ForgotPassword = "api/auth/forgot-password";
+            public const string CreateStaff = "api/auth/create-staff";
         }
 
         public static class User
@@ -27,6 +30,7 @@
         public static class Upload
         {
             public const string UploadUrl = "api/upload";
+            public const string UploadFile = "api/upload/file";
         }
         public static class UserProfile
         {
@@ -67,6 +71,7 @@
             public const string Posts = "api/post";
             public const string GetPostById = "api/post/{id}";
             public const string GetPostByUser = "api/post/user";
+            public const string GetPostsByClassGroup = "api/post/classgroup/{Id}";
             public const string Like = "api/post/like";
             public const string ClubPending = "api/post/club/pending/{clubid}";
             public const string Club = "api/post/club/{clubid}";
@@ -146,6 +151,18 @@
             public const string GetStudents = "api/classgroup/{id}/students";
             public const string AddStudent = "api/classgroup/{id}/students";
             public const string RemoveStudent = "api/classgroup/{id}/students/{studentId}";
+            
+            // Homeroom Teacher management endpoints
+            public const string AssignHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string RemoveHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string GetHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            
+            // Academic Year endpoints
+            public const string GetAcademicYears = "api/classgroup/academic-years";
+            public const string GetAcademicYearCurrent = "api/classgroup/academic-years-current";
+            
+            // Current Class endpoints
+            public const string GetCurrentClass = "api/classgroup/current-class";
         }
 
         public static class StarPoint
@@ -168,6 +185,27 @@
             public const string GetMyRedemptions = "api/redeems/me";
             public const string PickupRedemption = "api/redeems/{id}/pickup";
         }
+        public static class Staff
+        {
+            public const string Staffs = "api/staff";
+            public const string GetStaffById = "api/staff/{id}";
+        }
 
+        public static class Notification
+        {
+            public const string Notifications = "api/notification";
+            public const string GetByUser = "api/notification/user";
+            public const string MarkAsRead = "api/notification/{id}/read";
+            public const string AddNotification = "api/notification";
+            public const string AddTestNotification = "api/notification/test";
+        }
+
+        public static class Chat
+        {
+            public const string Rooms = "api/chat/rooms";
+            public const string Messages = "api/chat/messages";
+            public const string MarkAsRead = "api/chat/messages/{roomId}/read";
+            public const string GetMessages = "api/chat/messages/{roomId}";
+        }
     }
 }

@@ -4,6 +4,7 @@ using EduShpere.Application.DTOs.UserDto;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Models;
 using Microsoft.AspNetCore.Http;
+using EduShpere.Application.DTOs;
 
 namespace EduShpere.Application
 {
@@ -22,5 +23,6 @@ namespace EduShpere.Application
         Task<TokenModel> ForgotPassword(ForgotPasswordDto dto);
         Task<bool> DeleteUserAsync(int id);
         Task<UserStatisticsDto> GetUserStatisticsAsync();
+        Task<UserResponseDto> CreateStaff(CreateStaffDto dto);
     }
 }

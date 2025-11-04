@@ -17,13 +17,13 @@ namespace EduShpere.Application.Services
         Task<ClubJoinRequestDto> CreateJoinRequest(CreateClubJoinRequestDto dto, User user);
         Task<ClubJoinRequestDto> ApproveJoinRequest(int id);
         Task<bool> RejectJoinRequest(int id);
-        Task<ClubJoinRequestDto> InviteMentor(InviteMentorDto dto);
-        Task<ClubJoinRequestDto> MentorApprove(int id);
+        Task<ClubJoinRequestDto> InviteMentor(InviteMentorDto dto, User sender);
+        Task<ClubJoinRequestDto> MentorApprove(int clubId, User user);
         Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByCludId(int clubId,
      PaginationRequestDto paginationRequest,
      string? search = null);
         Task<ClubJoinRequestDto> CancelJoinRequest(int clubId, User user);
-        Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByUser(int userid,
+        Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByUserByClubId(int userid, int clubid,
      PaginationRequestDto paginationRequest,
      string? search = null);
     }

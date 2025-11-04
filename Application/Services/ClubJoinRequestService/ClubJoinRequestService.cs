@@ -13,6 +13,8 @@ using EduShpere.Shared.Constants;
 using EduShpere.Infrastructure;
 using EduShpere.Domain;
 using EduShpere.Shared;
+using EduShpere.Application.Services.NotificationService;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace EduShpere.Application.Services
 {
@@ -23,13 +25,15 @@ namespace EduShpere.Application.Services
         private readonly IClubRepository _clubRepo;
         private readonly IClubMemberRepository _clubMemberRepo;
         private readonly IUserRepository _userRepository;
-        public ClubJoinRequestService(IClubJoinRequestRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepositor)
+        private readonly INotificationService _notificationService;
+        public ClubJoinRequestService(IClubJoinRequestRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepositor, INotificationService notificationService)
         {
             _repo = repo;
             _mapper = mapper;
             _clubRepo = clubRepo;
             _clubMemberRepo = clubMemberRepo;
             _userRepository = userRepositor;
+            _notificationService = notificationService;
         }
         public async Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestAsync(
      PaginationRequestDto paginationRequest,
@@ -135,6 +139,7 @@ namespace EduShpere.Application.Services
                 UserId = request.UserId,
                 Role = "Member",
             };
+
             await _repo.UpdateAsync(request);
             await _clubMemberRepo.AddAsync(clubMember);
             var mapped = _mapper.Map<ClubJoinRequestDto>(request);
@@ -151,7 +156,7 @@ namespace EduShpere.Application.Services
             await _repo.UpdateAsync(request);
             return true;
         }
-        public async Task<ClubJoinRequestDto> InviteMentor(InviteMentorDto dto)
+        public async Task<ClubJoinRequestDto> InviteMentor(InviteMentorDto dto,User sender)
         {
             var user = await _userRepository.GetByIdAsync(dto.MentorId);
             if (user == null || user.Role != UserRole.Teacher )
@@ -163,33 +168,63 @@ namespace EduShpere.Application.Services
                 ClubId = dto.ClubId,
                 UserId = dto.MentorId,
                 Status = "Pending",
+                IsMentor = true,
             };
+            var isMentor = await _clubMemberRepo.IsMentorAnyClub(request.UserId);
+            if (isMentor)
+            {
+                throw new BadRequestException(ErrorMessages.ClubJoinRequest.AlreadyMentor);
+            }
+            var isAlreadyInvite = await _repo.IsAlreadyInvite(request.UserId, request.ClubId);
+            if (isAlreadyInvite) {
+                throw new BadRequestException(ErrorMessages.ClubJoinRequest.AlreadyInvite);
+            }
+            await _notificationService.AddAsync(new Notification
+            {
+                Link = $"/club/{dto.ClubId}",
+                Title = $"{user.FirstName} Đã gửi cho bạn lời mời vào Câu lạc bộ của họ",
+                CreatedAt = DateTime.Now,
+                Avatar = string.IsNullOrEmpty(sender.AvatarUrl) ? null : sender.AvatarUrl,
+                Read = false,
+                Type = "system",
+                UserId = dto.MentorId
+            });
             await _repo.AddAsync(request);
             var mapped = _mapper.Map<ClubJoinRequestDto>(request);
             return mapped;
         }
-        public async Task<ClubJoinRequestDto> MentorApprove(int id)
+        public async Task<ClubJoinRequestDto> MentorApprove(int clubId,User user)
         {
-            var request = await _repo.GetByIdAsync(id);
+            var request = await _repo.GetByUserIdAndClubId(clubId, user);
             if (request == null)
             {
                 throw new BadRequestException(ErrorMessages.ClubJoinRequest.RequestNotFound);
             }
             request.Status = "Approved";
             await _repo.UpdateAsync(request);
-            var club = await _clubRepo.GetByIdAsync(request.ClubId);
+            var club = await _clubRepo.GetByIdWithIncludesAsync(request.ClubId);
             if (club == null)
             {
                 throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
             }
             club.MentorUserId = request.UserId;
             await _clubRepo.UpdateAsync(club);
+            await _notificationService.AddAsync(new Notification
+            {
+                Title = $"{club.President.FirstName} Đã gửi cho bạn lời mời vào Câu lạc bộ của họ",
+                CreatedAt = DateTime.Now,
+                Avatar = string.IsNullOrEmpty(club.President.AvatarUrl) ? null : club.President.AvatarUrl,
+                Read = false,
+                Type = "system",
+                UserId = request.UserId,
+            });
             var clubMember = new ClubMember
             {
                 ClubId = request.ClubId,
                 UserId = request.UserId,
                 Role = "Mentor",
             };
+            
             await _clubMemberRepo.AddAsync(clubMember);
             var mapped = _mapper.Map<ClubJoinRequestDto>(request);
             return mapped;
@@ -205,11 +240,12 @@ namespace EduShpere.Application.Services
             return mapped;
         }
 
-        public async Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByUser( int userid,
+        public async Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByUserByClubId( int userid,int clubid,
      PaginationRequestDto paginationRequest,
      string? search = null)
         {
             var query = _repo.GetAllWithIncludesByUser(userid);
+            query = query.Where(c => c.ClubId == clubid);
 
             if (!string.IsNullOrWhiteSpace(search))
             {

@@ -22,9 +22,22 @@ namespace EduShpere.Application.Mappings
                     : null))
                 .ForMember(dest => dest.TeacherCode, opt => opt.MapFrom(src => src.TeacherProfile != null ? src.TeacherProfile.TeacherCode : null))
                 .ForMember(dest => dest.Department, opt => opt.MapFrom(src => src.TeacherProfile != null ? src.TeacherProfile.Department : null))
-                .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.TeacherProfile != null ? src.TeacherProfile.Position : null));
-            
+                .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.TeacherProfile != null ? src.TeacherProfile.Position : null))
+                .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src =>
+                src.UserRights
+                    .Where(ur => !ur.IsDeleted)
+                    .Select(ur => ur.Right.Code)
+                    .ToList()
+            ));
+
             CreateMap<UserDto, User>();
+            CreateMap<User, UserResponseDto>()
+                .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src =>
+                src.UserRights
+                    .Where(ur => !ur.IsDeleted)
+                    .Select(ur => ur.Right.Code)
+                    .ToList()
+            ));
         }
     }
 }

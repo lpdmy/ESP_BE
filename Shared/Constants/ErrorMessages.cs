@@ -17,6 +17,7 @@
             public const string OldPasswordContainsSpacesOrVietnamese = "Mật khẩu cũ không được chứa dấu cách hoặc ký tự tiếng Việt";
             public const string NewPasswordContainsSpacesOrVietnamese = "Mật khẩu mới không được chứa dấu cách hoặc ký tự tiếng Việt";
             public const string ConfirmPasswordContainsSpacesOrVietnamese = "Mật khẩu xác nhận không được chứa dấu cách hoặc ký tự tiếng Việt";
+            public const string ExistByEmail = "Email đã được sử dụng";
         }
 
         public struct Password
@@ -48,6 +49,13 @@
             public const string IdRequired = "ID là bắt buộc";
             public const string NameTooLong = "Tên không được vượt quá 255 ký tự";
             public const string DescriptionTooLong = "Mô tả không được vượt quá 500 ký tự";
+            
+            // System Announcement validation
+            public const string TitleRequired = "Tiêu đề là bắt buộc";
+            public const string TitleTooLong = "Tiêu đề không được vượt quá 500 ký tự";
+            public const string ContentRequired = "Nội dung là bắt buộc";
+            public const string AnnouncementTypeRequired = "Loại thông báo là bắt buộc";
+            public const string AnnouncementTypeTooLong = "Loại thông báo không được vượt quá 50 ký tự";
         }
 
         public struct Generic
@@ -113,6 +121,23 @@
             public const string PostNotFound = "Bài viết không tồn tại.";
             public const string ListNotFound = "Không tìm thấy bài viết nào.";
         }
+
+        public struct SystemAnnouncement
+        {
+            public const string NotFound = "Thông báo hệ thống không tồn tại.";
+            public const string AlreadyExists = "Thông báo hệ thống đã tồn tại.";
+            public const string CreateFailed = "Tạo thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string UpdateFailed = "Cập nhật thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string DeleteFailed = "Xóa thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string GetFailed = "Lấy thông tin thông báo hệ thống thất bại. Vui lòng thử lại.";
+            public const string InvalidId = "ID thông báo hệ thống không hợp lệ.";
+            public const string ValidationFailed = "Dữ liệu thông báo hệ thống không hợp lệ.";
+            public const string InvalidAnnouncementType = "Loại thông báo không hợp lệ.";
+            public const string ExpiryDateInPast = "Ngày hết hạn không được là ngày trong quá khứ.";
+            public const string FileUploadFailed = "Upload file đính kèm thất bại.";
+            public const string InvalidFileType = "Loại file không được hỗ trợ.";
+            public const string FileTooLarge = "File quá lớn. Kích thước tối đa là 10MB.";
+        }
         public struct ClubCreationRequest
         {
             public const string RecentRequestExists = "Bạn chỉ có thể gửi đơn tạo CLB 1 lần trong vòng 7 ngày.";
@@ -131,6 +156,8 @@
             public const string AlreadyPendingRequest = "Bạn đã có yêu cầu tham gia đang chờ xử lý cho câu lạc bộ này.";
             public const string AlreadyApproved = "Yêu cầu đã được duyệt";
             public const string NotTeacher = "Người được mời phải là giáo viên.";
+            public const string AlreadyMentor = "Người được mời đã là cố vấn của một câu lạc bộ rồi.";
+            public const string AlreadyInvite = "Câu lạc bộ đã mời giáo viên làm cố vấn";
         }
         public struct ClubMember
         {
@@ -206,7 +233,9 @@
             public const string UpdateStudentFailed = "Không thể cập nhật học sinh.";
             public const string TemplateGenerationFailed = "Không thể tạo file template import.";
         }
-
-
+        public struct Staff
+        {
+            public const string StaffNotFound = "Nhân viên không tồn tại.";
+        }
     }
 }

@@ -18,5 +18,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task<ClubMember> GetClubMemberByUserIdAndClubId(int userid, int clubid);
         Task<bool> IsInClub(int userid, int clubid);
         IQueryable<ClubMember> GetClubMemberByUser(User user);
+        Task<bool> IsMentorAnyClub(int userId);
     }
 }

@@ -2,17 +2,24 @@ using System.Text;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Application.Services;
+using EduShpere.Application.Services.ChatService;
 using EduShpere.Application.Services.ClassGroupService;
+using EduShpere.Application.Services.NotificationService;
 using EduShpere.Application.Services.StarPointService;
 using EduShpere.Domain.Models;
+using EduShpere.Hubs;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.AIService;
 using EduShpere.Infrastructure.Repositories;
+using EduShpere.Infrastructure.Repositories.Chat;
+using EduShpere.Infrastructure.Repositories.Notifications;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using EduShpere.Infrastructure.Repositories.StarPoint;
+using EduShpere.Infrastructure.Services;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -31,6 +38,10 @@ namespace EduShpere
                 options.EnableSensitiveDataLogging(false);
                 options.EnableServiceProviderCaching(false);
             });
+            
+            builder.Services.AddSingleton<AppMongoDbContext>();
+            builder.Services.AddScoped<IChatRepository, ChatRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
@@ -40,7 +51,7 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
-            
+            builder.Services.AddScoped<IUserRightRepository, UserRightRepository>();
             // Search repositories
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchHistory.ISearchHistoryRepository, EduShpere.Infrastructure.Repositories.SearchHistory.SearchHistoryRepository>();
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchAnalytics.ISearchAnalyticsRepository, EduShpere.Infrastructure.Repositories.SearchAnalytics.SearchAnalyticsRepository>();
@@ -61,8 +72,6 @@ namespace EduShpere
             builder.Services.AddScoped<IClubJoinRequestRepository, ClubJoinRequestRepository>();
             builder.Services.AddScoped<IClubCategoryRepository, ClubCategoryRepository>();
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-
-
             builder.Services.AddScoped<IRewardRuleRepository, RewardRuleRepository>();
             builder.Services.AddScoped<IRewardRepository, RewardRepository>();
             builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
@@ -71,7 +80,9 @@ namespace EduShpere
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddSingleton<CloudinaryService>();
+            builder.Services.AddSignalR();
             builder.Services.AddControllers(options =>
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
@@ -98,6 +109,7 @@ namespace EduShpere
             builder.Services.AddScoped<IRewardService, RewardService>();
             builder.Services.AddScoped<IRewardRedemptionService, RewardRedemptionService>();
             builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
+            builder.Services.AddScoped<IStaffService, StaffService>();
             builder.Services.AddScoped<Moderation>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -108,11 +120,19 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
+            
+            // System Announcement Service
+            builder.Services.AddScoped<EduShpere.Application.Services.SystemAnnouncementService.ISystemAnnouncementService, EduShpere.Application.Services.SystemAnnouncementService.SystemAnnouncementService>();
+            
+            builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
+
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(SystemAnnouncementProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CollectionProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ClubCreationRequestProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ClubProfile).Assembly);
@@ -161,10 +181,12 @@ namespace EduShpere
         }
     });
             });
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.RequireHttpsMetadata = true;
+                    options.RequireHttpsMetadata = false;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
@@ -173,6 +195,28 @@ namespace EduShpere
                         ValidateAudience = false,
                         ClockSkew = TimeSpan.Zero
                     };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var path = context.HttpContext.Request.Path;
+                            if (path.StartsWithSegments("/hubs/notification") || path.StartsWithSegments("/hubs/chat"))
+                            {
+                                var accessToken = context.Request.Query["access_token"];
+                                if (string.IsNullOrEmpty(accessToken))
+                                {
+                                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                                        accessToken = authHeader.Substring("Bearer ".Length).Trim();
+                                }
+                                if (!string.IsNullOrEmpty(accessToken))
+                                    context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
+
                 });
 
             builder.Services.AddCors(options =>
@@ -182,6 +226,14 @@ namespace EduShpere
                     policy.AllowAnyOrigin()
                           .AllowAnyHeader()
                           .AllowAnyMethod();
+                });
+
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins(allowedOrigins) // React dev origin
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -196,11 +248,14 @@ namespace EduShpere
 
             app.UseGlobalExceptionHandler();
             app.UseHttpsRedirection();
-
-            app.UseCors("AllowAll");
-
+            
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.MapHub<NotificationHub>("/hubs/notification");
+            app.MapHub<ChatHub>("/hubs/chat");
+
+      
             app.MapControllers();
             app.Run();
         }
