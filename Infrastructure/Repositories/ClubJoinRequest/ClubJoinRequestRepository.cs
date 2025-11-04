@@ -41,5 +41,9 @@ namespace EduShpere.Infrastructure.Repositories
                  .Include(r => r.User)
                  .Include(r => r.Club).ThenInclude(r => r.Category);
         }
+        public async Task<bool> IsAlreadyInvite(int userId, int clubId)
+        {
+            return await _context.ClubMembers.AnyAsync(cm => cm.UserId == userId && cm.ClubId == clubId && !cm.IsDeleted);
+        }
     }
 }

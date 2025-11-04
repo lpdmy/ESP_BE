@@ -22,7 +22,7 @@ public partial class ClubJoinRequest : BaseEntity
     public DateTime? RespondedAt { get; set; }
     public string? ReasonToJoin { get; set; }
     public string ? Experience { get; set; }
-
+    public bool? IsMentor { get; set; }
     public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("ClubId")]

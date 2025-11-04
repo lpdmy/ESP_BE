@@ -156,6 +156,8 @@
             public const string AlreadyPendingRequest = "Bạn đã có yêu cầu tham gia đang chờ xử lý cho câu lạc bộ này.";
             public const string AlreadyApproved = "Yêu cầu đã được duyệt";
             public const string NotTeacher = "Người được mời phải là giáo viên.";
+            public const string AlreadyMentor = "Người được mời đã là cố vấn của một câu lạc bộ rồi.";
+            public const string AlreadyInvite = "Câu lạc bộ đã mời giáo viên làm cố vấn";
         }
         public struct ClubMember
         {

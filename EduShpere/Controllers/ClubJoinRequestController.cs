@@ -63,9 +63,10 @@ namespace EduShpere.Controllers
         [HttpPost(ApiEndpoints.ClubJoinRequest.InviteMentor)]
         public async Task<IActionResult> InviteMentor([FromBody] InviteMentorDto dto)
         {
+            var user = await _httpContextService.GetAppUserAndThrow();
             try
             {
-                var response = await _clubJoinRequestService.InviteMentor(dto);
+                var response = await _clubJoinRequestService.InviteMentor(dto, user);
                 return Ok(new ResponseDto<ClubJoinRequestDto>(
                     response,
                     message: "Mời giảng viên làm cố vấn câu lạc bộ thành công",
@@ -93,8 +94,9 @@ namespace EduShpere.Controllers
         [HttpPut(ApiEndpoints.ClubJoinRequest.InviteMentor)]
         public async Task<IActionResult> MentorApprove(int id)
         {
+            var user = await _httpContextService.GetAppUserAndThrow();
             try {
-                var response = await _clubJoinRequestService.MentorApprove(id);
+                var response = await _clubJoinRequestService.MentorApprove(id, user);
                 return Ok(new ResponseDto<ClubJoinRequestDto>(
                            response,
                            message: "Giảng viên đã chấp nhận làm cố vấn câu lạc bộ thành công",
@@ -140,10 +142,10 @@ namespace EduShpere.Controllers
                    ));
         }
         [HttpGet(ApiEndpoints.ClubJoinRequest.JoinRequestByUser)]
-        public async Task<IActionResult> GetAllClubJoinRequestByUser([FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        public async Task<IActionResult> GetAllClubJoinRequestByUser(int clubid,[FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
-            var response = await _clubJoinRequestService.GetAllClubJoinRequestByUser(user.Id, paginationRequest, search);
+            var response = await _clubJoinRequestService.GetAllClubJoinRequestByUserByClubId(user.Id, clubid, paginationRequest, search);
             return Ok(new ResponseDto<PaginationResponseDto<ClubJoinRequestDto>>(
                        response,
                        message: "Lấy danh sách yêu cầu tham gia câu lạc bộ thành công",

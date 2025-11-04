@@ -27,5 +27,10 @@ namespace EduShpere.Infrastructure.Repositories
         {
             return _context.ClubMembers.Where(p => p.UserId == user.Id && p.IsDeleted==false).Include(p=>p.Club).ThenInclude(p=>p.Category);
         }
+        public async Task<bool> IsMentorAnyClub(int userId)
+        {
+            return await _context.ClubMembers.AnyAsync(cm=> cm.UserId == userId && cm.Role == "Mentor" && !cm.IsDeleted);
+        }
+        
     }
 }
