@@ -4,8 +4,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="EduShpere.AI.Train\**" />
+    <Content Remove="EduShpere.AI.Train\**" />
+    <EmbeddedResource Remove="EduShpere.AI.Train\**" />
+    <None Remove="EduShpere.AI.Train\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="FluentValidation" Version="12.0.0" />
@@ -19,16 +25,17 @@
     <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
-
+	<ItemGroup>
+		<Content Include="models\model.zip">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Application\EduShpere.Application.csproj" />
     <ProjectReference Include="..\Domain\EduShpere.Domain.csproj" />
     <ProjectReference Include="..\Infrastructure\EduShpere.Infrastructure.csproj" />
     <ProjectReference Include="..\Shared\EduShpere.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="EduShpere.AI.Train\data\" />
   </ItemGroup>
 
 </Project>
