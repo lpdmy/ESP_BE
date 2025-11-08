@@ -38,7 +38,12 @@ namespace EduShpere
                 options.EnableSensitiveDataLogging(false);
                 options.EnableServiceProviderCaching(false);
             });
-            
+            builder.Services.AddSingleton<ContentModerationService>(provider =>
+            {
+                var env = provider.GetRequiredService<IWebHostEnvironment>();
+                var modelPath = Path.Combine(env.ContentRootPath, "models", "model.zip");
+                return new ContentModerationService(modelPath);
+            });
             builder.Services.AddSingleton<AppMongoDbContext>();
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
