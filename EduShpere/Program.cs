@@ -76,6 +76,7 @@ namespace EduShpere
             builder.Services.AddScoped<IRewardRepository, RewardRepository>();
             builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
             builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
+            builder.Services.AddScoped<IJuryActivityRepository, JuryActivityRepository>();
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
@@ -120,7 +121,8 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
-            
+            builder.Services.AddScoped<IJuryService, JuryService>();
+
             // System Announcement Service
             builder.Services.AddScoped<EduShpere.Application.Services.SystemAnnouncementService.ISystemAnnouncementService, EduShpere.Application.Services.SystemAnnouncementService.SystemAnnouncementService>();
             
@@ -139,6 +141,8 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ClubJoinRequestProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CommentProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(JuryProfileMapping).Assembly);
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

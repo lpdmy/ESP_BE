@@ -43,4 +43,5 @@ public partial class Submission
     [ForeignKey("UserId")]
     [InverseProperty("Submissions")]
     public virtual User User { get; set; } = null!;
+    public ICollection<JuryAssignment> JuryAssignments { get; set; }
 }

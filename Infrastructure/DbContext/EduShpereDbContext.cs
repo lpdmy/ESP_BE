@@ -93,6 +93,8 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<SearchAnalytics> SearchAnalytics { get; set; }
     public virtual DbSet<Right> Rights { get; set; }
     public virtual DbSet<UserRight> UserRights { get; set; }
+    public virtual DbSet<JuryActivity> JuryActivity { get; set; }
+    public virtual DbSet<JuryAssignment> JuryAssignment { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

@@ -209,5 +209,10 @@ namespace EduShpere.Shared.Constants
             public const string MarkAsRead = "api/chat/messages/{roomId}/read";
             public const string GetMessages = "api/chat/messages/{roomId}";
         }
+        public static class Jury
+        {
+            public const string GetAllByClubId = "api/jury/{id}";
+            public const string ApiJury = "api/jury";
+        }
     }
 }
