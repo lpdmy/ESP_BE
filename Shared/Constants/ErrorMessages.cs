@@ -237,5 +237,13 @@
         {
             public const string StaffNotFound = "Nhân viên không tồn tại.";
         }
+        public struct Jury
+        {
+            public const string JuryNotFound = "Ban giám khảo không tồn tại.";
+        }
+        public struct Moderation
+        {
+            public const string ContentViolation = "Nội dung vi phạm môi trường học đường.";
+        }
     }
 }
