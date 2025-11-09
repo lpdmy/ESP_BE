@@ -33,6 +33,8 @@ public partial class Submission
 
     public byte[] RowVersion { get; set; } = null!;
 
+    public string? Title { get; set; }
+
     [ForeignKey("ActivityId")]
     [InverseProperty("Submissions")]
     public virtual Activity Activity { get; set; } = null!;
@@ -43,4 +45,5 @@ public partial class Submission
     [ForeignKey("UserId")]
     [InverseProperty("Submissions")]
     public virtual User User { get; set; } = null!;
+    public ICollection<JuryAssignment> JuryAssignments { get; set; }
 }

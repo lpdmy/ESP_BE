@@ -54,4 +54,5 @@ public partial class Activity : BaseEntity
     public virtual ICollection<Submission> Submissions { get; set; } = new List<Submission>();
     [InverseProperty("Activity")]
     public virtual ICollection<ActivityRule> Rules { get; set; } = new List<ActivityRule>();
+    public virtual ICollection<JuryActivity> JuryActivities { get; set; }
 }

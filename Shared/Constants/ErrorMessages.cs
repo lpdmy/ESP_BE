@@ -245,5 +245,9 @@
         {
             public const string ContentViolation = "Nội dung vi phạm môi trường học đường.";
         }
+        public struct Submission
+        {
+            public const string ListSubmissionNotFound = "danh sách bài nộp không tồn tại.";
+        }
     }
 }
