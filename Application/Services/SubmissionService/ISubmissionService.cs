@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Application.DTOs.SubmissionDto;
+
+namespace EduShpere.Application.Services
+{
+    public interface ISubmissionService
+    {
+        Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityId(int activityId,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+    }
+}

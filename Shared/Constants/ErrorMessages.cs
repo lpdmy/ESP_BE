@@ -241,5 +241,9 @@
         {
             public const string JuryNotFound = "Ban giám khảo không tồn tại.";
         }
+        public struct Submission
+        {
+            public const string ListSubmissionNotFound = "danh sách bài nộp không tồn tại.";
+        }
     }
 }

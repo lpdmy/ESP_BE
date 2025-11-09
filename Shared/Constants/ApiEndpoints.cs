@@ -214,5 +214,9 @@ namespace EduShpere.Shared.Constants
             public const string GetAllByClubId = "api/jury/{id}";
             public const string ApiJury = "api/jury";
         }
+        public static class Submission
+        {
+            public const string GetAllByActivityId = "api/submission/activity/{Id}";
+        }
     }
 }
