@@ -3,7 +3,6 @@ using EduShpere.Application.Services;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using EduShpere.Application.DTOs;
 using System.Net;
 using AutoMapper;
 using EduShpere.Application.DTOs.ActivityDto;
@@ -32,7 +31,7 @@ namespace EduShpere.Controllers
 
             foreach (var dto in ActivityDtos)
             {
-                dto.numberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
+                dto.NumberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
             }
             var result = new PaginationResponseDto<ActivityResponseDto>
             {

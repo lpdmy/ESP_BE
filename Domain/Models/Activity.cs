@@ -55,4 +55,19 @@ public partial class Activity : BaseEntity
     [InverseProperty("Activity")]
     public virtual ICollection<ActivityRule> Rules { get; set; } = new List<ActivityRule>();
     public virtual ICollection<JuryActivity> JuryActivities { get; set; }
+    
+    [InverseProperty("Activity")]
+    public virtual ICollection<ActivitySpeaker> Speakers { get; set; } = new List<ActivitySpeaker>();
+    
+    [InverseProperty("Activity")]
+    public virtual ICollection<ActivityProgram> Programs { get; set; } = new List<ActivityProgram>();
+    
+    [InverseProperty("Activity")]
+    public virtual ICollection<ActivitySport> Sports { get; set; } = new List<ActivitySport>();
+    
+    [InverseProperty("Activity")]
+    public virtual ActivityDetail? ActivityDetail { get; set; }
+    
+    [InverseProperty("Activity")]
+    public virtual ActivityRegistrationReward? RegistrationReward { get; set; }
 }

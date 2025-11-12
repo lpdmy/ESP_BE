@@ -21,8 +21,12 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<Activity> Activities { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
-
     public virtual DbSet<ActivityReward> ActivityRewards { get; set; }
+    public virtual DbSet<ActivitySpeaker> ActivitySpeakers { get; set; }
+    public virtual DbSet<ActivityProgram> ActivityPrograms { get; set; }
+    public virtual DbSet<ActivitySport> ActivitySports { get; set; }
+    public virtual DbSet<ActivityDetail> ActivityDetails { get; set; }
+    public virtual DbSet<ActivityRegistrationReward> ActivityRegistrationRewards { get; set; }
 
     public virtual DbSet<Attachment> Attachments { get; set; }
 

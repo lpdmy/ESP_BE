@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +14,32 @@ namespace EduShpere.Infrastructure.Repositories
         }
         public async Task<Activity?> GetByIdWithIncludesAsync(int id)
         {
-            return await _context.Activities
-                .Include(a => a.Rules)
-                .Include(a => a.ActivityParticipants)
-                .Include(a => a.ActivityRewards)
-                .Include(a => a.Submissions)
+            var activity = await _context.Activities
+                .Include(a => a.Rules.Where(r => !r.IsDeleted))
+                .Include(a => a.ActivityParticipants.Where(p => !p.IsDeleted))
+                .Include(a => a.ActivityRewards.Where(r => !r.IsDeleted))
+                .Include(a => a.Submissions.Where(s => !s.IsDeleted))
+                .Include(a => a.Speakers.Where(s => !s.IsDeleted))
+                .Include(a => a.Programs.Where(p => !p.IsDeleted))
+                .Include(a => a.Sports.Where(s => !s.IsDeleted))
+                .Include(a => a.ActivityDetail)
+                .Include(a => a.RegistrationReward)
                 .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+            
+            if (activity != null)
+            {
+                // Order collections after loading
+                if (activity.Speakers != null)
+                {
+                    activity.Speakers = activity.Speakers.OrderBy(s => s.Order).ToList();
+                }
+                if (activity.Programs != null)
+                {
+                    activity.Programs = activity.Programs.OrderBy(p => p.Order).ToList();
+                }
+            }
+            
+            return activity;
         }
 
         public async Task<IEnumerable<Activity>> SearchAsync(string query, int limit = 10)
