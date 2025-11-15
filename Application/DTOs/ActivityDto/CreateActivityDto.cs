@@ -73,6 +73,19 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // Helper property for frontend compatibility (maps to Awards)
         public StarPointRewardsDto? StarPointRewards { get; set; }
+        
+        // Grading Settings (will be serialized to JSON string)
+        public GradingSettingsDto? GradingSettings { get; set; }
+        
+        // Registration Settings
+        public bool OnlyTeacherCanRegister { get; set; } = false;
+    }
+    
+    public class GradingSettingsDto
+    {
+        // Note: Enabled is stored separately in Activity.IsGrade
+        // This DTO only contains criteria
+        public List<string> Criteria { get; set; } = new List<string>();
     }
     
     public class StarPointRewardsDto

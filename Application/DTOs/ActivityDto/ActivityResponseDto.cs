@@ -41,5 +41,11 @@ namespace EduShpere.Application.DTOs.ActivityDto
         // StarPoint Rewards
         public ActivityRegistrationRewardDto? RegistrationReward { get; set; }
         public List<ActivityAwardDto> Awards { get; set; } = new();
+        
+        // Grading Settings (Enabled is derived from IsGrade in Activity entity)
+        public GradingSettingsDto? GradingSettings { get; set; }
+        
+        // Registration Settings
+        public bool OnlyTeacherCanRegister { get; set; }
     }
 }

@@ -17,5 +17,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task AddRangeAsync(IEnumerable<Activity> Activity);
         Task<Activity?> GetByIdWithIncludesAsync(int id);
         Task<IEnumerable<Activity>> SearchAsync(string query, int limit = 10);
+        Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllWithPagingAsync(int pageNumber, int pageSize, string? search = null);
     }
 }

@@ -711,6 +711,42 @@ public partial class EduShpereDbContext : DbContext
             entity.HasIndex(e => e.SearchCount);
         });
 
+
+        modelBuilder.Entity<ActivityDetail>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivitySport>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivitySpeaker>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivityProgram>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivityRegistrationReward>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

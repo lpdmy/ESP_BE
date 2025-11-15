@@ -7,6 +7,8 @@ using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Encodings.Web;
 
 namespace EduShpere.Application.Services
 {
@@ -49,21 +51,9 @@ namespace EduShpere.Application.Services
             _auditService = auditService;
             _context = context;
         }
-        public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search =null)
+        public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null)
         {
-            var activities = await _repo.GetAllAsync();
-            var totalCount = activities.Count();
-            if (!string.IsNullOrEmpty(search))
-            {
-                activities = activities
-                    .Where(c => c.Title.Contains(search, StringComparison.OrdinalIgnoreCase));
-            }
-
-           var result = activities
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-            return (result,totalCount);
+            return await _repo.GetAllWithPagingAsync(pageNumber, pageSize, search);
         }
         public async Task<Activity?> GetByIdAsync(int id)
         {
@@ -135,6 +125,17 @@ namespace EduShpere.Application.Services
                 EndRegisterDate = dto.EndRegisterDate,
                     MaxParticipants = dto.MaxParticipants,
                     ClubId = dto.ClubId,
+                // Set IsGrade flag (nullable bool)
+                IsGrade = dto.GradingSettings != null && dto.GradingSettings.Criteria != null && dto.GradingSettings.Criteria.Any(),
+                // Serialize only Criteria to JSON string (without Unicode escaping)
+                GradingSettings = dto.GradingSettings != null && dto.GradingSettings.Criteria != null && dto.GradingSettings.Criteria.Any()
+                    ? JsonSerializer.Serialize(dto.GradingSettings.Criteria, new JsonSerializerOptions 
+                    { 
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                    })
+                    : null,
+                // Registration Settings
+                OnlyTeacherCanRegister = dto.OnlyTeacherCanRegister,
                 };
 
                 _auditService.SetAuditFieldsForCreate(activity);
@@ -364,6 +365,25 @@ namespace EduShpere.Application.Services
                 if (dto.RegisterDate.HasValue) existingActivity.RegisterDate = dto.RegisterDate.Value;
                 if (dto.EndRegisterDate.HasValue) existingActivity.EndRegisterDate = dto.EndRegisterDate.Value;
                 if (dto.ClubId.HasValue) existingActivity.ClubId = dto.ClubId;
+                
+                // Update IsGrade flag (nullable bool)
+                if (dto.GradingSettings != null)
+                {
+                    existingActivity.IsGrade = dto.GradingSettings.Criteria != null && dto.GradingSettings.Criteria.Any();
+                    // Serialize only Criteria to JSON string (without Unicode escaping)
+                    existingActivity.GradingSettings = dto.GradingSettings.Criteria != null && dto.GradingSettings.Criteria.Any()
+                        ? JsonSerializer.Serialize(dto.GradingSettings.Criteria, new JsonSerializerOptions 
+                        { 
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+                        })
+                        : null;
+                }
+                
+                // Update Registration Settings
+                if (dto.OnlyTeacherCanRegister.HasValue)
+                {
+                    existingActivity.OnlyTeacherCanRegister = dto.OnlyTeacherCanRegister.Value;
+                }
 
                 _auditService.SetAuditFieldsForUpdate(existingActivity);
                 _context.Activities.Update(existingActivity);
