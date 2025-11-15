@@ -21,8 +21,12 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<Activity> Activities { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
-
     public virtual DbSet<ActivityReward> ActivityRewards { get; set; }
+    public virtual DbSet<ActivitySpeaker> ActivitySpeakers { get; set; }
+    public virtual DbSet<ActivityProgram> ActivityPrograms { get; set; }
+    public virtual DbSet<ActivitySport> ActivitySports { get; set; }
+    public virtual DbSet<ActivityDetail> ActivityDetails { get; set; }
+    public virtual DbSet<ActivityRegistrationReward> ActivityRegistrationRewards { get; set; }
 
     public virtual DbSet<Attachment> Attachments { get; set; }
 
@@ -705,6 +709,42 @@ public partial class EduShpereDbContext : DbContext
             entity.HasIndex(e => new { e.Query, e.Category }).IsUnique();
             entity.HasIndex(e => e.TrendingScore);
             entity.HasIndex(e => e.SearchCount);
+        });
+
+
+        modelBuilder.Entity<ActivityDetail>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivitySport>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivitySpeaker>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivityProgram>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivityRegistrationReward>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
         });
 
         OnModelCreatingPartial(modelBuilder);
