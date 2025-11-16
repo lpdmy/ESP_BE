@@ -240,6 +240,7 @@
         public struct Jury
         {
             public const string JuryNotFound = "Ban giám khảo không tồn tại.";
+            public const string JuryNotEnough = "Số lượng giám khảo không đủ để thực hiện chấm điểm.";
         }
         public struct Moderation
         {

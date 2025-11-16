@@ -30,6 +30,13 @@ namespace EduShpere.Infrastructure.Repositories
         {
             return await _dbSet.AnyAsync(ja => ja.UserId == userId && ja.ActivityId == activityId);
         }
-
+        public IQueryable<JuryActivity> GetAllJuryActivityByUser(int id)
+        {
+            return _dbSet
+                .Where(ja => ja.UserId == id)
+                .Include(ja => ja.User)
+                .Include(ja => ja.Activity)
+                .ThenInclude(a => a.Submissions);
+        }
     }
 }

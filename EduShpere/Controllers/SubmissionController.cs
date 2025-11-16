@@ -13,9 +13,12 @@ namespace EduShpere.Controllers
     public class SubmissionController : ControllerBase
     {
         private readonly ISubmissionService _service;
-        public SubmissionController(ISubmissionService service)
+        private readonly IHttpContextService _httpContextService;
+
+        public SubmissionController(ISubmissionService service,IHttpContextService httpContextService)
         {
             _service = service;
+            _httpContextService = httpContextService;
         }
         [HttpGet(ApiEndpoints.Submission.GetAllByActivityId)]
         public async Task<IActionResult> GetAllByActivityId([FromQuery]PaginationRequestDto dto,int Id,string ? search)
@@ -33,6 +36,24 @@ namespace EduShpere.Controllers
                 throw new Exception(ex.Message);
             }
             
+        }
+        [HttpGet(ApiEndpoints.Submission.GetAllByUserIdByActivityId)]
+        public async Task<IActionResult> GetAllByActivityIdByUserId([FromQuery] PaginationRequestDto dto, int Id, string? search)
+        {
+            var userId = await _httpContextService.GetAppUserAndThrow();
+            try
+            {
+                var result = await _service.GetAllSubmissionByActivityIdByUserId(Id, userId.Id, dto, search);
+                return Ok(new ResponseDto<PaginationResponseDto<SubmissionResponseDto>>(result, "Lấy danh sách thành công", 200));
+            }
+            catch (BadRequestException err)
+            {
+                throw new BadRequestException(err.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

@@ -16,6 +16,9 @@ namespace EduShpere.Application.DTOs.SubmissionDto
         public string UserFullName => $"{LastName} {FirstName}";
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public int NumberJurys { get; set; }
         public ClassGroupDto Class { get; set; }
+        public List<int> Users { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

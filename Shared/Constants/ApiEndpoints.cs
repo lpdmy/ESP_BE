@@ -213,10 +213,17 @@ namespace EduShpere.Shared.Constants
         {
             public const string GetAllByClubId = "api/jury/{id}";
             public const string ApiJury = "api/jury";
+            public const string assignJury = "api/jury/assign";
+            public const string GetJuryActivity = "api/jury/activity";
+            public const string RamdomAssignJury = "api/jury/random-assign";
+            public const string DeleteAssignJury = "api/jury/delete-assign-activity/{id}";
+            public const string GetAllAssignByUser = "api/jury/assign/user/{Id}";
+            public const string GetAllAssignByUserNotGrading = "api/jury/assign-not-grading/user/{Id}";
         }
         public static class Submission
         {
             public const string GetAllByActivityId = "api/submission/activity/{Id}";
+            public const string GetAllByUserIdByActivityId = "api/submission/activity/user/{Id}";
         }
     }
 }

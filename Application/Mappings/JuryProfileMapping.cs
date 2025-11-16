@@ -9,8 +9,8 @@ namespace EduShpere.Application
         public JuryProfileMapping()
         {
             CreateMap<JuryActivity, JuryActivityResponseDto>().ForMember(dest => dest.FirstName, opt => opt.MapFrom(p => p.User.FirstName))
-            .ForMember(dest => dest.LastName, opt => opt.MapFrom(p => p.User.LastName));
-           
+            .ForMember(dest =>dest.LastName, opt => opt.MapFrom(p => p.User.LastName));
+            CreateMap<JuryAssignment, JuryAssignmentDto>();
         }
     }
 }

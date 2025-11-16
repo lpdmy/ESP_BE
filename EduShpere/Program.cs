@@ -83,6 +83,8 @@ namespace EduShpere
             builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
             builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
             builder.Services.AddScoped<IJuryActivityRepository, JuryActivityRepository>();
+            builder.Services.AddScoped<IJuryAssignRepository, JuryAssignRepository>();
+
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));

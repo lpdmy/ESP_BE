@@ -18,7 +18,10 @@ namespace EduShpere.Application
                .ForMember(dest => dest.LastName, opt => opt.MapFrom(p => p.User.LastName))
                .ForMember(dest => dest.Class, opt => opt.MapFrom(p =>
                    p.User.ClassGroupMembers.Select(cgm => cgm.ClassGroup).OrderByDescending(cg => cg.CreatedAt).FirstOrDefault()
-               ));
+               ))
+               .ForMember(dest => dest.Users, opt => opt.MapFrom(p =>
+    p.JuryAssignments.Select(j => j.UserId).ToList()
+));
             CreateMap<ClassGroup, ClassGroupDto>();
         }
     }

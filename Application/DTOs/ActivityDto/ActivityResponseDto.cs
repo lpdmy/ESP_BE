@@ -25,6 +25,9 @@ namespace EduShpere.Application.DTOs
         public DateTime EndRegisterDate { get; set; }
         public IEnumerable<ActivityParticipantDto> Participants { get; set; } = null!;
         public List<string> Rules { get; set; } = new();
+        public int numberOfSubmission { get; set; }
+        public int numberOfPendingSubmission { get; set; }
+        public int numberOfCompletedSubmission { get; set; }
     }
 
 }
