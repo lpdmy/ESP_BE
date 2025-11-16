@@ -54,6 +54,13 @@ namespace EduShpere
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+            builder.Services.AddScoped<IActivityRuleRepository, ActivityRuleRepository>();
+            builder.Services.AddScoped<IActivitySpeakerRepository, ActivitySpeakerRepository>();
+            builder.Services.AddScoped<IActivityProgramRepository, ActivityProgramRepository>();
+            builder.Services.AddScoped<IActivitySportRepository, ActivitySportRepository>();
+            builder.Services.AddScoped<IActivityDetailRepository, ActivityDetailRepository>();
+            builder.Services.AddScoped<IActivityRegistrationRewardRepository, ActivityRegistrationRewardRepository>();
+            builder.Services.AddScoped<IActivityRewardRepository, ActivityRewardRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
             builder.Services.AddScoped<IUserRightRepository, UserRightRepository>();

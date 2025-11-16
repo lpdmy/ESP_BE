@@ -3,12 +3,12 @@ using EduShpere.Application.Services;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using EduShpere.Application.DTOs;
 using System.Net;
 using AutoMapper;
 using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Middlewares;
 using EduShpere.Application.DTOs.CommonDto;
+using System.Linq;
 
 namespace EduShpere.Controllers
 {
@@ -28,12 +28,16 @@ namespace EduShpere.Controllers
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
             var (Activity, totalCount) = await _Service.GetAllAsync(pageNumber, pageSize, search);
-            var ActivityDtos = _mapper.Map<IEnumerable<ActivityResponseDto>>(Activity);
-
-            foreach (var dto in ActivityDtos)
+            
+            // Map each item individually to avoid AfterMap issues with collections
+            var ActivityDtos = new List<ActivityResponseDto>();
+            foreach (var activity in Activity)
             {
-                dto.numberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
+                var dto = _mapper.Map<ActivityResponseDto>(activity);
+                dto.NumberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
+                ActivityDtos.Add(dto);
             }
+
             var result = new PaginationResponseDto<ActivityResponseDto>
             {
                 Data = ActivityDtos,
