@@ -16,6 +16,8 @@ namespace EduShpere.Application.DTOs
 
         public int UserId { get; set; }
 
+        public int? ClassGroupId { get; set; }
+
         public ParticipantStatus? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
 

@@ -112,6 +112,28 @@
         {
             public const string AlreadyJoined = "Người dùng đã tham gia hoạt động này.";
             public const string NotFound = "Người dùng chưa tham gia hoạt động này.";
+            public const string NotHomeroomTeacher = "Bạn không phải là giáo viên chủ nhiệm của lớp này.";
+            public const string InvalidClassGroup = "Lớp học không tồn tại hoặc không hợp lệ.";
+            public const string ClassGroupAcademicYearMismatch = "Lớp học không thuộc niên khóa của hoạt động này.";
+            public const string OnlyHomeroomTeacherCanRegister = "Chỉ có giáo viên chủ nhiệm của lớp mới có thể đăng ký cho lớp.";
+            public const string TeacherNotFound = "Không tìm thấy thông tin giáo viên.";
+            public const string ClassGroupIdRequired = "ClassGroupId là bắt buộc khi đăng ký cho lớp.";
+
+        }
+
+        public struct ActivityMatch
+        {
+            public const string NotFound = "Không tìm thấy trận đấu này.";
+            public const string BracketNotFound = "Không tìm thấy bracket cho môn thể thao này.";
+            public const string BracketAlreadyExists = "Đã có bracket cho môn thể thao này. Vui lòng xóa bracket cũ trước khi tạo mới.";
+            public const string InsufficientClasses = "Cần ít nhất 2 lớp đã đăng ký để tạo bracket.";
+            public const string MatchAlreadyCompleted = "Trận đấu đã hoàn thành, không thể cập nhật kết quả.";
+            public const string InvalidWinner = "Người thắng phải là một trong hai lớp tham gia trận đấu.";
+            public const string SameClassGroup = "Hai lớp không được trùng nhau.";
+            public const string DifferentGrades = "Hai lớp phải cùng khối.";
+            public const string InvalidMatchDate = "Ngày giờ trận đấu không hợp lệ.";
+            public const string SportNotFound = "Không tìm thấy môn thể thao này trong hoạt động.";
+            public const string ClassGroupNotRegistered = "Lớp này chưa đăng ký hoạt động.";
 
         }
         public struct Post

@@ -54,6 +54,7 @@ namespace EduShpere
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+            builder.Services.AddScoped<IActivityMatchRepository, ActivityMatchRepository>();
             builder.Services.AddScoped<IActivityRuleRepository, ActivityRuleRepository>();
             builder.Services.AddScoped<IActivitySpeakerRepository, ActivitySpeakerRepository>();
             builder.Services.AddScoped<IActivityProgramRepository, ActivityProgramRepository>();
@@ -133,6 +134,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(EduShpere.Application.Mappings.SearchProfile).Assembly);
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+            builder.Services.AddScoped<IActivityMatchService, ActivityMatchService>();
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
             builder.Services.AddScoped<IJuryService, JuryService>();
@@ -146,6 +148,7 @@ namespace EduShpere
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityMatchProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(SystemAnnouncementProfile).Assembly);

@@ -23,5 +23,8 @@ public class ActivitySport : BaseEntity
     [ForeignKey("ActivityId")]
     [InverseProperty("Sports")]
     public virtual Activity Activity { get; set; } = null!;
+
+    [InverseProperty("Sport")]
+    public virtual ICollection<ActivityMatch> ActivityMatches { get; set; } = new List<ActivityMatch>();
 }
 

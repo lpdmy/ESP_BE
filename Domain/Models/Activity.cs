@@ -73,4 +73,7 @@ public partial class Activity : BaseEntity
     
     [InverseProperty("Activity")]
     public virtual ActivityRegistrationReward? RegistrationReward { get; set; }
+
+    [InverseProperty("Activity")]
+    public virtual ICollection<ActivityMatch> ActivityMatches { get; set; } = new List<ActivityMatch>();
 }

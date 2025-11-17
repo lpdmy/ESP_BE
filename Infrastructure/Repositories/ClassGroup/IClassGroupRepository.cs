@@ -44,4 +44,6 @@ public interface IClassGroupRepository
     Task<bool> AssignHomeroomTeacherAsync(int classGroupId, int teacherId);
     Task<bool> RemoveHomeroomTeacherAsync(int classGroupId);
     Task<ClassGroup?> GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(int teacherId, int academicYearId);
+    Task<bool> IsTeacherHomeroomOfClassGroupAsync(int teacherId, int classGroupId);
+    Task<ClassGroup?> GetClassGroupByIdWithAcademicYearAsync(int classGroupId);
 }

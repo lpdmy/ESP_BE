@@ -17,6 +17,8 @@ public partial class ActivityParticipant : BaseEntity
 
     public int UserId { get; set; }
 
+    public int? ClassGroupId { get; set; }
+
     [StringLength(50)]
     public ParticipantStatus? Status { get; set; }
 
@@ -29,4 +31,8 @@ public partial class ActivityParticipant : BaseEntity
     [ForeignKey("UserId")]
     [InverseProperty("ActivityParticipants")]
     public virtual User User { get; set; } = null!;
+
+    [ForeignKey("ClassGroupId")]
+    [InverseProperty("ActivityParticipants")]
+    public virtual ClassGroup? ClassGroup { get; set; }
 }
