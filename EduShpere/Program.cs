@@ -108,6 +108,11 @@ namespace EduShpere
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
+            
+            // AI Scheduling Services - Cho activity mới
+            builder.Services.AddScoped<EduShpere.MLTrainer.Services.ActivityScheduleMLService>();
+            builder.Services.AddScoped<EduShpere.MLTrainer.Services.ORToolsScheduler>();
+            builder.Services.AddScoped<EduShpere.MLTrainer.Services.ActivityScheduleService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
