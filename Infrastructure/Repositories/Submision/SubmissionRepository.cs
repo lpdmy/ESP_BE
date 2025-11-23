@@ -19,7 +19,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(s => s.User)
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
-                .Include(s => s.Activity);
+                .Include(s => s.Activity)
+                .Include(s => s.Attachments.Where(a => !a.IsDeleted));
         }
     }
 }

@@ -13,5 +13,11 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityId(int activityId,
     PaginationRequestDto paginationRequest,
     string? search = null);
+        Task<SubmissionResponseDto> CreateSubmission(CreateSubmissionDto dto, int userId);
+        Task<SubmissionResponseDto?> GetSubmissionById(int id);
+        Task<PaginationResponseDto<SubmissionResponseDto>> GetMySubmissions(int userId, PaginationRequestDto paginationRequest, string? search = null);
+        Task<SubmissionResponseDto?> GetMySubmissionByActivityId(int activityId, int userId);
+        Task<SubmissionResponseDto> UpdateSubmission(UpdateSubmissionDto dto, int userId);
+        Task<bool> DeleteSubmission(int id, int userId);
     }
 }

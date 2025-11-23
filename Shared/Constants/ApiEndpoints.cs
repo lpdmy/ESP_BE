@@ -217,6 +217,12 @@ namespace EduShpere.Shared.Constants
         public static class Submission
         {
             public const string GetAllByActivityId = "api/submission/activity/{Id}";
+            public const string Create = "api/submission";
+            public const string GetById = "api/submission/{id}";
+            public const string GetMySubmissions = "api/submission/my-submissions";
+            public const string GetMySubmissionByActivityId = "api/submission/activity/{activityId}/my-submission";
+            public const string Update = "api/submission/{id}";
+            public const string Delete = "api/submission/{id}";
         }
     }
 }

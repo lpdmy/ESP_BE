@@ -17,5 +17,6 @@ namespace EduShpere.Application.DTOs.SubmissionDto
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public ClassGroupDto Class { get; set; }
+        public List<SubmissionAttachmentDto> Attachments { get; set; } = new List<SubmissionAttachmentDto>();
     }
 }

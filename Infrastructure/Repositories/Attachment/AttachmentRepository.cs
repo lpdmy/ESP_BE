@@ -30,5 +30,17 @@ namespace EduShpere.Infrastructure.Repositories
             _dbSet.RemoveRange(attachments);
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteAttachmentBySubmissionId(int submissionId)
+        {
+            var attachments = _context.Attachments.Where(a => a.SubmissionId == submissionId);
+            _context.Attachments.RemoveRange(attachments);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<Attachment>> GetAttachmentsBySubmissionIdAsync(int submissionId)
+        {
+            return await _dbSet.Where(a => a.SubmissionId == submissionId && !a.IsDeleted).ToListAsync();
+        }
     }
 }

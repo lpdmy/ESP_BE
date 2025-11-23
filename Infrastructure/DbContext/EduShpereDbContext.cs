@@ -190,6 +190,8 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.Comment).WithMany(p => p.Attachments).HasConstraintName("FK__Attachmen__Comme__5E8A0973");
 
             entity.HasOne(d => d.Post).WithMany(p => p.Attachments).HasConstraintName("FK__Attachmen__PostI__5D95E53A");
+
+            entity.HasOne(d => d.Submission).WithMany(p => p.Attachments).HasConstraintName("FK__Attachmen__Submi__SubmissionId");
         });
 
         modelBuilder.Entity<ClassGroup>(entity =>

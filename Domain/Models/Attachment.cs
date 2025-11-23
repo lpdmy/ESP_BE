@@ -15,6 +15,8 @@ public partial class Attachment
 
     public int? CommentId { get; set; }
 
+    public int? SubmissionId { get; set; }
+
     [StringLength(1000)]
     public string? FileUrl { get; set; }
 
@@ -55,4 +57,8 @@ public partial class Attachment
     [ForeignKey("PostId")]
     [InverseProperty("Attachments")]
     public virtual Post? Post { get; set; }
+
+    [ForeignKey("SubmissionId")]
+    [InverseProperty("Attachments")]
+    public virtual Submission? Submission { get; set; }
 }
