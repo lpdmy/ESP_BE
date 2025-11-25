@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\EduShpere.Domain.csproj" />
-    <ProjectReference Include="..\ESP.AIService\ESP.AIService.csproj" />
+    <ProjectReference Include="..\ESP.AIService\ESP.AIService.csproj" ExcludeFromPublish="true" />
     <ProjectReference Include="..\Infrastructure\EduShpere.Infrastructure.csproj" />
     <ProjectReference Include="..\Shared\EduShpere.Shared.csproj" />
   </ItemGroup>

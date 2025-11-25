@@ -34,7 +34,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Application\EduShpere.Application.csproj" />
     <ProjectReference Include="..\Domain\EduShpere.Domain.csproj" />
-	  <ProjectReference Include="..\ESP.AIService\ESP.AIService.csproj" ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\ESP.AIService\ESP.AIService.csproj" ReferenceOutputAssembly="true" ExcludeFromPublish="true" />
 	  <ProjectReference Include="..\Infrastructure\EduShpere.Infrastructure.csproj" />
     <ProjectReference Include="..\Shared\EduShpere.Shared.csproj" />
   </ItemGroup>

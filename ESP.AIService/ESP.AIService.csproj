@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
 	<ExcludeAppHost>true</ExcludeAppHost>
 	<PublishSingleFile>false</PublishSingleFile>
+	<!-- Không publish khi được reference bởi project khác -->
+	<IsPublishable>false</IsPublishable>
   </PropertyGroup>
 
   <ItemGroup>
