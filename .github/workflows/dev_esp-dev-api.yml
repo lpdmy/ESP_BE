@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: windows-latest  # Windows để hỗ trợ OR-Tools x64
+    runs-on: windows-latest  # cần Windows cho OR-Tools x64
 
     steps:
       # 1️⃣ Checkout code
@@ -39,7 +39,14 @@ jobs:
 
       # 6️⃣ Publish project for Windows x64
       - name: Publish
-        run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -r win-x64 --self-contained false -o ./publish
+        run: |
+          dotnet publish ./EduShpere/EduShpere.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained false `
+            -o ./publish `
+            /p:ExcludeAppHost=true `
+            /p:PublishTrimmed=false
 
       # 7️⃣ Deploy to Azure WebApp
       - name: Deploy to Azure WebApp
