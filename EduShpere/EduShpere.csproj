@@ -34,9 +34,25 @@
   <ItemGroup>
     <ProjectReference Include="..\Application\EduShpere.Application.csproj" />
     <ProjectReference Include="..\Domain\EduShpere.Domain.csproj" />
-	  <ProjectReference Include="..\ESP.AIService\ESP.AIService.csproj" ReferenceOutputAssembly="true" ExcludeFromPublish="true" />
+	  <ProjectReference Include="..\ESP.AIService\ESP.AIService.csproj">
+	    <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+	    <SetTargetFramework>TargetFramework=net8.0</SetTargetFramework>
+	    <Properties>IsReferencedProject=true</Properties>
+	  </ProjectReference>
 	  <ProjectReference Include="..\Infrastructure\EduShpere.Infrastructure.csproj" />
     <ProjectReference Include="..\Shared\EduShpere.Shared.csproj" />
   </ItemGroup>
+
+  <!-- Exclude ESP.AIService output files from publish to avoid conflicts -->
+  <Target Name="ExcludeAIServicePublishOutputs" BeforeTargets="GetCopyToPublishDirectoryItems">
+    <ItemGroup>
+      <_AIServicePublishFilesToExclude Include="**\ESP.AIService.apphost.exe" />
+      <_AIServicePublishFilesToExclude Include="**\ESP.AIService.deps.json" />
+      <_AIServicePublishFilesToExclude Include="**\ESP.AIService.runtimeconfig.json" />
+    </ItemGroup>
+    <ItemGroup>
+      <_FilesToPublish Remove="@(_AIServicePublishFilesToExclude)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
