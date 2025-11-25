@@ -22,15 +22,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- appsettings.json chỉ copy khi build (để chạy standalone), không copy khi publish -->
+    <!-- Khi được sử dụng như library trong EduShpere, sẽ dùng appsettings.json của EduShpere -->
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
     <!-- Copy Data folder và model.zip nếu có -->
+    <!-- Copy cả khi build và publish -->
     <None Update="Data/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
