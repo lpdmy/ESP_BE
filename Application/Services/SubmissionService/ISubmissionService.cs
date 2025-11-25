@@ -17,5 +17,15 @@ namespace EduShpere.Application.Services
     int activityId, int userId,
     PaginationRequestDto paginationRequest,
     string? search = null);
+        Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityIdByUserIDGrading(
+    int activityId, int userId,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+        Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByUser(
+        int userId,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+        Task<List<SubmissionResponseDto>> GetRankByActivityId(int id);
+
     }
 }

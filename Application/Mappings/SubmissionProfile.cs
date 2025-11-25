@@ -21,7 +21,9 @@ namespace EduShpere.Application
                ))
                .ForMember(dest => dest.Users, opt => opt.MapFrom(p =>
     p.JuryAssignments.Select(j => j.UserId).ToList()
-));
+))
+               .ForMember(dest => dest.Score, opt => opt.MapFrom(p => p.Score))
+               .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(p => p.Activity.Title));
             CreateMap<ClassGroup, ClassGroupDto>();
         }
     }

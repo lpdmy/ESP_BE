@@ -13,6 +13,8 @@ namespace EduShpere.Domain.Models
         public User User { get; set; }
         public int SubmissionId { get; set; }
         public Submission Submission { get; set; }
-        public double? ScoreTemp { get; set; }
+        public string? ScoreTemp { get; set; }
+        public string? Comment { get; set; }
+        public int? TotalScore { get; set; }
     }
 }

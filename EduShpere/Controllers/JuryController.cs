@@ -142,7 +142,7 @@ namespace EduShpere.Controllers
             }
         }
         [HttpGet(ApiEndpoints.Jury.GetAllAssignByUser)]
-        public async Task<IActionResult> GetAllAssignByUserAsync( int Id, [FromQuery] PaginationRequestDto paginationRequest)
+        public async Task<IActionResult> GetAllAssignByUserAsync(int Id, [FromQuery] PaginationRequestDto paginationRequest)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
             try
@@ -167,6 +167,41 @@ namespace EduShpere.Controllers
             {
                 var result = await _juryService.GetAllAssignByUserNotGradeAsync(user.Id, Id, paginationRequest);
                 return Ok(new ResponseDto<PaginationResponseDto<JuryAssignmentDto>>(result, "Lấy danh sách phân công giám khảo thành công"));
+            }
+            catch (BadRequestException ex)
+            {
+                throw new BadRequestException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        [HttpGet(ApiEndpoints.Jury.GetAllAssignByUserGrading)]
+        public async Task<IActionResult> GetAllAssignByUserGradingAsync(int Id, [FromQuery] PaginationRequestDto paginationRequest)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            try
+            {
+                var result = await _juryService.GetAllAssignByUserGradeAsync(user.Id, Id, paginationRequest);
+                return Ok(new ResponseDto<PaginationResponseDto<JuryAssignmentDto>>(result, "Lấy danh sách phân công giám khảo thành công"));
+            }
+            catch (BadRequestException ex)
+            {
+                throw new BadRequestException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        [HttpPost(ApiEndpoints.Jury.GradeSubmission)]
+        public async Task<IActionResult> GradeSubmission([FromBody] GradeSubmissionDto dto)
+        {
+            try
+            {
+                var result = await _juryService.GradeSubmission(dto.id, dto.Scores,dto.Comment,dto.TotalScore);
+                return Ok(new ResponseDto<string>(result, "Chấm điểm thành công"));
             }
             catch (BadRequestException ex)
             {

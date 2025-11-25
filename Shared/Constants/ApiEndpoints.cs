@@ -219,11 +219,16 @@ namespace EduShpere.Shared.Constants
             public const string DeleteAssignJury = "api/jury/delete-assign-activity/{id}";
             public const string GetAllAssignByUser = "api/jury/assign/user/{Id}";
             public const string GetAllAssignByUserNotGrading = "api/jury/assign-not-grading/user/{Id}";
+            public const string GetAllAssignByUserGrading = "api/jury/assign-grading/user/{Id}";
+
+            public const string GradeSubmission = "api/jury/grade-submission";
         }
         public static class Submission
         {
             public const string GetAllByActivityId = "api/submission/activity/{Id}";
             public const string GetAllByUserIdByActivityId = "api/submission/activity/user/{Id}";
+            public const string GetRankByActivityId = "api/submission/activity/{id}/rank";
+            public const string GetAllByUser = "api/submission/activity/user";
         }
     }
 }
