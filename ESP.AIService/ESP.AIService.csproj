@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	<ExcludeAppHost>true</ExcludeAppHost>
+	<PublishSingleFile>false</PublishSingleFile>
+	<!-- Không publish khi được reference bởi project khác -->
+	<IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.OrTools.runtime.win-x64" Version="9.14.6206" />
+    <PackageReference Include="Microsoft.ML" Version="2.0.1" />
+    <PackageReference Include="Google.OrTools" Version="9.14.6206" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\EduShpere.Domain.csproj" />
+    <ProjectReference Include="..\Infrastructure\EduShpere.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- appsettings.json chỉ copy khi build (để chạy standalone), không copy khi publish -->
+    <!-- Khi được sử dụng như library trong EduShpere, sẽ dùng appsettings.json của EduShpere -->
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy Data folder và model.zip nếu có -->
+    <!-- Copy cả khi build và publish -->
+    <None Update="Data/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

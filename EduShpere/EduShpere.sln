@@ -1,17 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShpere", "EduShpere.csproj", "{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere", "EduShpere.csproj", "{79DFFEA0-5CBF-4D07-8371-31EF4B0EBD77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShpere.Application", "..\Application\EduShpere.Application.csproj", "{A5E903B9-7205-4060-B15F-6B8D309EBBB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Application", "..\Application\EduShpere.Application.csproj", "{A5E903B9-7205-4060-B15F-6B8D309EBBB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShpere.Domain", "..\Domain\EduShpere.Domain.csproj", "{CFC14D43-E43A-4372-815D-8248E9BD548D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Domain", "..\Domain\EduShpere.Domain.csproj", "{CFC14D43-E43A-4372-815D-8248E9BD548D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShpere.Infrastructure", "..\Infrastructure\EduShpere.Infrastructure.csproj", "{75B64E16-614F-40A5-BBB4-DF58A2795D3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Infrastructure", "..\Infrastructure\EduShpere.Infrastructure.csproj", "{75B64E16-614F-40A5-BBB4-DF58A2795D3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduShpere.Shared", "..\Shared\EduShpere.Shared.csproj", "{A7639FEE-B4FC-4078-9CFB-FC8703D33483}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Shared", "..\Shared\EduShpere.Shared.csproj", "{A7639FEE-B4FC-4078-9CFB-FC8703D33483}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ESP.AIService", "..\ESP.AIService\ESP.AIService.csproj", "{66F34D0C-4AAA-4566-9738-48F9C1408583}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,8 +41,15 @@ Global
 		{A7639FEE-B4FC-4078-9CFB-FC8703D33483}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7639FEE-B4FC-4078-9CFB-FC8703D33483}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7639FEE-B4FC-4078-9CFB-FC8703D33483}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1EA96903-3192-4A2B-A154-42F48B3F0EDE}
 	EndGlobalSection
 EndGlobal

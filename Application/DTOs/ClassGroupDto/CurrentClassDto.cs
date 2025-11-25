@@ -11,4 +11,9 @@ public class CurrentClassDto
     public string UserRole { get; set; } = string.Empty; // "Student" or "Teacher"
     public DateTime? JoinedAt { get; set; } // For students
     public DateTime? AssignedAt { get; set; } // For teachers
+    
+    /// <summary>
+    /// Lịch học của lớp (optional - backward compatible)
+    /// </summary>
+    public List<ClassGroupScheduleDto>? Schedules { get; set; }
 }

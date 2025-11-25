@@ -18,4 +18,11 @@ public class UpdateClassGroupDto
     public int? Grade { get; set; }
 
     public int? AcademicYearId { get; set; }
+
+    /// <summary>
+    /// Lịch học của lớp (optional - backward compatible)
+    /// Nếu null: giữ nguyên lịch cũ
+    /// Nếu có: xóa lịch cũ và thêm lịch mới
+    /// </summary>
+    public List<CreateClassGroupScheduleDto>? Schedules { get; set; }
 }
