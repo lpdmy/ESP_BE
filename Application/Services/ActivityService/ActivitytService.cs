@@ -9,6 +9,7 @@ using EduShpere.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Linq;
 
 namespace EduShpere.Application.Services
 {
@@ -53,7 +54,8 @@ namespace EduShpere.Application.Services
         }
         public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null)
         {
-            return await _repo.GetAllWithPagingAsync(pageNumber, pageSize, search);
+            var (items, totalCount) = await _repo.GetAllWithPagingAsync(pageNumber, pageSize, search);
+            return (items ?? Enumerable.Empty<Activity>(), totalCount);
         }
         public async Task<Activity?> GetByIdAsync(int id)
         {

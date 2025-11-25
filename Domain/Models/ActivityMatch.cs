@@ -54,6 +54,7 @@ public partial class ActivityMatch : BaseEntity
     [StringLength(1000)]
     public string? Notes { get; set; }
 
+    [Timestamp]
     public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("ActivityId")]

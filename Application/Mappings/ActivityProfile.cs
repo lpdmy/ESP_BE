@@ -53,7 +53,17 @@ namespace EduShpere.Application.Mappings
             CreateMap<ActivitySport, ActivitySportDto>();
             CreateMap<ActivityDetail, ActivityDetailDto>();
             CreateMap<ActivityRegistrationReward, ActivityRegistrationRewardDto>();
-            CreateMap<ActivityParticipant, ActivityParticipantDto>();
+            CreateMap<ActivityParticipant, ActivityParticipantDto>()
+                .ForMember(dest => dest.ClassGroupId, opt => opt.MapFrom(src => src.ClassGroupId))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src =>
+                    src.User != null
+                        ? (string.IsNullOrWhiteSpace(src.User.FirstName) && string.IsNullOrWhiteSpace(src.User.LastName)
+                            ? src.User.Username
+                            : $"{src.User.LastName} {src.User.FirstName}".Trim())
+                        : null))
+                .ForMember(dest => dest.UserAvatarUrl, opt => opt.MapFrom(src => src.User != null ? src.User.AvatarUrl : null))
+                .ForMember(dest => dest.ClassGroupName, opt => opt.MapFrom(src => src.ClassGroup != null ? src.ClassGroup.Name : null))
+                .ForMember(dest => dest.Grade, opt => opt.MapFrom(src => src.ClassGroup != null ? src.ClassGroup.Grade : null));
             CreateMap<ActivityReward, ActivityAwardDto>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Rank))
                 .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.Rank))
