@@ -12,34 +12,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout source code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      # ✅ Clean previous build to avoid duplicate files
+      # 3️⃣ Clean previous build folders to avoid duplicate files
       - name: Clean previous build
         run: rm -rf ./EduShpere/bin ./EduShpere/obj ./publish
 
+      # 4️⃣ Restore NuGet packages
       - name: Restore dependencies
         run: dotnet restore ./EduShpere/EduShpere.csproj
 
+      # 5️⃣ Build project
       - name: Build
         run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
 
-      # ✅ Publish Linux self-contained, single file to reduce size
+      # 6️⃣ Publish project for Linux, self-contained, single file
       - name: Publish for Linux
-        run: dotnet publish ./EduShpere/EduShpere.csproj \
-              -c Release \
-              -r linux-x64 \
-              --self-contained true \
-              /p:PublishSingleFile=true \
-              -o ./publish
+        run: |
+          dotnet publish ./EduShpere/EduShpere.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained true \
+            /p:PublishSingleFile=true \
+            -o ./publish
 
-      # ✅ Deploy to Azure WebApp
+      # 7️⃣ Deploy to Azure WebApp
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
         with:
