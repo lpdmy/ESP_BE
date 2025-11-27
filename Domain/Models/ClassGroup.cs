@@ -48,6 +48,9 @@ public partial class ClassGroup : BaseEntity
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 
     [InverseProperty("ClassGroup")]
+    public virtual ICollection<ClassGroupSchedule> Schedules { get; set; } = new List<ClassGroupSchedule>();
+
+    [InverseProperty("ClassGroup")]
     public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
 
     [InverseProperty("ClassGroup1")]

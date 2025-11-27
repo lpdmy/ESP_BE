@@ -102,6 +102,12 @@ namespace EduShpere
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
                 options.ModelValidatorProviders.Clear();
+            })
+            .AddJsonOptions(options =>
+            {
+                // Handle circular references by ignoring cycles
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.WriteIndented = false;
             });
 
             // Register KidNet services
@@ -111,6 +117,7 @@ namespace EduShpere
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<ITournamentScheduleService, TournamentScheduleService>();
             builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<EduShpere.Application.Services.SearchService.ISearchService, EduShpere.Application.Services.SearchService.SearchService>();

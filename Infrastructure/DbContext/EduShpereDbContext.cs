@@ -35,6 +35,8 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<ClassGroupMember> ClassGroupMembers { get; set; }
 
+    public virtual DbSet<ClassGroupSchedule> ClassGroupSchedules { get; set; }
+
     public virtual DbSet<Club> Clubs { get; set; }
 
     public virtual DbSet<ClubJoinRequest> ClubJoinRequests { get; set; }
@@ -224,6 +226,25 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ClassGroupMembers)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ClassGrou__UserI__55009F39");
+        });
+
+        modelBuilder.Entity<ClassGroupSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ClassGroupSchedule__3214EC07");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            entity.HasOne(d => d.ClassGroup).WithMany(p => p.Schedules)
+                .HasForeignKey(d => d.ClassGroupId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__ClassGroupSchedule__ClassGroupId");
+
+            entity.HasIndex(e => new { e.ClassGroupId, e.DayOfWeek, e.Period })
+                .HasDatabaseName("IX_ClassGroupSchedule_ClassGroup_Day_Period")
+                .IsUnique();
         });
 
         modelBuilder.Entity<Club>(entity =>

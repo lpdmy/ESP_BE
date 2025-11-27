@@ -9,6 +9,7 @@ using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Middlewares;
 using EduShpere.Application.DTOs.CommonDto;
 using System.Linq;
+using EduShpere.Infrastructure;
 
 namespace EduShpere.Controllers
 {
@@ -18,10 +19,21 @@ namespace EduShpere.Controllers
         private readonly IActivityService _Service;
         private readonly IMapper _mapper;
         private readonly IActivityParticipantService _APservice;
-        public ActivityController(IActivityService Service, IMapper mapper, IActivityParticipantService APservice) {
+        private readonly ITournamentScheduleService _tournamentScheduleService;
+        private readonly EduShpereDbContext _dbContext;
+        
+        public ActivityController(
+            IActivityService Service, 
+            IMapper mapper, 
+            IActivityParticipantService APservice,
+            ITournamentScheduleService tournamentScheduleService,
+            EduShpereDbContext dbContext) 
+        {
             _Service = Service;
             _mapper = mapper;
             _APservice = APservice;
+            _tournamentScheduleService = tournamentScheduleService;
+            _dbContext = dbContext;
         }
         [HttpGet(ApiEndpoints.Activity.Activities)]
         [Authorize(Roles = "Student,Teacher,Admin")]
@@ -92,6 +104,55 @@ namespace EduShpere.Controllers
             return Ok(new ResponseDto<ActivityResponseDto>(
                 ActivityDto,
                 "Cập nhật hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        [HttpPost(ApiEndpoints.Activity.GenerateTournamentSchedule)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GenerateTournamentSchedule(int id, [FromBody] GenerateTournamentScheduleRequestDto dto)
+        {
+            // Validate activity exists
+            var activity = await _Service.GetByIdAsync(id);
+            if (activity == null)
+            {
+                return NotFound(new ResponseDto<string>(
+                    null,
+                    ErrorMessages.Activity.ActivityNotFound,
+                    (int)HttpStatusCode.NotFound
+                ));
+            }
+
+            // Set ActivityId from route
+            dto.ActivityId = id;
+
+            // Generate schedule using AI service
+            var response = await _tournamentScheduleService.GenerateScheduleAsync(dto, _dbContext);
+
+            if (!response.Success)
+            {
+                return BadRequest(new ResponseDto<GenerateTournamentScheduleResponseDto>(
+                    response,
+                    response.Explanation,
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+
+            return Ok(new ResponseDto<GenerateTournamentScheduleResponseDto>(
+                response,
+                "Tạo lịch thi đấu thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        [HttpPost(ApiEndpoints.Activity.TrainScheduleModel)]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> TrainScheduleModel()
+        {
+            await _tournamentScheduleService.TrainModelAsync(_dbContext);
+            return Ok(new ResponseDto<string>(
+                null,
+                "Train ML model thành công",
                 (int)HttpStatusCode.OK
             ));
         }
