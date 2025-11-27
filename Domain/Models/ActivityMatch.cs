@@ -40,6 +40,8 @@ public partial class ActivityMatch : BaseEntity
 
     public int? WinnerClassGroupId { get; set; }
 
+public DateTime? ActualStartTime { get; set; }
+
     public int Round { get; set; } = 1;
 
     [StringLength(50)]

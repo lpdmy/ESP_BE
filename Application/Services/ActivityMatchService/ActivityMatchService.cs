@@ -390,42 +390,61 @@ namespace EduShpere.Application.Services
                 throw new NotFoundException(ErrorMessages.ActivityMatch.NotFound);
             }
 
-            if (match.Status == MatchStatus.Completed)
+            if (match.Status == MatchStatus.Completed && (dto.MarkAsCompleted))
             {
                 throw new BadRequestException(ErrorMessages.ActivityMatch.MatchAlreadyCompleted);
             }
 
-            // Validate winner
-            if (dto.WinnerClassGroupId != match.ClassGroup1Id && 
-                dto.WinnerClassGroupId != match.ClassGroup2Id)
+            var markAsCompleted = dto.MarkAsCompleted;
+
+            if (markAsCompleted)
             {
-                throw new BadRequestException(ErrorMessages.ActivityMatch.InvalidWinner);
+                if (!dto.WinnerClassGroupId.HasValue ||
+                    (dto.WinnerClassGroupId != match.ClassGroup1Id &&
+                     dto.WinnerClassGroupId != match.ClassGroup2Id))
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityMatch.InvalidWinner);
+                }
             }
 
-            // Update result
             match.Score1 = dto.Score1;
             match.Score2 = dto.Score2;
-            match.WinnerClassGroupId = dto.WinnerClassGroupId;
-            match.Status = MatchStatus.Completed;
 
-            // Nếu có trận tiếp theo, tự động đưa winner vào
-            if (match.NextMatchId.HasValue)
+            if (markAsCompleted)
             {
-                var nextMatch = await _matchRepo.GetByIdAsync(match.NextMatchId.Value);
-                if (nextMatch != null && !nextMatch.IsDeleted)
+                match.WinnerClassGroupId = dto.WinnerClassGroupId;
+                match.Status = MatchStatus.Completed;
+                if (!match.ActualStartTime.HasValue)
                 {
-                    // Xác định slot nào còn trống
-                    if (!nextMatch.ClassGroup1Id.HasValue)
-                    {
-                        nextMatch.ClassGroup1Id = match.WinnerClassGroupId;
-                    }
-                    else if (!nextMatch.ClassGroup2Id.HasValue)
-                    {
-                        nextMatch.ClassGroup2Id = match.WinnerClassGroupId;
-                    }
+                    match.ActualStartTime = DateTime.UtcNow;
+                }
 
-                    _auditService.SetAuditFieldsForUpdate(nextMatch);
-                    await _matchRepo.UpdateAsync(nextMatch);
+                if (match.NextMatchId.HasValue)
+                {
+                    var nextMatch = await _matchRepo.GetByIdAsync(match.NextMatchId.Value);
+                    if (nextMatch != null && !nextMatch.IsDeleted)
+                    {
+                        if (!nextMatch.ClassGroup1Id.HasValue)
+                        {
+                            nextMatch.ClassGroup1Id = match.WinnerClassGroupId;
+                        }
+                        else if (!nextMatch.ClassGroup2Id.HasValue)
+                        {
+                            nextMatch.ClassGroup2Id = match.WinnerClassGroupId;
+                        }
+
+                        _auditService.SetAuditFieldsForUpdate(nextMatch);
+                        await _matchRepo.UpdateAsync(nextMatch);
+                    }
+                }
+            }
+            else
+            {
+                match.Status = MatchStatus.InProgress;
+                match.WinnerClassGroupId = null;
+                if (!match.ActualStartTime.HasValue)
+                {
+                    match.ActualStartTime = DateTime.UtcNow;
                 }
             }
 
@@ -519,7 +538,13 @@ namespace EduShpere.Application.Services
                 match.Location = dto.Location;
 
             if (dto.Status.HasValue)
+            {
+                if (dto.Status.Value == MatchStatus.InProgress && match.Status != MatchStatus.InProgress && !match.ActualStartTime.HasValue)
+                {
+                    match.ActualStartTime = DateTime.UtcNow;
+                }
                 match.Status = dto.Status.Value;
+            }
 
             if (dto.Notes != null)
                 match.Notes = dto.Notes;

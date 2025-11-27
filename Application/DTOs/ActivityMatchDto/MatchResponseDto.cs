@@ -29,6 +29,7 @@ namespace EduShpere.Application.DTOs.ActivityMatchDto
         public int? NextMatchId { get; set; }
         public bool IsBye { get; set; }
         public string? Notes { get; set; }
+        public DateTime? ActualStartTime { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
