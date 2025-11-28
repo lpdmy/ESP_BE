@@ -165,6 +165,10 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ActivityParticipants)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ActivityP__UserI__6EC0713C");
+
+            entity.HasOne(d => d.Sport).WithMany(p => p.ActivityParticipants)
+                .HasForeignKey(d => d.SportId)
+                .HasConstraintName("FK__ActivityP__SportI__72C60C4A");
         });
 
         modelBuilder.Entity<ActivityReward>(entity =>

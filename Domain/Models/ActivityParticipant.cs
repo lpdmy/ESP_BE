@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Domain.Models;
 
-[Index("ActivityId", "UserId", Name = "ActivityParticipants_index_10", IsUnique = true)]
 public partial class ActivityParticipant : BaseEntity
 {
     [Key]
@@ -22,6 +21,15 @@ public partial class ActivityParticipant : BaseEntity
     [StringLength(50)]
     public ParticipantStatus? Status { get; set; }
 
+    public int? SportId { get; set; }
+
+    public Guid? GroupCode { get; set; }
+
+    public bool IsLeader { get; set; }
+
+    [StringLength(2000)]
+    public string? RegistrationMetadata { get; set; }
+
     public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("ActivityId")]
@@ -35,4 +43,8 @@ public partial class ActivityParticipant : BaseEntity
     [ForeignKey("ClassGroupId")]
     [InverseProperty("ActivityParticipants")]
     public virtual ClassGroup? ClassGroup { get; set; }
+
+    [ForeignKey("SportId")]
+    [InverseProperty("ActivityParticipants")]
+    public virtual ActivitySport? Sport { get; set; }
 }

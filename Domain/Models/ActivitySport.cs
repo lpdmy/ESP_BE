@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -18,6 +19,8 @@ public class ActivitySport : BaseEntity
 
     public bool IsCustom { get; set; } = false;
 
+    public int? MaxMembers { get; set; }
+
     public byte[] RowVersion { get; set; } = null!;
 
     [ForeignKey("ActivityId")]
@@ -26,5 +29,8 @@ public class ActivitySport : BaseEntity
 
     [InverseProperty("Sport")]
     public virtual ICollection<ActivityMatch> ActivityMatches { get; set; } = new List<ActivityMatch>();
+
+    [InverseProperty("Sport")]
+    public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
 }
 

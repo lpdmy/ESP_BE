@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.OrTools.LinearSolver;
 using ESP.AIService.Models;
-using ESP.AIService.Entities;
 using EduShpere.Infrastructure;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using AiActivityMatch = ESP.AIService.Entities.ActivityMatch;
+using AiMatchStatus = ESP.AIService.Entities.MatchStatus;
 
 namespace ESP.AIService.Services;
 
@@ -34,7 +35,7 @@ public class ORToolsScheduler
         }
 
         // Lấy các matches đã có để check conflict
-        List<ActivityMatch> existingMatches = new();
+        List<AiActivityMatch> existingMatches = new();
         
         try
         {
@@ -72,7 +73,7 @@ public class ORToolsScheduler
                   AND IsDeleted = 0";
             
             var matchDtos = dbContext.Database
-                .SqlQueryRaw<Models.ActivityMatchDto>(sql, request.ActivityId, (int)MatchStatus.Cancelled)
+                .SqlQueryRaw<Models.ActivityMatchDto>(sql, request.ActivityId, (int)AiMatchStatus.Cancelled)
                 .ToList();
             
             existingMatches = matchDtos.Select(dto => dto.ToActivityMatch()).ToList();
@@ -82,7 +83,7 @@ public class ORToolsScheduler
             // Nếu không có table hoặc có lỗi
             Console.WriteLine($"⚠️ Không thể query ActivityMatches: {ex.Message}");
             Console.WriteLine("   Table có thể chưa được tạo. Sẽ không check conflict với matches cũ.");
-            existingMatches = new List<ActivityMatch>();
+            existingMatches = new List<AiActivityMatch>();
         }
 
         // Filter slots: loại bỏ các slots conflict
@@ -184,7 +185,7 @@ public class ORToolsScheduler
 
     private List<ScheduleSlot> FilterAvailableSlots(
         List<ScheduleSlot> slots,
-        List<ActivityMatch> existingMatches,
+        List<AiActivityMatch> existingMatches,
         TournamentScheduleRequest request,
         EduShpereDbContext dbContext)
     {
@@ -334,12 +335,12 @@ public class ORToolsScheduler
         };
     }
 
-    private List<ActivityMatch> GenerateMatches(
+    private List<AiActivityMatch> GenerateMatches(
         TournamentScheduleRequest request,
         List<ScheduleSlot> slots,
         int numberOfRounds)
     {
-        var matches = new List<ActivityMatch>();
+        var matches = new List<AiActivityMatch>();
         var classGroupIds = request.ClassGroupIds.ToList();
         var matchNumber = 1;
 
@@ -362,14 +363,14 @@ public class ORToolsScheduler
         return matches;
     }
 
-    private List<ActivityMatch> GenerateSingleEliminationMatches(
+    private List<AiActivityMatch> GenerateSingleEliminationMatches(
         TournamentScheduleRequest request,
         List<ScheduleSlot> slots,
         List<int> classGroupIds,
         int numberOfRounds,
         ref int matchNumber)
     {
-        var matches = new List<ActivityMatch>();
+        var matches = new List<AiActivityMatch>();
         var slotIndex = 0;
 
         // Shuffle teams để random đội được bye nếu lẻ
@@ -403,7 +404,7 @@ public class ORToolsScheduler
         }
 
         // Dictionary để lưu matches theo round
-        var matchesByRound = new Dictionary<int, List<ActivityMatch>>();
+        var matchesByRound = new Dictionary<int, List<AiActivityMatch>>();
 
         // Tạo matches cho tất cả các rounds (bao gồm cả chung kết)
         for (int round = 1; round <= numberOfRounds; round++)
@@ -412,7 +413,7 @@ public class ORToolsScheduler
                            round == numberOfRounds - 1 ? "Bán kết" : 
                            $"Vòng {round}";
             
-            var roundMatches = new List<ActivityMatch>();
+            var roundMatches = new List<AiActivityMatch>();
             var matchesInThisRound = matchesPerRound[round - 1];
 
             if (round == 1)
@@ -434,7 +435,7 @@ public class ORToolsScheduler
                         team2 = shuffledTeams[teamIndex + 1];
                     }
 
-                    var match = new ActivityMatch
+                    var match = new AiActivityMatch
                     {
                         ActivityId = request.ActivityId,
                         SportId = request.SportId,
@@ -445,7 +446,7 @@ public class ORToolsScheduler
                         StartTime = slot.StartTime,
                         EndTime = slot.EndTime,
                         Location = slot.Location,
-                        Status = MatchStatus.Pending,
+                        Status = AiMatchStatus.Pending,
                         Round = round,
                         RoundName = roundName,
                         MatchNumber = matchNumber++,
@@ -485,7 +486,7 @@ public class ORToolsScheduler
                         notes = $"Chờ kết quả {prevRoundName}";
                     }
 
-                    var match = new ActivityMatch
+                    var match = new AiActivityMatch
                     {
                         ActivityId = request.ActivityId,
                         SportId = request.SportId,
@@ -496,7 +497,7 @@ public class ORToolsScheduler
                         StartTime = slot.StartTime,
                         EndTime = slot.EndTime,
                         Location = slot.Location,
-                        Status = MatchStatus.Pending,
+                        Status = AiMatchStatus.Pending,
                         Round = round,
                         RoundName = roundName,
                         MatchNumber = matchNumber++,
@@ -518,7 +519,7 @@ public class ORToolsScheduler
                                        round - 1 == numberOfRounds ? "Chung kết" : 
                                        $"Vòng {round - 1}";
                     
-                    var match = new ActivityMatch
+                    var match = new AiActivityMatch
                     {
                         ActivityId = request.ActivityId,
                         SportId = request.SportId,
@@ -529,7 +530,7 @@ public class ORToolsScheduler
                         StartTime = slot.StartTime,
                         EndTime = slot.EndTime,
                         Location = slot.Location,
-                        Status = MatchStatus.Pending,
+                        Status = AiMatchStatus.Pending,
                         Round = round,
                         RoundName = roundName,
                         MatchNumber = matchNumber++,
@@ -590,13 +591,13 @@ public class ORToolsScheduler
         return matches;
     }
 
-    private List<ActivityMatch> GenerateRoundRobinMatches(
+    private List<AiActivityMatch> GenerateRoundRobinMatches(
         TournamentScheduleRequest request,
         List<ScheduleSlot> slots,
         List<int> classGroupIds,
         ref int matchNumber)
     {
-        var matches = new List<ActivityMatch>();
+        var matches = new List<AiActivityMatch>();
         var slotIndex = 0;
 
         // Round robin: mỗi team đấu với tất cả teams khác
@@ -605,7 +606,7 @@ public class ORToolsScheduler
             for (int j = i + 1; j < classGroupIds.Count && slotIndex < slots.Count; j++)
             {
                 var slot = slots[slotIndex++];
-                var match = new ActivityMatch
+                var match = new AiActivityMatch
                 {
                     ActivityId = request.ActivityId,
                     SportId = request.SportId,
@@ -616,7 +617,7 @@ public class ORToolsScheduler
                     StartTime = slot.StartTime,
                     EndTime = slot.EndTime,
                     Location = slot.Location,
-                    Status = MatchStatus.Pending,
+                    Status = AiMatchStatus.Pending,
                     Round = 1,
                     RoundName = "Vòng bảng",
                     MatchNumber = matchNumber++,

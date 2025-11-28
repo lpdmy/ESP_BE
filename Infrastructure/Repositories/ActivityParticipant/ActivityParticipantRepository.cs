@@ -1,5 +1,6 @@
 ﻿
 
+using System.Linq;
 using System.Numerics;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +12,16 @@ namespace EduShpere.Infrastructure.Repositories
         public ActivityParticipantRepository(EduShpereDbContext context) : base(context)
         {
         }
-        public async Task<bool> isAlreadyRegistered(int UserId, int ActivityId) { 
-          return await _dbSet.AnyAsync(p => p.UserId == UserId && p.ActivityId == ActivityId && p.IsDeleted == false);
+        public async Task<bool> IsAlreadyRegisteredAsync(int userId, int activityId, int? sportId = null)
+        {
+            var query = _dbSet.Where(p => p.UserId == userId && p.ActivityId == activityId && !p.IsDeleted);
+
+            if (sportId.HasValue)
+            {
+                query = query.Where(p => p.SportId == sportId);
+            }
+
+            return await query.AnyAsync();
         }
          public async Task SoftDeleteAsync(int id)
         {

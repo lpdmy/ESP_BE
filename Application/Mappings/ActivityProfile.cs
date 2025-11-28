@@ -23,6 +23,7 @@ namespace EduShpere.Application.Mappings
                 .ForMember(dest => dest.RegistrationReward, opt => opt.MapFrom(src => src.RegistrationReward != null && !src.RegistrationReward.IsDeleted ? src.RegistrationReward : null))
                 .ForMember(dest => dest.ActivityDetail, opt => opt.MapFrom(src => src.ActivityDetail != null && !src.ActivityDetail.IsDeleted ? src.ActivityDetail : null))
                 .ForMember(dest => dest.GradingSettings, opt => opt.Ignore()) // Ignore default mapping, handle in AfterMap
+                .ForMember(dest => dest.RegistrationSettings, opt => opt.Ignore()) // Ignore default mapping, handle in AfterMap
                 .AfterMap((src, dest) => 
                 {
                     // Deserialize GradingSettings from JSON string and set Enabled from IsGrade (handle nullable)
@@ -45,6 +46,43 @@ namespace EduShpere.Application.Mappings
                     {
                         dest.GradingSettings = null;
                     }
+
+                    if (!string.IsNullOrWhiteSpace(src.RegistrationSettings))
+                    {
+                        try
+                        {
+                            dest.RegistrationSettings = JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(src.RegistrationSettings);
+                            // Ensure GroupRegistration has default values if missing
+                            if (dest.RegistrationSettings != null && dest.RegistrationSettings.GroupRegistration == null)
+                            {
+                                dest.RegistrationSettings.GroupRegistration = new GroupRegistrationSettingsDto
+                                {
+                                    MinMembers = 1,
+                                    MaxMembers = null,
+                                    RequireLeader = false
+                                };
+                            }
+                            // Ensure MinMembers and MaxMembers have defaults if not set
+                            else if (dest.RegistrationSettings?.GroupRegistration != null)
+                            {
+                                if (dest.RegistrationSettings.GroupRegistration.MinMembers <= 0)
+                                {
+                                    dest.RegistrationSettings.GroupRegistration.MinMembers = 1;
+                                }
+                                // MaxMembers can be null (unlimited), so we don't set a default
+                            }
+                        }
+                        catch
+                        {
+                            // If deserialization fails, create default settings based on SubType
+                            dest.RegistrationSettings = CreateDefaultRegistrationSettings(src.SubType);
+                        }
+                    }
+                    else
+                    {
+                        // Create default settings based on SubType when RegistrationSettings is null/empty
+                        dest.RegistrationSettings = CreateDefaultRegistrationSettings(src.SubType);
+                    }
                 });
 
             // Related entities to DTOs
@@ -63,7 +101,8 @@ namespace EduShpere.Application.Mappings
                         : null))
                 .ForMember(dest => dest.UserAvatarUrl, opt => opt.MapFrom(src => src.User != null ? src.User.AvatarUrl : null))
                 .ForMember(dest => dest.ClassGroupName, opt => opt.MapFrom(src => src.ClassGroup != null ? src.ClassGroup.Name : null))
-                .ForMember(dest => dest.Grade, opt => opt.MapFrom(src => src.ClassGroup != null ? src.ClassGroup.Grade : null));
+                .ForMember(dest => dest.Grade, opt => opt.MapFrom(src => src.ClassGroup != null ? src.ClassGroup.Grade : null))
+                .ForMember(dest => dest.SportName, opt => opt.MapFrom(src => src.Sport != null ? src.Sport.SportName : null));
             CreateMap<ActivityReward, ActivityAwardDto>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Rank))
                 .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.Rank))
@@ -79,6 +118,34 @@ namespace EduShpere.Application.Mappings
             CreateMap<ActivityAwardDto, ActivityReward>()
                 .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.Name ?? src.Rank))
                 .ForMember(dest => dest.StarPoints, opt => opt.MapFrom(src => src.StarPoints > 0 ? src.StarPoints : src.Points));
+        }
+
+        private static ActivityRegistrationSettingsDto CreateDefaultRegistrationSettings(string? subType)
+        {
+            // For CreativeContest, default to group registration with minMembers = 1
+            if (subType == "CreativeContest")
+            {
+                return new ActivityRegistrationSettingsDto
+                {
+                    GroupRegistration = new GroupRegistrationSettingsDto
+                    {
+                        MinMembers = 1,
+                        MaxMembers = null, // Unlimited
+                        RequireLeader = true
+                    }
+                };
+            }
+
+            // For other activity types, default to single registration (minMembers = 1, no max limit)
+            return new ActivityRegistrationSettingsDto
+            {
+                GroupRegistration = new GroupRegistrationSettingsDto
+                {
+                    MinMembers = 1,
+                    MaxMembers = null, // Unlimited
+                    RequireLeader = false
+                }
+            };
         }
     }
 }

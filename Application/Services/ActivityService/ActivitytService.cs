@@ -26,6 +26,11 @@ namespace EduShpere.Application.Services
         private readonly IMapper _mapper;
         private readonly IAuditService _auditService;
         private readonly EduShpereDbContext _context;
+        private static readonly JsonSerializerOptions RegistrationSettingsJsonOptions = new()
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
 
         public ActivityService(
             IActivityRepository repo,
@@ -138,6 +143,7 @@ namespace EduShpere.Application.Services
                     : null,
                 // Registration Settings
                 OnlyTeacherCanRegister = dto.OnlyTeacherCanRegister,
+                RegistrationSettings = SerializeRegistrationSettings(dto.RegistrationSettings),
                 };
 
                 _auditService.SetAuditFieldsForCreate(activity);
@@ -171,16 +177,13 @@ namespace EduShpere.Application.Services
                     "Ném bóng", "Bóng đá", "Bóng chuyền", "Bóng rổ"
                 };
                 
-                if (dto.SportsCategories != null && dto.SportsCategories.Any())
+                var sportsConfigurations = dto.SportsConfigurations != null && dto.SportsConfigurations.Any()
+                    ? dto.SportsConfigurations
+                    : dto.SportsCategories?.Select(name => new ActivitySportConfigDto { SportName = name }).ToList();
+
+                if (sportsConfigurations != null && sportsConfigurations.Any())
                 {
-                    var sports = dto.SportsCategories
-                        .Select(sportName => new ActivitySport
-                        {
-                            ActivityId = activity.Id,
-                            SportName = sportName.Trim(),
-                            IsCustom = !predefinedSports.Contains(sportName.Trim()),
-                        })
-                        .ToList();
+                    var sports = BuildSportEntities(activity.Id, sportsConfigurations, predefinedSports);
 
                     foreach (var sport in sports)
                     {
@@ -284,10 +287,13 @@ namespace EduShpere.Application.Services
                 }
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                // Reload with all includes
+                
+                // Reload with all includes BEFORE committing transaction
+                // This ensures the query runs within the transaction scope
                 var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(activity.Id);
+                
+                await transaction.CommitAsync();
+                
                 return _mapper.Map<ActivityResponseDto>(activityWithIncludes);
             }
             catch
@@ -387,7 +393,29 @@ namespace EduShpere.Application.Services
                     existingActivity.OnlyTeacherCanRegister = dto.OnlyTeacherCanRegister.Value;
                 }
 
-                _auditService.SetAuditFieldsForUpdate(existingActivity);
+                if (dto.RegistrationSettings != null)
+                {
+                    existingActivity.RegistrationSettings = SerializeRegistrationSettings(dto.RegistrationSettings);
+                }
+
+                // Update IsDeleted flag for soft delete
+                if (dto.IsDeleted.HasValue)
+                {
+                    existingActivity.IsDeleted = dto.IsDeleted.Value;
+                    if (dto.IsDeleted.Value)
+                    {
+                        _auditService.SetAuditFieldsForDelete(existingActivity);
+                    }
+                    else
+                    {
+                        _auditService.SetAuditFieldsForUpdate(existingActivity);
+                    }
+                }
+                else
+                {
+                    _auditService.SetAuditFieldsForUpdate(existingActivity);
+                }
+                
                 _context.Activities.Update(existingActivity);
 
                 // Update Rules - Delete old and create new
@@ -430,7 +458,10 @@ namespace EduShpere.Application.Services
                     "Ném bóng", "Bóng đá", "Bóng chuyền", "Bóng rổ"
                 };
                 
-                if (dto.SportsCategories != null)
+                var hasSportsPayload = (dto.SportsConfigurations != null && dto.SportsConfigurations.Any()) ||
+                                       (dto.SportsCategories != null && dto.SportsCategories.Any());
+
+                if (hasSportsPayload)
                 {
                     var existingSports = await _context.ActivitySports
                         .Where(s => s.ActivityId == existingActivity.Id && !s.IsDeleted)
@@ -441,15 +472,12 @@ namespace EduShpere.Application.Services
                         sport.IsDeleted = true;
                         _auditService.SetAuditFieldsForDelete(sport);
                     }
+
+                    var sportsConfigurations = dto.SportsConfigurations != null && dto.SportsConfigurations.Any()
+                        ? dto.SportsConfigurations
+                        : dto.SportsCategories!.Select(name => new ActivitySportConfigDto { SportName = name }).ToList();
                     
-                    var sports = dto.SportsCategories
-                        .Select(sportName => new ActivitySport
-                        {
-                            ActivityId = existingActivity.Id,
-                            SportName = sportName.Trim(),
-                            IsCustom = !predefinedSports.Contains(sportName.Trim()),
-                        })
-                        .ToList();
+                    var sports = BuildSportEntities(existingActivity.Id, sportsConfigurations, predefinedSports);
 
                     foreach (var sport in sports)
                     {
@@ -623,10 +651,13 @@ namespace EduShpere.Application.Services
                 }
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                // Reload with all includes
+                
+                // Reload with all includes BEFORE committing transaction
+                // This ensures the query runs within the transaction scope
                 var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(existingActivity.Id);
+                
+                await transaction.CommitAsync();
+                
                 return _mapper.Map<ActivityResponseDto>(activityWithIncludes);
             }
             catch
@@ -634,6 +665,30 @@ namespace EduShpere.Application.Services
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        private static string? SerializeRegistrationSettings(ActivityRegistrationSettingsDto? settings)
+        {
+            if (settings == null)
+            {
+                return null;
+            }
+
+            return JsonSerializer.Serialize(settings, RegistrationSettingsJsonOptions);
+        }
+
+        private static List<ActivitySport> BuildSportEntities(int activityId, IEnumerable<ActivitySportConfigDto> configs, HashSet<string> predefinedSports)
+        {
+            return configs
+                .Where(config => !string.IsNullOrWhiteSpace(config.SportName))
+                .Select(config => new ActivitySport
+                {
+                    ActivityId = activityId,
+                    SportName = config.SportName.Trim(),
+                    MaxMembers = config.MaxMembers,
+                    IsCustom = !predefinedSports.Contains(config.SportName.Trim())
+                })
+                .ToList();
         }
     }
 }

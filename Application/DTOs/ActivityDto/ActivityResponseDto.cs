@@ -47,5 +47,6 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // Registration Settings
         public bool OnlyTeacherCanRegister { get; set; }
+        public ActivityRegistrationSettingsDto? RegistrationSettings { get; set; }
     }
 }

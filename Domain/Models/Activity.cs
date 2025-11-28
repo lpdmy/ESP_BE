@@ -37,6 +37,7 @@ public partial class Activity : BaseEntity
     public string ThumbnailUrl { get; set; } = null!;
     public bool? IsGrade { get; set; } = false; // Enable grading for this activity (nullable to handle NULL in database)
     public string? GradingSettings { get; set; } // JSON string for grading criteria (only criteria, not enabled flag)
+    public string? RegistrationSettings { get; set; } // JSON string for registration-specific settings (group sizes, etc.)
     public bool? OnlyTeacherCanRegister { get; set; } = false; // Only teachers can register for this activity (nullable to handle NULL in database)
 
     [InverseProperty("Activity")]

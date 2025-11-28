@@ -118,6 +118,14 @@
             public const string OnlyHomeroomTeacherCanRegister = "Chỉ có giáo viên chủ nhiệm của lớp mới có thể đăng ký cho lớp.";
             public const string TeacherNotFound = "Không tìm thấy thông tin giáo viên.";
             public const string ClassGroupIdRequired = "ClassGroupId là bắt buộc khi đăng ký cho lớp.";
+            public const string MembersRequired = "Danh sách thành viên không được để trống.";
+            public const string LeaderRequired = "Vui lòng chọn nhóm trưởng cho nhóm tham gia.";
+            public const string GroupSizeOutOfRange = "Số lượng thành viên phải nằm trong khoảng {0} - {1}.";
+            public const string StudentNotInClass = "Học sinh không thuộc lớp đã chọn.";
+            public const string ActivityNotSupportGroupRegistration = "Hoạt động này không hỗ trợ đăng ký theo nhóm.";
+            public const string ActivityNotSupportSportRegistration = "Hoạt động này không hỗ trợ đăng ký hội thao.";
+            public const string SportNotFound = "Không tìm thấy môn thi đấu trong hoạt động.";
+            public const string SportLimitExceeded = "Số lượng thành viên đăng ký cho môn này đã vượt quá giới hạn.";
 
         }
 

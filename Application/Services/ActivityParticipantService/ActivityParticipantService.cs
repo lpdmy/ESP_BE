@@ -1,6 +1,11 @@
 ﻿
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using AutoMapper;
 using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Domain;
 using EduShpere.Domain.Enum;
 using EduShpere.Domain.Models;
@@ -17,19 +22,30 @@ namespace EduShpere.Application.Services
         private readonly IActivityParticipantRepository _repo;
         private readonly IActivityRepository _activityRepo;
         private readonly IClassGroupRepository _classGroupRepo;
+        private readonly IActivitySportRepository _activitySportRepo;
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
+        private readonly EduShpereDbContext _context;
+        private static readonly JsonSerializerOptions RegistrationJsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         public ActivityParticipantService(
             IActivityParticipantRepository repo, 
             IActivityRepository activityRepo,
             IClassGroupRepository classGroupRepo,
+            IActivitySportRepository activitySportRepo,
             IUserRepository userRepo,
-            IMapper mapper) {
+            IMapper mapper,
+            EduShpereDbContext context) {
             _repo = repo;
             _activityRepo = activityRepo;
             _classGroupRepo = classGroupRepo;
+            _activitySportRepo = activitySportRepo;
             _userRepo = userRepo;
             _mapper = mapper;
+            _context = context;
         }
         public async Task<ActivityParticipantResponseDto> AddActivityParticipant(AddParticipantDto dto) {
             if (dto.UserId == null || dto.ActivityId == null) {
@@ -37,7 +53,7 @@ namespace EduShpere.Application.Services
             }
             
             // Kiểm tra đã đăng ký chưa
-            bool isJoin = await _repo.isAlreadyRegistered(dto.UserId, dto.ActivityId);
+            bool isJoin = await _repo.IsAlreadyRegisteredAsync(dto.UserId, dto.ActivityId);
             if (isJoin == true) {
                 throw new BadRequestException(ErrorMessages.ActivityParticipant.AlreadyJoined);
             }
@@ -138,6 +154,190 @@ namespace EduShpere.Application.Services
             var participantDto = _mapper.Map<ActivityParticipantResponseDto>(participant);
             return participantDto;
         }
+
+        public async Task<GroupRegistrationResultDto> RegisterGroupAsync(GroupRegistrationDto dto)
+        {
+            if (dto.MemberIds == null || !dto.MemberIds.Any())
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.MembersRequired);
+            }
+
+            if (!dto.MemberIds.Contains(dto.LeaderId))
+            {
+                dto.MemberIds.Insert(0, dto.LeaderId);
+            }
+
+            var distinctMemberIds = dto.MemberIds.Distinct().ToList();
+
+            var activity = await _activityRepo.GetByIdWithIncludesAsync(dto.ActivityId);
+            if (activity == null)
+            {
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+            }
+
+            if (!string.Equals(activity.SubType, "CreativeContest", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.ActivityNotSupportGroupRegistration);
+            }
+
+            var registrationSettings = GetRegistrationSettings(activity)?.GroupRegistration;
+            if (registrationSettings != null)
+            {
+                if (distinctMemberIds.Count < registrationSettings.MinMembers)
+                {
+                    var maxMembersStr = registrationSettings.MaxMembers.HasValue ? registrationSettings.MaxMembers.Value.ToString() : "∞";
+                    throw new BadRequestException(string.Format(ErrorMessages.ActivityParticipant.GroupSizeOutOfRange, registrationSettings.MinMembers, maxMembersStr));
+                }
+                if (registrationSettings.MaxMembers.HasValue && distinctMemberIds.Count > registrationSettings.MaxMembers.Value)
+                {
+                    throw new BadRequestException(string.Format(ErrorMessages.ActivityParticipant.GroupSizeOutOfRange, registrationSettings.MinMembers, registrationSettings.MaxMembers.Value));
+                }
+                if (registrationSettings.RequireLeader && dto.LeaderId <= 0)
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.LeaderRequired);
+                }
+            }
+
+            var classGroupId = dto.ClassGroupId;
+            if (!classGroupId.HasValue)
+            {
+                var leaderClass = await _classGroupRepo.GetStudentCurrentClassAsync(dto.LeaderId);
+                if (leaderClass == null)
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.ClassGroupIdRequired);
+                }
+                classGroupId = leaderClass.Id;
+            }
+            else
+            {
+                var classGroup = await _classGroupRepo.GetByIdAsync(classGroupId.Value);
+                if (classGroup == null || classGroup.IsDeleted)
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.InvalidClassGroup);
+                }
+            }
+
+            foreach (var memberId in distinctMemberIds)
+            {
+                if (!await _classGroupRepo.IsStudentInClassAsync(classGroupId.Value, memberId))
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.StudentNotInClass);
+                }
+
+                if (await _repo.IsAlreadyRegisteredAsync(memberId, dto.ActivityId))
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.AlreadyJoined);
+                }
+            }
+
+            var now = DateTime.UtcNow;
+            var groupCode = Guid.NewGuid();
+
+            var participants = distinctMemberIds.Select(memberId => new ActivityParticipant
+            {
+                ActivityId = dto.ActivityId,
+                UserId = memberId,
+                ClassGroupId = classGroupId,
+                GroupCode = groupCode,
+                IsLeader = memberId == dto.LeaderId,
+                RegistrationMetadata = dto.GroupName,
+                CreatedAt = now,
+                CreatedBy = dto.RequestedByUserId ?? dto.LeaderId,
+                Status = ParticipantStatus.Joined,
+                IsDeleted = false
+            }).ToList();
+
+            await _repo.AddRangeAsync(participants);
+
+            return new GroupRegistrationResultDto
+            {
+                GroupCode = groupCode,
+                Participants = _mapper.Map<IEnumerable<ActivityParticipantResponseDto>>(participants)
+            };
+        }
+
+        public async Task<SportRegistrationResultDto> RegisterSportAsync(SportRegistrationDto dto)
+        {
+            if (dto.MemberIds == null || !dto.MemberIds.Any())
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.MembersRequired);
+            }
+
+            var distinctMemberIds = dto.MemberIds.Distinct().ToList();
+
+            var activity = await _activityRepo.GetByIdWithIncludesAsync(dto.ActivityId);
+            if (activity == null)
+            {
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+            }
+
+            if (!string.Equals(activity.SubType, "SportsFestival", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.ActivityNotSupportSportRegistration);
+            }
+
+            var sport = await _activitySportRepo.GetByIdAsync(dto.SportId);
+            if (sport == null || sport.ActivityId != dto.ActivityId)
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.SportNotFound);
+            }
+
+            var classGroup = await _classGroupRepo.GetByIdAsync(dto.ClassGroupId);
+            if (classGroup == null || classGroup.IsDeleted)
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.InvalidClassGroup);
+            }
+
+            foreach (var memberId in distinctMemberIds)
+            {
+                if (!await _classGroupRepo.IsStudentInClassAsync(dto.ClassGroupId, memberId))
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.StudentNotInClass);
+                }
+
+                if (await _repo.IsAlreadyRegisteredAsync(memberId, dto.ActivityId, dto.SportId))
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.AlreadyJoined);
+                }
+            }
+
+            if (sport.MaxMembers.HasValue)
+            {
+                var currentCount = await _context.ActivityParticipants
+                    .Where(p => p.ActivityId == dto.ActivityId &&
+                                p.SportId == dto.SportId &&
+                                p.ClassGroupId == dto.ClassGroupId &&
+                                !p.IsDeleted)
+                    .CountAsync();
+
+                if (currentCount + distinctMemberIds.Count > sport.MaxMembers.Value)
+                {
+                    throw new BadRequestException(ErrorMessages.ActivityParticipant.SportLimitExceeded);
+                }
+            }
+
+            var now = DateTime.UtcNow;
+            var participants = distinctMemberIds.Select(memberId => new ActivityParticipant
+            {
+                ActivityId = dto.ActivityId,
+                UserId = memberId,
+                ClassGroupId = dto.ClassGroupId,
+                SportId = dto.SportId,
+                CreatedAt = now,
+                CreatedBy = dto.RequestedByUserId ?? memberId,
+                Status = ParticipantStatus.Joined,
+                IsDeleted = false
+            }).ToList();
+
+            await _repo.AddRangeAsync(participants);
+
+            return new SportRegistrationResultDto
+            {
+                SportId = dto.SportId,
+                ClassGroupId = dto.ClassGroupId,
+                Participants = _mapper.Map<IEnumerable<ActivityParticipantResponseDto>>(participants)
+            };
+        }
         public async Task<ActivityParticipantResponseDto> RemoveActivityParticipant(int participationId)
         {
             var participant = await _repo.GetByIdAsync(participationId);
@@ -152,6 +352,72 @@ namespace EduShpere.Application.Services
         public async Task<int> CountNumberParticipantInActivity(int activityId)
         {
             return await _repo.CountNumberParticipantInActivity(activityId);
+        }
+
+        private ActivityRegistrationSettingsDto? GetRegistrationSettings(Activity activity)
+        {
+            if (string.IsNullOrWhiteSpace(activity.RegistrationSettings))
+            {
+                // Return default settings based on SubType
+                return CreateDefaultRegistrationSettings(activity.SubType);
+            }
+
+            try
+            {
+                var settings = JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(activity.RegistrationSettings, RegistrationJsonOptions);
+                // Ensure GroupRegistration has default values if missing
+                if (settings != null && settings.GroupRegistration == null)
+                {
+                    settings.GroupRegistration = new GroupRegistrationSettingsDto
+                    {
+                        MinMembers = 1,
+                        MaxMembers = null,
+                        RequireLeader = activity.SubType == "CreativeContest"
+                    };
+                }
+                // Ensure MinMembers has default if not set
+                else if (settings?.GroupRegistration != null)
+                {
+                    if (settings.GroupRegistration.MinMembers <= 0)
+                    {
+                        settings.GroupRegistration.MinMembers = 1;
+                    }
+                }
+                return settings;
+            }
+            catch
+            {
+                // If deserialization fails, return default settings
+                return CreateDefaultRegistrationSettings(activity.SubType);
+            }
+        }
+
+        private static ActivityRegistrationSettingsDto CreateDefaultRegistrationSettings(string? subType)
+        {
+            // For CreativeContest, default to group registration with minMembers = 1
+            if (subType == "CreativeContest")
+            {
+                return new ActivityRegistrationSettingsDto
+                {
+                    GroupRegistration = new GroupRegistrationSettingsDto
+                    {
+                        MinMembers = 1,
+                        MaxMembers = null, // Unlimited
+                        RequireLeader = true
+                    }
+                };
+            }
+
+            // For other activity types, default to single registration (minMembers = 1, no max limit)
+            return new ActivityRegistrationSettingsDto
+            {
+                GroupRegistration = new GroupRegistrationSettingsDto
+                {
+                    MinMembers = 1,
+                    MaxMembers = null, // Unlimited
+                    RequireLeader = false
+                }
+            };
         }
 
     }

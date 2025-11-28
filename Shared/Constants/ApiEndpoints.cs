@@ -68,6 +68,8 @@ namespace EduShpere.Shared.Constants
         {
             public const string ActivityParticipantRoute = "api/activityparticipant";
             public const string GetActivityParticipantById = "api/activityparticipant/{id}";
+            public const string GroupRegistration = "api/activityparticipant/group";
+            public const string SportRegistration = "api/activityparticipant/sport";
         }
 
         public static class ActivityMatch

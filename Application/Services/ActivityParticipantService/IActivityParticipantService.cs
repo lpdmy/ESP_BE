@@ -7,6 +7,8 @@ namespace EduShpere.Application.Services
     public interface IActivityParticipantService
     {
         Task<ActivityParticipantResponseDto> AddActivityParticipant(AddParticipantDto dto);
+        Task<GroupRegistrationResultDto> RegisterGroupAsync(GroupRegistrationDto dto);
+        Task<SportRegistrationResultDto> RegisterSportAsync(SportRegistrationDto dto);
         Task<ActivityParticipantResponseDto> RemoveActivityParticipant(int participationId);
         Task<int> CountNumberParticipantInActivity(int activityId);
     }
