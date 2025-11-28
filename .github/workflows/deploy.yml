@@ -1,11 +1,9 @@
 name: Build and Deploy EduShpere API to EC2
 
-# Chạy khi push vào nhánh main hoặc dev
 on:
   push:
     branches:
-      - main
-      - dev
+      - dev          # chỉ chạy trên nhánh dev
   workflow_dispatch:
 
 jobs:
@@ -27,34 +25,35 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore ./EduShpere/EduShpere.csproj
 
-      # 4️⃣ Build
+      # 4️⃣ Build project
       - name: Build
         run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
 
-      # 5️⃣ Publish
+      # 5️⃣ Publish project
       - name: Publish
         run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
 
-      # 6️⃣ Upload folder publish lên EC2
-      - name: Upload publish to EC2
-        uses: appleboy/scp-action@v0.1.1
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          source: "./publish/*"
-          target: "/var/www/esp-api"
-
-      # 7️⃣ Restart service trên EC2
-      - name: Restart EduShpere API service
+      # 6️⃣ Deploy to EC2
+      - name: Deploy to AWS EC2 via SSH
         uses: appleboy/ssh-action@v0.1.9
         with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.EC2_PUBLIC_IP }}    # Public IP EC2
+          username: ec2-user                    # user deploy trên EC2
+          key: ${{ secrets.EC2_SSH_KEY }}       # private key từ GitHub Secrets
           port: 22
+          sync: true                             # ✅ sync folder
+          overwrite: true                        # ✅ ghi đè file cũ
+          rm: true                               # ✅ xóa tar temp
+          source: "./publish/"                   # folder publish local
+          target: "/var/www/esp-api"             # folder deploy trên EC2
           script: |
+            # Tạo folder backup nếu chưa có
+            sudo mkdir -p /var/www/esp-api-backup || true
+            # Backup folder cũ với timestamp
+            sudo cp -r /var/www/esp-api /var/www/esp-api-backup/$(date +%F_%H-%M-%S) || true
+            # Stop service trước khi deploy
             sudo systemctl stop espapi || true
+            # Start service lại
             sudo systemctl start espapi
-            sudo systemctl status espapi
+            # Kiểm tra status
+            sudo systemctl status espapi --no-pager
