@@ -27,14 +27,14 @@ jobs:
           dotnet restore ./EduShpere/EduShpere.csproj
           dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
           
-      # 3b 🔎 KIỂM TRA CẤU TRÚC FILE (DIAGNOSTICS) - Giữ nguyên để xác nhận lại
+      # 3b 🔎 KIỂM TRA CẤU TRÚC FILE (DIAGNOSTICS)
       - name: Inspect Published Files Structure
         run: |
           echo "Listing contents of the publish directory to confirm DLL location:"
           find ./publish -print
           
       # ----------------------------------------------------------------------
-      # 4️⃣ TRUYỀN FILE LÊN EC2 (ĐÃ TẮT TÍNH NĂNG NÉN) 🌟
+      # 4️⃣ TRUYỀN FILE LÊN EC2 (Giữ nguyên cấu hình SCP)
       # ----------------------------------------------------------------------
       - name: Copy published files to EC2 Temp Directory
         uses: appleboy/scp-action@v0.1.7
@@ -43,14 +43,12 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          # Đường dẫn đã xác nhận là chính xác: EduShpere.dll nằm ngay trong publish/
-          source: "./publish/"         
+          source: "./publish"           # Không có dấu "/" ở cuối để SCP đẩy cả thư mục publish
           target: "/tmp/esp-deployment"
-          # 🌟 KHẮC PHỤC LỖI GIẢI NÉN: Tắt tính năng tar/untar để truyền file trực tiếp
           tar_dereference: false
 
       # ----------------------------------------------------------------------
-      # 5️⃣ KIỂM TRA LỖI TRUYỀN FILE TRÊN EC2 (Diagnostics Nâng cao)
+      # 5️⃣ KIỂM TRA LỖI TRUYỀN FILE TRÊN EC2 (ĐÃ SỬA ĐƯỜNG DẪN KIỂM TRA) 🌟
       # ----------------------------------------------------------------------
       - name: 🔎 Verify DLL exists on EC2 (Post-SCP Check)
         uses: appleboy/ssh-action@v0.1.9
@@ -60,7 +58,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            TARGET_FILE="/tmp/esp-deployment/EduShpere.dll"
+            # 🌟 SỬA ĐƯỜNG DẪN: Trỏ vào thư mục con "publish" vừa được tạo
+            TARGET_FILE="/tmp/esp-deployment/publish/EduShpere.dll" 
             
             echo "Checking if ${TARGET_FILE} exists after SCP..."
             
@@ -69,14 +68,13 @@ jobs:
               ls -l "${TARGET_FILE}"
             else
               echo "❌ CRITICAL ERROR: EduShpere.dll NOT found in temp directory. Deployment FAILED."
-              # Liệt kê nội dung thư mục tạm để chẩn đoán thêm nếu vẫn lỗi
               echo "Contents of /tmp/esp-deployment/ (Check for file presence):"
               ls -l /tmp/esp-deployment/ 
               exit 1 
             fi
             
       # ----------------------------------------------------------------------
-      # 6️⃣ THỰC THI LỆNH TRIỂN KHAI
+      # 6️⃣ THỰC THI LỆNH TRIỂN KHAI (ĐÃ SỬA ĐƯỜNG DẪN NGUỒN RSYNC) 🌟
       # ----------------------------------------------------------------------
       - name: Run Deployment Commands on EC2
         uses: appleboy/ssh-action@v0.1.9
@@ -92,6 +90,9 @@ jobs:
             TEMP_DIR="/tmp/esp-deployment"
             APP_USER="ec2-user"
             SERVICE_NAME="espapi"
+            
+            # 🌟 ĐỊNH NGHĨA NGUỒN RSYNC MỚI: Thư mục con 'publish'
+            SOURCE_RSYNC_DIR="${TEMP_DIR}/publish/" 
             
             # 1️⃣ Tạo folder deploy nếu chưa có + backup
             sudo mkdir -p ${DEPLOY_DIR}
@@ -109,15 +110,15 @@ jobs:
 
             # 3️⃣ Đồng bộ file đã truyền vào thư mục đích (rsync cục bộ)
             echo "🔄 Synchronizing files to deployment directory..."
-            sudo rsync -av --delete ${TEMP_DIR}/ ${DEPLOY_DIR}/
+            # 🌟 SỬ DỤNG SOURCE_RSYNC_DIR MỚI
+            sudo rsync -av --delete ${SOURCE_RSYNC_DIR} ${DEPLOY_DIR}/
             
             # 4️⃣ Chỉnh quyền an toàn cho folder
             echo "🔒 Setting directory permissions..."
-            # Quan trọng: Đảm bảo ec2-user có thể truy cập file
             sudo chown -R ${APP_USER}:${APP_USER} ${DEPLOY_DIR}
             sudo chmod -R 755 ${DEPLOY_DIR}
 
-            # 5️⃣ Xóa thư mục tạm đã truyền file
+            # 5️⃣ Xóa thư mục tạm (Xóa toàn bộ /tmp/esp-deployment)
             sudo rm -rf ${TEMP_DIR}
 
             # 6️⃣ Start service lại & kiểm tra trạng thái
