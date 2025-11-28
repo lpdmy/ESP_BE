@@ -21,20 +21,31 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # 3️⃣ Restore dependencies
-      - name: Restore dependencies
-        run: dotnet restore ./EduShpere/EduShpere.csproj
+      # 3️⃣ Build & Publish Project
+      - name: Build and Publish
+        run: |
+          dotnet restore ./EduShpere/EduShpere.csproj
+          dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
+          
+      # ----------------------------------------------------------------------
+      # 4️⃣ TRUYỀN FILE LÊN EC2 (Sử dụng SCP Action)
+      # Chuyển file từ Runner lên thư mục tạm /tmp/esp-deployment trên EC2
+      # ----------------------------------------------------------------------
+      - name: Copy published files to EC2 Temp Directory
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./publish/"         # Thư mục đã publish trên GitHub Runner
+          target: "/tmp/esp-deployment" # Thư mục tạm trên EC2
 
-      # 4️⃣ Build project
-      - name: Build
-        run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
-
-      # 5️⃣ Publish project
-      - name: Publish
-        run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
-
-      # 6️⃣ Deploy to EC2 via SSH
-      - name: Deploy to AWS EC2
+      # ----------------------------------------------------------------------
+      # 5️⃣ THỰC THI LỆNH TRIỂN KHAI (Sử dụng SSH Action)
+      # Thực hiện tất cả các lệnh quản trị và dịch vụ trên EC2
+      # ----------------------------------------------------------------------
+      - name: Run Deployment Commands on EC2
         uses: appleboy/ssh-action@v0.1.9
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
@@ -42,30 +53,47 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # ⚡ Add EC2 host to known_hosts to avoid SSH verification errors
-            mkdir -p ~/.ssh
-            ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
-
+            # 📚 Định nghĩa biến
+            DEPLOY_DIR="/var/www/esp-api"
+            BACKUP_DIR="/var/www/esp-api-backup"
+            TEMP_DIR="/tmp/esp-deployment"
+            APP_USER="ec2-user"
+            SERVICE_NAME="espapi"
+            
             # 1️⃣ Tạo folder deploy nếu chưa có + backup
-            sudo mkdir -p /var/www/esp-api
-            sudo mkdir -p /var/www/esp-api-backup
-            if [ -d "/var/www/esp-api" ]; then
-              sudo cp -r /var/www/esp-api /var/www/esp-api-backup/$(date +%F_%H-%M-%S)
+            sudo mkdir -p ${DEPLOY_DIR}
+            sudo mkdir -p ${BACKUP_DIR}
+            
+            # Backup thư mục cũ trước khi ghi đè
+            if [ -d "${DEPLOY_DIR}" ]; then
+              echo "✅ Backing up old deployment..."
+              sudo cp -r ${DEPLOY_DIR} ${BACKUP_DIR}/$(date +%F_%H-%M-%S)
             fi
 
             # 2️⃣ Stop service trước khi deploy
-            sudo systemctl stop espapi || true
+            echo "🛑 Stopping service ${SERVICE_NAME}..."
+            sudo systemctl stop ${SERVICE_NAME} || true
 
-            # 3️⃣ Copy file publish từ runner lên EC2
-            rsync -avz --delete ./publish/ ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/var/www/esp-api/
-
+            # 3️⃣ Di chuyển/Đồng bộ file đã truyền vào thư mục đích
+            # Sử dụng rsync cục bộ trên EC2 để đồng bộ từ /tmp sang /var/www/esp-api
+            echo "🔄 Synchronizing files to deployment directory..."
+            # Lệnh này yêu cầu sudo vì DEPLOY_DIR thường thuộc quyền root
+            sudo rsync -av --delete ${TEMP_DIR}/ ${DEPLOY_DIR}/
+            
             # 4️⃣ Chỉnh quyền an toàn cho folder
-            sudo chown -R ec2-user:ec2-user /var/www/esp-api
-            sudo chmod -R 755 /var/www/esp-api
+            echo "🔒 Setting directory permissions..."
+            # Đảm bảo thư mục và file thuộc sở hữu của APP_USER để dịch vụ có thể chạy
+            sudo chown -R ${APP_USER}:${APP_USER} ${DEPLOY_DIR}
+            sudo chmod -R 755 ${DEPLOY_DIR}
 
-            # 5️⃣ Start service lại
-            sudo systemctl start espapi
-            sudo systemctl status espapi --no-pager
+            # 5️⃣ Xóa thư mục tạm đã truyền file
+            sudo rm -rf ${TEMP_DIR}
 
-            # 6️⃣ Kiểm tra port 5000 listen
+            # 6️⃣ Start service lại & kiểm tra trạng thái
+            echo "🚀 Starting service ${SERVICE_NAME}..."
+            sudo systemctl start ${SERVICE_NAME}
+            sudo systemctl status ${SERVICE_NAME} --no-pager
+            
+            # 7️⃣ Kiểm tra port 5000 listen
+            echo "🔍 Checking port 5000 status..."
             sudo ss -tulwn | grep 5000
