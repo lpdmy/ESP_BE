@@ -26,6 +26,7 @@ namespace EduShpere.Application.Services
     PaginationRequestDto paginationRequest,
     string? search = null);
         Task<List<SubmissionResponseDto>> GetRankByActivityId(int id);
+        Task<SubmissionResponseDto> GetSubmissionById(int id);
 
     }
 }

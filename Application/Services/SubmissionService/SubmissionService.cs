@@ -1,6 +1,9 @@
-﻿using AutoMapper;
+﻿using System.Collections.Generic;
+using AutoMapper;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.DTOs.SubmissionDto;
+using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
@@ -197,7 +200,7 @@ namespace EduShpere.Application.Services
         }
         public async Task<List<SubmissionResponseDto>> GetRankByActivityId(int id)
         {
-            var submissions =  _repo.GetAllSubmissionsByActivityId(id);
+            var submissions = _repo.GetAllSubmissionsByActivityId(id);
             var requiredJuryDict = await _juryAssign.NumberJuryRequiredByActivity(id);
 
             var completedSubmissions = _repo.FilterCompletedSubmissions(await submissions.ToListAsync(), requiredJuryDict);
@@ -220,7 +223,7 @@ namespace EduShpere.Application.Services
             return mapped;
         }
         public async Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByUser(
-        int userId,
+    int userId,
     PaginationRequestDto paginationRequest,
     string? search = null)
         {
@@ -230,28 +233,73 @@ namespace EduShpere.Application.Services
             {
                 query = query.Where(c => c.Title.Contains(search));
             }
-            var totalCount = await query.CountAsync();
-            var data = await query
-                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
-                .Take(paginationRequest.PageSize)
+
+            var submissionList = await query
+                .Include(s => s.JuryAssignments)
                 .ToListAsync();
-            if (!data.Any())
+
+            if (!submissionList.Any())
             {
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
-            var mapped = _mapper.Map<List<SubmissionResponseDto>>(data);
+
+            var activityIds = submissionList.Select(s => s.ActivityId).Distinct().ToList();
+
+            var requiredJuryDict = new Dictionary<int, int>();
+            foreach (var activityId in activityIds)
+            {
+                var dict = await _juryAssign.NumberJuryRequiredByActivity(activityId);
+                foreach (var kvp in dict)
+                {
+                    requiredJuryDict[kvp.Key] = kvp.Value;
+                }
+            }
+
+            var mapped = _mapper.Map<List<SubmissionResponseDto>>(submissionList);
+
+            foreach (var dto in mapped)
+            {
+                var submission = submissionList.First(s => s.Id == dto.Id);
+                var completedCount = submission.JuryAssignments.Count(j => j.TotalScore.HasValue);
+                var requiredCount = requiredJuryDict.TryGetValue(submission.Id, out var rc) ? rc : 0;
+
+                dto.Status = completedCount >= requiredCount ? "Đã chấm xong" : "Đang chấm";
+            }
+
+            var pagedData = mapped
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToList();
+
             return new PaginationResponseDto<SubmissionResponseDto>
             {
-                Data = mapped,
-                TotalCount = totalCount,
+                Data = pagedData,
+                TotalCount = mapped.Count,
                 PageNumber = paginationRequest.PageNumber,
                 PageSize = paginationRequest.PageSize
             };
         }
 
+
+
         private List<string> GradeCriteria(string json)
         {
             return JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+        }
+
+        public async Task<SubmissionResponseDto> GetSubmissionById(int id)
+        {
+            var submission = await _repo.GetSubmissionById(id);
+            if (submission == null)
+            {
+                throw new BadRequestException(ErrorMessages.Submission.SubmissionNotFound);
+            }
+            var mapped = _mapper.Map<SubmissionResponseDto>(submission);
+            foreach (var item in mapped.JuryAssignments)
+            {
+                item.ScoreDetail = JsonConvert.DeserializeObject<Dictionary<string, float>>(item.ScoreTemp ?? "{}");
+            }
+            return mapped;
         }
     }
 }

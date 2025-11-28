@@ -18,5 +18,6 @@ namespace EduShpere.Infrastructure.Repositories
     List<Submission> submissions,
     Dictionary<int, int> requiredJuryDict);
         IQueryable<Submission> GetAllSubmissionByUser(int UserId);
+        Task<Submission> GetSubmissionById(int id);
     }
 }

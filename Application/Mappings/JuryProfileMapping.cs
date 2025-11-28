@@ -28,7 +28,8 @@ namespace EduShpere.Application
                 .ForMember(dest => dest.Avatar,
                     opt => opt.MapFrom(src => src.User.AvatarUrl));
             CreateMap<JuryAssignment, JuryAssignmentDto>()
-                .ForMember(dest => dest.GradeSetting, opt =>opt.MapFrom(src=>src.Submission.Activity.GradingSettings));
+                .ForMember(dest => dest.GradeSetting, opt =>opt.MapFrom(src=>src.Submission.Activity.GradingSettings))
+                .ForMember(dest => dest.JuryName, opt => opt.MapFrom(src => src.User.LastName + " " + src.User.FirstName));
         }
     }
 }

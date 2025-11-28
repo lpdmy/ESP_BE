@@ -230,6 +230,7 @@ namespace EduShpere.Shared.Constants
             public const string GetAllByUserIdByActivityId = "api/submission/activity/user/{Id}";
             public const string GetRankByActivityId = "api/submission/activity/{id}/rank";
             public const string GetAllByUser = "api/submission/activity/user";
+            public const string GetSubmissionById = "api/submission/{id}";
         }
     }
 }

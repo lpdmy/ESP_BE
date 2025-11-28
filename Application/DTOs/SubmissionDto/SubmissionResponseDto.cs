@@ -25,6 +25,8 @@ namespace EduShpere.Application.DTOs.SubmissionDto
         public DateTime CreatedAt { get; set; }
         public double Score { get; set; }
         public string ActivityName { get; set; }
+        public string Status { get; set; }
+        public List<JuryAssignmentDto> JuryAssignments { get; set; }
 
     }
 }

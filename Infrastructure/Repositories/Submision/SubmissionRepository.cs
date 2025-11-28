@@ -20,7 +20,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
                 .Include(s => s.Activity)
-                .Include(s=>s.JuryAssignments);
+                .Include(s=>s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
         }
         public IQueryable<Submission>GetAllSubmissionByUserByActivity(int userId,int activityId)
         {
@@ -29,7 +30,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
                 .Include(s => s.Activity)
-                .Include(s => s.JuryAssignments);
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
         }
 
         public IQueryable<Submission> GetAllSubmissionByUserByActivityNotGrading(int userId, int activityId)
@@ -39,7 +41,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
                 .Include(s => s.Activity)
-                .Include(s => s.JuryAssignments);
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
         }
         public IQueryable<Submission> GetAllSubmissionByUserByActivityGrading(int userId, int activityId)
         {
@@ -48,7 +51,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
                 .Include(s => s.Activity)
-                .Include(s => s.JuryAssignments);
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
         }
         public async Task<List<Submission>> GetRankByActivityId(int id)
         {
@@ -75,7 +79,19 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
                 .Include(s => s.Activity)
-                .Include(s => s.JuryAssignments);
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
+        }
+
+        public Task<Submission> GetSubmissionById(int id)
+        {
+            return _dbSet.Include(s => s.User)
+                .ThenInclude(u => u.ClassGroupMembers)
+                .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(s => s.Activity)
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
     }
 }

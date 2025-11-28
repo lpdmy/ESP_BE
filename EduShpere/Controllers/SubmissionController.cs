@@ -92,5 +92,22 @@ namespace EduShpere.Controllers
                 throw new Exception(ex.Message);
             }
         }
+        [HttpGet(ApiEndpoints.Submission.GetSubmissionById)]
+        public async Task<IActionResult> GetSubmissionById(int id)
+        {
+            try
+            {
+                var result = await _service.GetSubmissionById(id);
+                return Ok(new ResponseDto<SubmissionResponseDto>(result, "Lấy bài nộp thành công", 200));
+            }
+            catch (BadRequestException err)
+            {
+                throw new BadRequestException(err.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
     }
 }

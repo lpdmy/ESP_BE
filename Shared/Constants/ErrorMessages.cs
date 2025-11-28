@@ -249,6 +249,8 @@
         public struct Submission
         {
             public const string ListSubmissionNotFound = "danh sách bài nộp không tồn tại.";
+            public const string SubmissionNotFound = "bài nộp không tồn tại.";
+
         }
         public struct Assignment { 
             public const string AssignMentNotFound = "Phân công không tồn tại.";

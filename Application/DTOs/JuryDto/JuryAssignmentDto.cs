@@ -13,6 +13,7 @@ namespace EduShpere.Application.DTOs
         public int Id { get; set; }
         public int UserId { get; set; }
         public int SubmissionId { get; set; }
+        public string? JuryName { get; set; }
         public SubmissionResponseDto Submission { get; set; }
         public string? ScoreTemp { get; set; }
         public Dictionary<string, float>? ScoreDetail { get; set; }
