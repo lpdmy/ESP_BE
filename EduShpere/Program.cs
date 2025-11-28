@@ -208,6 +208,16 @@ namespace EduShpere
             });
             var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
+            // Fallback nếu không có cấu hình CORS
+            if (allowedOrigins == null || allowedOrigins.Length == 0)
+            {
+                allowedOrigins = new[]
+                {
+                    "http://localhost:3000",
+                    "https://edusphere-dev.netlify.app"
+                };
+            }
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
