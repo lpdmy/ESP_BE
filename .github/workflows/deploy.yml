@@ -3,7 +3,7 @@ name: Build and Deploy EduShpere API to EC2
 on:
   push:
     branches:
-      - dev          
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -33,8 +33,21 @@ jobs:
       - name: Publish
         run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
 
-      # 6️⃣ Deploy to EC2
-      - name: Deploy to AWS EC2 via SSH
+      # 6️⃣ Copy publish folder từ runner lên EC2
+      - name: Copy publish folder to EC2
+        uses: appleboy/scp-action@v0.1.1
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./publish/*"
+          target: "/var/www/esp-api"
+          rm: true        # xóa folder cũ trước khi copy
+          overwrite: true
+
+      # 7️⃣ Restart espapi service
+      - name: Restart espapi service
         uses: appleboy/ssh-action@v0.1.9
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
@@ -42,21 +55,13 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # 1️⃣ Tạo folder deploy nếu chưa có
-            sudo mkdir -p /var/www/esp-api
+            # Tạo folder backup nếu chưa có
             sudo mkdir -p /var/www/esp-api-backup
-
-            # 2️⃣ Stop service trước khi deploy
-            sudo systemctl stop espapi || true
-
-            # 3️⃣ Backup folder cũ nếu tồn tại
+            # Backup folder cũ với timestamp
             if [ -d "/var/www/esp-api" ]; then
               sudo cp -r /var/www/esp-api /var/www/esp-api-backup/$(date +%F_%H-%M-%S)
             fi
-
-            # 4️⃣ Copy publish từ runner lên EC2
-            scp -r ./publish/* ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/var/www/esp-api/
-
-            # 5️⃣ Start service lại
-            sudo systemctl start espapi
+            # Restart service
+            sudo systemctl restart espapi
+            # Kiểm tra status
             sudo systemctl status espapi --no-pager
