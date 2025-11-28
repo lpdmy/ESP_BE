@@ -3,7 +3,7 @@ name: Build and Deploy EduShpere API to EC2
 on:
   push:
     branches:
-      - dev          # chỉ chạy trên nhánh dev
+      - dev          
   workflow_dispatch:
 
 jobs:
