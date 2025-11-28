@@ -3,7 +3,7 @@ name: Build and Deploy EduShpere API to EC2
 on:
   push:
     branches:
-      - dev          # Chỉ chạy trên nhánh dev
+      - dev
   workflow_dispatch:
 
 jobs:
@@ -23,18 +23,30 @@ jobs:
 
       # 3️⃣ Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore ./EduShpere/EduShpere.csproj
+        run: dotnet restore ./ESP.BE/EduShpere/EduShpere.csproj
 
       # 4️⃣ Build project
       - name: Build
-        run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
+        run: dotnet build ./ESP.BE/EduShpere/EduShpere.csproj --configuration Release --no-restore
 
       # 5️⃣ Publish project
       - name: Publish
-        run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
+        run: dotnet publish ./ESP.BE/EduShpere/EduShpere.csproj -c Release -o ./publish
 
-      # 6️⃣ Deploy to EC2 via SSH
-      - name: Deploy to AWS EC2 via SSH
+      # 6️⃣ Copy publish folder lên EC2
+      - name: Copy publish folder to EC2
+        uses: appleboy/scp-action@v0.1.1
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./publish/*"
+          target: "/var/www/esp-api/"
+          strip_components: 0
+
+      # 7️⃣ Restart service trên EC2
+      - name: Restart espapi service on EC2
         uses: appleboy/ssh-action@v0.1.9
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
@@ -42,28 +54,16 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Thêm EC2 vào known_hosts để tránh host key verification failed
-            mkdir -p ~/.ssh
-            ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
-
-            # 1️⃣ Tạo folder deploy và backup nếu chưa có
-            sudo mkdir -p /var/www/esp-api
+            # 1️⃣ Tạo folder backup nếu chưa có
             sudo mkdir -p /var/www/esp-api-backup
-
             # 2️⃣ Backup folder cũ
             if [ -d "/var/www/esp-api" ]; then
               sudo cp -r /var/www/esp-api /var/www/esp-api-backup/$(date +%F_%H-%M-%S)
             fi
-
-            # 3️⃣ Copy file publish từ runner lên EC2
-            rsync -avz --delete ./publish/ ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/var/www/esp-api/
-
-            # 4️⃣ Stop service trước khi deploy
+            # 3️⃣ Stop service trước khi deploy
             sudo systemctl stop espapi || true
-
-            # 5️⃣ Start service lại
+            # 4️⃣ Start service lại
             sudo systemctl start espapi
             sudo systemctl status espapi --no-pager
-
-            # 6️⃣ Kiểm tra port 5000 đang listen
+            # 5️⃣ Kiểm tra port 5000 đang listen
             sudo ss -tulwn | grep 5000
