@@ -1,0 +1,45 @@
+name: Build and Deploy EduShpere API to EC2
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./EduShpere/EduShpere.csproj
+
+      - name: Build
+        run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
+
+      - name: Deploy to AWS EC2 via SSH
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./publish/"
+          target: "/var/www/esp-api"
+          script: |
+            sudo systemctl stop espapi || true
+            sudo cp -r /var/www/esp-api/* /var/www/esp-api-backup/ || true
+            sudo cp -r ./publish/* /var/www/esp-api/
+            sudo systemctl start espapi
