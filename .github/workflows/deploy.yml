@@ -1,5 +1,6 @@
 name: Build and Deploy EduShpere API to EC2
 
+# Chạy khi push vào nhánh main hoặc dev
 on:
   push:
     branches:
@@ -12,34 +13,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup .NET 8
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+      # 3️⃣ Restore dependencies
       - name: Restore dependencies
         run: dotnet restore ./EduShpere/EduShpere.csproj
 
+      # 4️⃣ Build
       - name: Build
         run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
 
+      # 5️⃣ Publish
       - name: Publish
         run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
 
-      - name: Deploy to AWS EC2 via SSH
+      # 6️⃣ Upload folder publish lên EC2
+      - name: Upload publish to EC2
+        uses: appleboy/scp-action@v0.1.1
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./publish/*"
+          target: "/var/www/esp-api"
+
+      # 7️⃣ Restart service trên EC2
+      - name: Restart EduShpere API service
         uses: appleboy/ssh-action@v0.1.9
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          source: "./publish/"
-          target: "/var/www/esp-api"
           script: |
             sudo systemctl stop espapi || true
-            sudo cp -r /var/www/esp-api/* /var/www/esp-api-backup/ || true
-            sudo cp -r ./publish/* /var/www/esp-api/
             sudo systemctl start espapi
+            sudo systemctl status espapi
