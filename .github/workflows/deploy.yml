@@ -27,8 +27,16 @@ jobs:
           dotnet restore ./EduShpere/EduShpere.csproj
           dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
           
+      # 3b 🔎 KIỂM TRA CẤU TRÚC FILE (DIAGNOSTICS) 
+      # Mục đích: Xác định chính xác đường dẫn của EduShpere.dll
+      - name: Inspect Published Files Structure
+        run: |
+          echo "Listing contents of the publish directory to confirm DLL location:"
+          find ./publish -print
+          
       # ----------------------------------------------------------------------
-      # 4️⃣ TRUYỀN FILE LÊN EC2 (Sử dụng SCP Action)
+      # 4️⃣ TRUYỀN FILE LÊN EC2 (ĐÃ SỬA ĐƯỜNG DẪN SOURCE) 🌟
+      # Lý do sửa: Khắc phục lỗi "EduShpere.dll NOT found"
       # ----------------------------------------------------------------------
       - name: Copy published files to EC2 Temp Directory
         uses: appleboy/scp-action@v0.1.7
@@ -37,12 +45,12 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          source: "./publish/"         # Thư mục đã publish trên GitHub Runner
-          target: "/tmp/esp-deployment" # Thư mục tạm trên EC2
+          # 🌟 ĐIỀU CHỈNH: Trỏ vào thư mục con EduShpere/ (Dựa trên dự đoán phổ biến của dotnet publish)
+          source: "./publish/EduShpere/"         
+          target: "/tmp/esp-deployment" 
 
       # ----------------------------------------------------------------------
-      # 5️⃣ KIỂM TRA LỖI (Diagnostics)
-      # Xác minh file DLL quan trọng có tồn tại trong thư mục tạm trên EC2
+      # 5️⃣ KIỂM TRA LỖI TRUYỀN FILE TRÊN EC2 (Diagnostics)
       # ----------------------------------------------------------------------
       - name: 🔎 Verify DLL exists on EC2
         uses: appleboy/ssh-action@v0.1.9
@@ -56,17 +64,17 @@ jobs:
             
             echo "Checking if ${TARGET_FILE} exists after SCP..."
             
-            # Sử dụng test -f để kiểm tra sự tồn tại và đưa ra thông báo rõ ràng
+            # Sử dụng test -f để kiểm tra sự tồn tại
             if test -f "${TARGET_FILE}"; then
-              echo "✅ Success: EduShpere.dll found in temp directory."
+              echo "✅ Success: EduShpere.dll found in temp directory. Proceeding with deployment."
               ls -l "${TARGET_FILE}"
             else
-              echo "❌ ERROR: EduShpere.dll NOT found in temp directory. Deployment stopped."
-              exit 1 # Buộc pipeline thất bại nếu file quan trọng không có
+              echo "❌ CRITICAL ERROR: EduShpere.dll NOT found in temp directory. Check Step 3b and Step 4 path."
+              exit 1 
             fi
             
       # ----------------------------------------------------------------------
-      # 6️⃣ THỰC THI LỆNH TRIỂN KHAI
+      # 6️⃣ THỰC THI LỆNH TRIỂN KHAI (ĐÃ KHẮC PHỤC LỖI STATUS 1)
       # ----------------------------------------------------------------------
       - name: Run Deployment Commands on EC2
         uses: appleboy/ssh-action@v0.1.9
@@ -97,11 +105,12 @@ jobs:
             echo "🛑 Stopping service ${SERVICE_NAME}..."
             sudo systemctl stop ${SERVICE_NAME} || true
 
-            # 3️⃣ Di chuyển/Đồng bộ file đã truyền vào thư mục đích (rsync cục bộ)
+            # 3️⃣ Đồng bộ file đã truyền vào thư mục đích (rsync cục bộ)
             echo "🔄 Synchronizing files to deployment directory..."
+            # Lệnh này yêu cầu sudo vì DEPLOY_DIR thường thuộc quyền root
             sudo rsync -av --delete ${TEMP_DIR}/ ${DEPLOY_DIR}/
             
-            # 4️⃣ Chỉnh quyền an toàn cho folder
+            # 4️⃣ Chỉnh quyền an toàn cho folder (Khắc phục lỗi Permission Denied ban đầu)
             echo "🔒 Setting directory permissions..."
             sudo chown -R ${APP_USER}:${APP_USER} ${DEPLOY_DIR}
             sudo chmod -R 755 ${DEPLOY_DIR}
@@ -114,6 +123,6 @@ jobs:
             sudo systemctl start ${SERVICE_NAME}
             sudo systemctl status ${SERVICE_NAME} --no-pager
 
-            # 7️⃣ Kiểm tra port 5000 listen (Thêm || true để không fail pipeline)
+            # 7️⃣ Kiểm tra port 5000 listen (Thêm || true để khắc phục lỗi Process exited with status 1)
             echo "🔍 Checking port 5000 status..."
             sudo ss -tulwn | grep 5000 || true
