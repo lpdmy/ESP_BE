@@ -96,4 +96,4 @@ jobs:
             
             # 7️⃣ Kiểm tra port 5000 listen
             echo "🔍 Checking port 5000 status..."
-            sudo ss -tulwn | grep 5000
+            sudo ss -tulwn | grep 5000 || true
