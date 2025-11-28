@@ -1,10 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<!-- Khi được reference, sử dụng Library để tránh tạo apphost.exe -->
+	<OutputType Condition="'$(IsReferencedProject)' == 'true'">Library</OutputType>
+	<OutputType Condition="'$(IsReferencedProject)' != 'true'">Exe</OutputType>
 	<ExcludeAppHost>true</ExcludeAppHost>
 	<PublishSingleFile>false</PublishSingleFile>
 	<!-- Không publish khi được reference bởi project khác -->
@@ -12,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.OrTools.runtime.win-x64" Version="9.14.6206" />
+    <PackageReference Include="Google.OrTools.runtime.linux-x64" Version="9.14.6206" />
     <PackageReference Include="Microsoft.ML" Version="2.0.1" />
     <PackageReference Include="Google.OrTools" Version="9.14.6206" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
