@@ -15,5 +15,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task<bool> IsAlreadyRegisteredAsync(int userId, int activityId, int? sportId = null);
         Task SoftDeleteAsync(int id);
         Task<int> CountNumberParticipantInActivity(int activityId);
+        Task<IEnumerable<ActivityParticipant>> GetByActivityIdAndUserIdAsync(int activityId, int userId);
     }
 }

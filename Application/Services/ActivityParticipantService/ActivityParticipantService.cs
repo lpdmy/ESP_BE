@@ -144,7 +144,7 @@ namespace EduShpere.Application.Services
                 ActivityId = dto.ActivityId,
                 UserId = dto.UserId,
                 ClassGroupId = dto.ClassGroupId,
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
                 IsDeleted = false,
                 CreatedBy = dto.UserId,
                 Status = ParticipantStatus.Joined,
@@ -198,9 +198,12 @@ namespace EduShpere.Application.Services
                 }
             }
 
+            // For CreativeContest, members can come from different classes (school-wide)
+            // We only need to ensure the leader has a class, but members can be from anywhere
             var classGroupId = dto.ClassGroupId;
             if (!classGroupId.HasValue)
             {
+                // Get leader's class for the group registration
                 var leaderClass = await _classGroupRepo.GetStudentCurrentClassAsync(dto.LeaderId);
                 if (leaderClass == null)
                 {
@@ -217,17 +220,21 @@ namespace EduShpere.Application.Services
                 }
             }
 
+            // Validate each member
             foreach (var memberId in distinctMemberIds)
             {
-                if (!await _classGroupRepo.IsStudentInClassAsync(classGroupId.Value, memberId))
-                {
-                    throw new BadRequestException(ErrorMessages.ActivityParticipant.StudentNotInClass);
-                }
-
+                // For CreativeContest, members can be from different classes (school-wide registration)
+                // We only validate that the member exists and is not already registered
+                // The leader's class is used as the group's class, but members don't need to be in the same class
+                
+                // Check if member is already registered for this activity
                 if (await _repo.IsAlreadyRegisteredAsync(memberId, dto.ActivityId))
                 {
                     throw new BadRequestException(ErrorMessages.ActivityParticipant.AlreadyJoined);
                 }
+                
+                // Note: We don't check IsStudentInClassAsync for CreativeContest
+                // because members can come from anywhere in the school system
             }
 
             var now = DateTime.UtcNow;
@@ -352,6 +359,38 @@ namespace EduShpere.Application.Services
         public async Task<int> CountNumberParticipantInActivity(int activityId)
         {
             return await _repo.CountNumberParticipantInActivity(activityId);
+        }
+
+        public async Task<bool> CancelRegistrationAsync(int activityId, int userId)
+        {
+            // Lấy activity để kiểm tra thời hạn đăng ký
+            var activity = await _activityRepo.GetByIdAsync(activityId);
+            if (activity == null)
+            {
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+            }
+
+            // Kiểm tra thời hạn đăng ký - chỉ cho phép hủy trước khi hết hạn đăng ký
+            var now = DateTime.UtcNow;
+            if (now > activity.EndRegisterDate)
+            {
+                throw new BadRequestException(ErrorMessages.ActivityParticipant.CannotCancelAfterDeadline);
+            }
+
+            // Tìm tất cả participants của user trong activity này
+            var participants = await _repo.GetByActivityIdAndUserIdAsync(activityId, userId);
+            if (participants == null || !participants.Any())
+            {
+                throw new NotFoundException(ErrorMessages.ActivityParticipant.NotFound);
+            }
+
+            // Soft delete tất cả participants của user (bao gồm cả group và sport registrations)
+            foreach (var participant in participants)
+            {
+                await _repo.SoftDeleteAsync(participant.Id);
+            }
+
+            return true;
         }
 
         private ActivityRegistrationSettingsDto? GetRegistrationSettings(Activity activity)

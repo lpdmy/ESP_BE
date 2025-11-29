@@ -63,6 +63,67 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
+
+        [HttpGet(ApiEndpoints.Activity.GetListItems)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetListItems(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 30,
+            [FromQuery] string? search = null,
+            [FromQuery] string? subType = null,
+            [FromQuery] string? status = null,
+            [FromQuery] DateTime? dateFrom = null,
+            [FromQuery] DateTime? dateTo = null,
+            [FromQuery] string? organizer = null,
+            [FromQuery] int? minParticipants = null,
+            [FromQuery] int? maxParticipants = null,
+            [FromQuery] string? sortBy = "StartDate",
+            [FromQuery] bool sortDescending = true)
+        {
+            var filter = new ActivityListFilterDto
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Search = search,
+                SubType = subType,
+                Status = status,
+                DateFrom = dateFrom,
+                DateTo = dateTo,
+                Organizer = organizer,
+                MinParticipants = minParticipants,
+                MaxParticipants = maxParticipants,
+                SortBy = sortBy,
+                SortDescending = sortDescending
+            };
+
+            // Get current user ID from token
+            int? userId = null;
+            var user = HttpContext.User;
+            if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    // Try alternative claim names
+                    userIdClaim = user.FindFirst("Id")?.Value ??
+                                  user.FindFirst("id")?.Value ??
+                                  user.FindFirst("sub")?.Value ??
+                                  user.FindFirst("nameid")?.Value;
+                }
+                
+                if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int parsedUserId))
+                {
+                    userId = parsedUserId;
+                }
+            }
+
+            var result = await _Service.GetListItemsWithFilterAsync(filter, userId);
+            return Ok(new ResponseDto<PaginationResponseDto<ActivityListItemDto>>(
+                result,
+                "Lấy danh sách hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
         [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)

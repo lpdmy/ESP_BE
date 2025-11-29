@@ -61,5 +61,23 @@ namespace EduShpere.Controllers
             var result = await _service.RemoveActivityParticipant(participationId);
             return Ok(new ResponseDto<ActivityParticipantResponseDto>(result, "Xóa người tham gia hoạt động thành công", 200));
         }
+
+        [HttpDelete(ApiEndpoints.ActivityParticipant.CancelRegistration)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> CancelRegistration(int activityId)
+        {
+            if (activityId <= 0)
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+            
+            var user = HttpContext.User;
+            var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidToken, 401));
+            }
+
+            var result = await _service.CancelRegistrationAsync(activityId, userId);
+            return Ok(new ResponseDto<bool>(result, "Hủy đăng ký tham gia hoạt động thành công", 200));
+        }
     }
 }

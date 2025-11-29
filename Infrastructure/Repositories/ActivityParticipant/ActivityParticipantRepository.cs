@@ -37,5 +37,12 @@ namespace EduShpere.Infrastructure.Repositories
             return count;
         }
 
+        public async Task<IEnumerable<ActivityParticipant>> GetByActivityIdAndUserIdAsync(int activityId, int userId)
+        {
+            return await _dbSet
+                .Where(ap => ap.ActivityId == activityId && ap.UserId == userId && !ap.IsDeleted)
+                .ToListAsync();
+        }
+
     }
 }

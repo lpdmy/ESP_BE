@@ -59,6 +59,7 @@ namespace EduShpere.Shared.Constants
         {
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
+            public const string GetListItems = "api/activity/list-items";
             public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
         }
@@ -70,6 +71,7 @@ namespace EduShpere.Shared.Constants
             public const string GetActivityParticipantById = "api/activityparticipant/{id}";
             public const string GroupRegistration = "api/activityparticipant/group";
             public const string SportRegistration = "api/activityparticipant/sport";
+            public const string CancelRegistration = "api/activityparticipant/cancel/{activityId}";
         }
 
         public static class ActivityMatch

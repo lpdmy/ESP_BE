@@ -2,11 +2,20 @@
 using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Domain.Models;
 using System.Text.Json;
+using System.Text.Encodings.Web;
+using System;
 
 namespace EduShpere.Application.Mappings
 {
     public class ActivityProfile : Profile
     {
+        // Use same JsonSerializerOptions as ActivitytService for consistency
+        private static readonly JsonSerializerOptions RegistrationSettingsJsonOptions = new()
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
         public ActivityProfile()
         {
             // Activity to DTOs
@@ -47,41 +56,69 @@ namespace EduShpere.Application.Mappings
                         dest.GradingSettings = null;
                     }
 
+                    // Deserialize RegistrationSettings from JSON string in DB
+                    // Only deserialize if RegistrationSettings exists in DB
                     if (!string.IsNullOrWhiteSpace(src.RegistrationSettings))
                     {
                         try
                         {
-                            dest.RegistrationSettings = JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(src.RegistrationSettings);
-                            // Ensure GroupRegistration has default values if missing
-                            if (dest.RegistrationSettings != null && dest.RegistrationSettings.GroupRegistration == null)
+                            // Debug: Log raw RegistrationSettings from DB
+                            System.Diagnostics.Debug.WriteLine($"[ActivityProfile] Activity ID: {src.Id}, SubType: {src.SubType}");
+                            System.Diagnostics.Debug.WriteLine($"[ActivityProfile] Raw RegistrationSettings from DB: {src.RegistrationSettings}");
+                            
+                            dest.RegistrationSettings = JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(src.RegistrationSettings, RegistrationSettingsJsonOptions);
+                            
+                            System.Diagnostics.Debug.WriteLine($"[ActivityProfile] Deserialized RegistrationSettings: GroupRegistration = {dest.RegistrationSettings?.GroupRegistration != null}");
+                            if (dest.RegistrationSettings?.GroupRegistration != null)
                             {
-                                dest.RegistrationSettings.GroupRegistration = new GroupRegistrationSettingsDto
-                                {
-                                    MinMembers = 1,
-                                    MaxMembers = null,
-                                    RequireLeader = false
-                                };
+                                System.Diagnostics.Debug.WriteLine($"[ActivityProfile] MinMembers from DB: {dest.RegistrationSettings.GroupRegistration.MinMembers}, MaxMembers from DB: {dest.RegistrationSettings.GroupRegistration.MaxMembers}");
                             }
-                            // Ensure MinMembers and MaxMembers have defaults if not set
-                            else if (dest.RegistrationSettings?.GroupRegistration != null)
+                            
+                            // IMPORTANT: Preserve values from DB, don't create defaults that override DB values
+                            // If GroupRegistration is null after deserialization, it means DB doesn't have it - preserve null
+                            // Only fix invalid MinMembers (<= 0), preserve all other values from DB
+                            if (dest.RegistrationSettings != null && dest.RegistrationSettings.GroupRegistration != null)
                             {
+                                // Only fix invalid MinMembers (<= 0 or default 0), preserve valid values from DB
                                 if (dest.RegistrationSettings.GroupRegistration.MinMembers <= 0)
                                 {
+                                    System.Diagnostics.Debug.WriteLine($"[ActivityProfile] Fixing invalid MinMembers (was {dest.RegistrationSettings.GroupRegistration.MinMembers})");
                                     dest.RegistrationSettings.GroupRegistration.MinMembers = 1;
                                 }
-                                // MaxMembers can be null (unlimited), so we don't set a default
+                                // MaxMembers can be null (unlimited) - preserve DB value
+                                // RequireLeader - preserve DB value
                             }
+                            // If GroupRegistration is null after deserialization, don't create default here
+                            // Only create default if RegistrationSettings is null/empty in DB (handled in else block below)
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // If deserialization fails, create default settings based on SubType
-                            dest.RegistrationSettings = CreateDefaultRegistrationSettings(src.SubType);
+                            System.Diagnostics.Debug.WriteLine($"[ActivityProfile] Error deserializing RegistrationSettings: {ex.Message}");
+                            // If deserialization fails, only create default for CreativeContest
+                            if (src.SubType == "CreativeContest")
+                            {
+                                dest.RegistrationSettings = CreateDefaultRegistrationSettings(src.SubType);
+                            }
+                            else
+                            {
+                                dest.RegistrationSettings = null; // Don't create defaults for non-CreativeContest
+                            }
                         }
                     }
                     else
                     {
-                        // Create default settings based on SubType when RegistrationSettings is null/empty
-                        dest.RegistrationSettings = CreateDefaultRegistrationSettings(src.SubType);
+                        System.Diagnostics.Debug.WriteLine($"[ActivityProfile] Activity ID: {src.Id}, SubType: {src.SubType}, RegistrationSettings is null/empty");
+                        // Only create default settings for CreativeContest when RegistrationSettings is null/empty
+                        // For other types, return null (no group registration settings)
+                        if (src.SubType == "CreativeContest")
+                        {
+                            System.Diagnostics.Debug.WriteLine("[ActivityProfile] Creating default RegistrationSettings for CreativeContest (null in DB)");
+                            dest.RegistrationSettings = CreateDefaultRegistrationSettings(src.SubType);
+                        }
+                        else
+                        {
+                            dest.RegistrationSettings = null; // No registration settings for non-CreativeContest
+                        }
                     }
                 });
 

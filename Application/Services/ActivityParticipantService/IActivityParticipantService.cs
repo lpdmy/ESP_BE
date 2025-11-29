@@ -1,6 +1,4 @@
-﻿
-
-using EduShpere.Application.DTOs;
+﻿using EduShpere.Application.DTOs;
 
 namespace EduShpere.Application.Services
 {
@@ -10,6 +8,7 @@ namespace EduShpere.Application.Services
         Task<GroupRegistrationResultDto> RegisterGroupAsync(GroupRegistrationDto dto);
         Task<SportRegistrationResultDto> RegisterSportAsync(SportRegistrationDto dto);
         Task<ActivityParticipantResponseDto> RemoveActivityParticipant(int participationId);
+        Task<bool> CancelRegistrationAsync(int activityId, int userId);
         Task<int> CountNumberParticipantInActivity(int activityId);
     }
 }

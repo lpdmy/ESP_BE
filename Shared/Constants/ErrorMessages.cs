@@ -126,6 +126,7 @@
             public const string ActivityNotSupportSportRegistration = "Hoạt động này không hỗ trợ đăng ký hội thao.";
             public const string SportNotFound = "Không tìm thấy môn thi đấu trong hoạt động.";
             public const string SportLimitExceeded = "Số lượng thành viên đăng ký cho môn này đã vượt quá giới hạn.";
+            public const string CannotCancelAfterDeadline = "Không thể hủy đăng ký sau thời hạn đăng ký.";
 
         }
 
