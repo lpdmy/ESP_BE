@@ -9,6 +9,8 @@ using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Middlewares;
 using EduShpere.Application.DTOs.CommonDto;
 using System.Linq;
+using System.Security.Claims;
+using EduShpere.Domain.Models;
 
 namespace EduShpere.Controllers
 {
@@ -18,10 +20,13 @@ namespace EduShpere.Controllers
         private readonly IActivityService _Service;
         private readonly IMapper _mapper;
         private readonly IActivityParticipantService _APservice;
-        public ActivityController(IActivityService Service, IMapper mapper, IActivityParticipantService APservice) {
+        private readonly IHttpContextService _HttpContextService;
+
+        public ActivityController(IActivityService Service, IMapper mapper, IActivityParticipantService APservice, IHttpContextService HttpContextService) {
             _Service = Service;
             _mapper = mapper;
             _APservice = APservice;
+            _HttpContextService = HttpContextService;
         }
         [HttpGet(ApiEndpoints.Activity.Activities)]
         [Authorize(Roles = "Student,Teacher,Admin")]
@@ -51,6 +56,72 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
+
+        [HttpGet(ApiEndpoints.Activity.MyActivities)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetMyActivities(int pageNumber, int pageSize, string? search = null, string? status = null)
+        {
+            var userId = _HttpContextService.GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new ResponseDto<string>(
+                    null,
+                    "Không thể xác định người dùng",
+                    (int)HttpStatusCode.Unauthorized
+                ));
+            }
+
+            var (Activity, totalCount) = await _Service.GetActivitiesByUserIdAsync(userId.Value, pageNumber, pageSize, search, status);
+            
+            // Check if Activity is null
+            if (Activity == null)
+            {
+                Activity = new List<Activity>();
+            }
+            
+            // Map each item individually with participant info
+            var ActivityDtos = new List<MyActivityResponseDto>();
+            if (Activity != null)
+            {
+                foreach (var activity in Activity)
+                {
+                    if (activity == null) continue;
+                    
+                    var dto = _mapper.Map<MyActivityResponseDto>(activity);
+                    dto.NumberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
+                    
+                    // Get participant info for current user
+                    var participant = activity.ActivityParticipants?.FirstOrDefault(p => p.UserId == userId.Value && !p.IsDeleted);
+                    if (participant != null)
+                    {
+                        dto.RegisteredAt = participant.CreatedAt;
+                        dto.ParticipationStatus = participant.Status;
+                    }
+                    
+                    // Get star points from registration reward
+                    if (activity.RegistrationReward != null && !activity.RegistrationReward.IsDeleted)
+                    {
+                        dto.StarPoints = activity.RegistrationReward.StarPoints;
+                    }
+                    
+                    ActivityDtos.Add(dto);
+                }
+            }
+
+            var result = new PaginationResponseDto<MyActivityResponseDto>
+            {
+                Data = ActivityDtos,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+            return Ok(new ResponseDto<PaginationResponseDto<MyActivityResponseDto>>(
+                result,
+                "Lấy danh sách hoạt động của bạn thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
         [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)

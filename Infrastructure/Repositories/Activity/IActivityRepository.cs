@@ -18,5 +18,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task<Activity?> GetByIdWithIncludesAsync(int id);
         Task<IEnumerable<Activity>> SearchAsync(string query, int limit = 10);
         Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllWithPagingAsync(int pageNumber, int pageSize, string? search = null);
+        Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null);
     }
 }

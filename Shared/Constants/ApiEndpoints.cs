@@ -59,6 +59,7 @@ namespace EduShpere.Shared.Constants
         {
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
+            public const string MyActivities = "api/my-activities";
 
         }
 

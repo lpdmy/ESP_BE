@@ -47,6 +47,14 @@ namespace EduShpere.Application.Mappings
                     }
                 });
 
+            // Activity to MyActivityResponseDto (for user's activities list)
+            CreateMap<Activity, MyActivityResponseDto>()
+                .ForMember(dest => dest.Rules, opt => opt.MapFrom(src => src.Rules != null ? src.Rules.Where(r => !r.IsDeleted).Select(r => r.RuleText).ToList() : new List<string>()))
+                .ForMember(dest => dest.NumberOfParticipants, opt => opt.MapFrom(src => src.ActivityParticipants != null ? src.ActivityParticipants.Count(p => !p.IsDeleted) : 0))
+                .ForMember(dest => dest.RegisteredAt, opt => opt.Ignore())
+                .ForMember(dest => dest.StarPoints, opt => opt.Ignore())
+                .ForMember(dest => dest.ParticipationStatus, opt => opt.Ignore());
+
             // Related entities to DTOs
             CreateMap<ActivitySpeaker, ActivitySpeakerDto>();
             CreateMap<ActivityProgram, ActivityProgramDto>();
