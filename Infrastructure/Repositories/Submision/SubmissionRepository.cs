@@ -19,7 +19,79 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(s => s.User)
                 .ThenInclude(u => u.ClassGroupMembers)
                 .ThenInclude(cgm => cgm.ClassGroup)
-                .Include(s => s.Activity);
+                .Include(s => s.Activity)
+                .Include(s=>s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
+        }
+        public IQueryable<Submission>GetAllSubmissionByUserByActivity(int userId,int activityId)
+        {
+            return _dbSet.Where(s => s.UserId == userId && s.ActivityId==activityId)
+                .Include(s => s.User)
+                .ThenInclude(u => u.ClassGroupMembers)
+                .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(s => s.Activity)
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
+        }
+
+        public IQueryable<Submission> GetAllSubmissionByUserByActivityNotGrading(int userId, int activityId)
+        {
+            return _dbSet.Where(s => s.UserId == userId && s.ActivityId == activityId).Where(p=>p.Score == null)
+                .Include(s => s.User)
+                .ThenInclude(u => u.ClassGroupMembers)
+                .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(s => s.Activity)
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
+        }
+        public IQueryable<Submission> GetAllSubmissionByUserByActivityGrading(int userId, int activityId)
+        {
+            return _dbSet.Where(s => s.UserId == userId && s.ActivityId == activityId).Where(p => p.Score != null)
+                .Include(s => s.User)
+                .ThenInclude(u => u.ClassGroupMembers)
+                .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(s => s.Activity)
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
+        }
+        public async Task<List<Submission>> GetRankByActivityId(int id)
+        {
+            return await _dbSet.Where(s => s.ActivityId == id && s.Score.HasValue)
+                .OrderByDescending(s => s.Score )
+                .Include(s => s.User)
+                .ToListAsync();
+        }
+        public List<Submission> FilterCompletedSubmissions(
+    List<Submission> submissions,
+    Dictionary<int, int> requiredJuryDict)
+        {
+            return submissions
+                .Where(s =>
+                    requiredJuryDict.TryGetValue(s.Id, out var requiredCount) &&
+                    s.JuryAssignments.Count(j => j.TotalScore.HasValue) == requiredCount
+                )
+                .ToList();
+        }
+        public IQueryable<Submission> GetAllSubmissionByUser(int UserId)
+        {
+            return _dbSet.Where(s => s.UserId == UserId)
+                .Include(s => s.User)
+                .ThenInclude(u => u.ClassGroupMembers)
+                .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(s => s.Activity)
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User);
+        }
+
+        public Task<Submission> GetSubmissionById(int id)
+        {
+            return _dbSet.Include(s => s.User)
+                .ThenInclude(u => u.ClassGroupMembers)
+                .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(s => s.Activity)
+                .Include(s => s.JuryAssignments)
+                .ThenInclude(ja => ja.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
     }
 }

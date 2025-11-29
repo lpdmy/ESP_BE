@@ -19,6 +19,12 @@ namespace EduShpere.Application.Mappings
                 .ForMember(dest => dest.Awards, opt => opt.MapFrom(src => src.ActivityRewards != null ? src.ActivityRewards.Where(r => !r.IsDeleted).ToList() : new List<ActivityReward>()))
                 .ForMember(dest => dest.NumberOfParticipants, opt => opt.MapFrom(src => src.ActivityParticipants != null ? src.ActivityParticipants.Count(p => !p.IsDeleted) : 0))
                 .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => src.IsDeleted))
+                .ForMember(dest => dest.numberOfSubmission,
+               opt => opt.MapFrom(src => src.Submissions.Count()))
+           .ForMember(dest => dest.numberOfPendingSubmission,
+               opt => opt.MapFrom(src => src.Submissions.Count(p => p.Score == null)))
+           .ForMember(dest => dest.numberOfCompletedSubmission,
+               opt => opt.MapFrom(src => src.Submissions.Count(p => p.Score != null)))
                 .ForMember(dest => dest.OnlyTeacherCanRegister, opt => opt.MapFrom(src => src.OnlyTeacherCanRegister ?? false))
                 .ForMember(dest => dest.RegistrationReward, opt => opt.MapFrom(src => src.RegistrationReward != null && !src.RegistrationReward.IsDeleted ? src.RegistrationReward : null))
                 .ForMember(dest => dest.ActivityDetail, opt => opt.MapFrom(src => src.ActivityDetail != null && !src.ActivityDetail.IsDeleted ? src.ActivityDetail : null))
@@ -69,6 +75,7 @@ namespace EduShpere.Application.Mappings
             CreateMap<ActivityAwardDto, ActivityReward>()
                 .ForMember(dest => dest.Rank, opt => opt.MapFrom(src => src.Name ?? src.Rank))
                 .ForMember(dest => dest.StarPoints, opt => opt.MapFrom(src => src.StarPoints > 0 ? src.StarPoints : src.Points));
+            CreateMap<ActivityResponseDto, Activity>();
         }
     }
 }
