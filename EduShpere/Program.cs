@@ -43,11 +43,12 @@ namespace EduShpere
                 var modelPath = Path.Combine(AppContext.BaseDirectory, "models", "model.zip");
                 return new ContentModerationService(modelPath);
             });
-
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
             builder.Services.AddSingleton<AppMongoDbContext>();
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+            builder.Services.AddHostedService<SubmissionScoreUpdateService>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.TeacherProfile.ITeacherProfileRepository, EduShpere.Infrastructure.Repositories.TeacherProfile.TeacherProfileRepository>();
@@ -91,6 +92,8 @@ namespace EduShpere
             builder.Services.AddScoped<IRewardRedemptionRepository, RewardRedemptionRepository>();
             builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
             builder.Services.AddScoped<IJuryActivityRepository, JuryActivityRepository>();
+            builder.Services.AddScoped<IJuryAssignRepository, JuryAssignRepository>();
+
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
             builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Gmail"));
@@ -165,7 +168,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ClubJoinRequestProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CommentProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
-            builder.Services.AddAutoMapper(typeof(JuryProfileMapping).Assembly);
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             builder.Services.AddAutoMapper(typeof(SubmissionProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -210,6 +213,16 @@ namespace EduShpere
     });
             });
             var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
+            // Fallback nếu không có cấu hình CORS
+            if (allowedOrigins == null || allowedOrigins.Length == 0)
+            {
+                allowedOrigins = new[]
+                {
+                    "http://localhost:3000",
+                    "https://edusphere-dev.netlify.app"
+                };
+            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
