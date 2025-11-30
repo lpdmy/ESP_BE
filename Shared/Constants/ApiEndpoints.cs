@@ -59,6 +59,7 @@ namespace EduShpere.Shared.Constants
         {
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
+            public const string GetListItems = "api/activity/list-items";
             public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
         }
@@ -68,6 +69,24 @@ namespace EduShpere.Shared.Constants
         {
             public const string ActivityParticipantRoute = "api/activityparticipant";
             public const string GetActivityParticipantById = "api/activityparticipant/{id}";
+            public const string GroupRegistration = "api/activityparticipant/group";
+            public const string SportRegistration = "api/activityparticipant/sport";
+            public const string CancelRegistration = "api/activityparticipant/cancel/{activityId}";
+        }
+
+        public static class ActivityMatch
+        {
+            public const string Matches = "api/activity-match";
+            public const string GetMatchById = "api/activity-match/{id}";
+            public const string GetBracket = "api/activity-match/bracket";
+            public const string GetMatchesByRound = "api/activity-match/round/{round}";
+            public const string GenerateBracket = "api/activity-match/generate-bracket";
+            public const string CreateMatch = "api/activity-match";
+            public const string UpdateMatchResult = "api/activity-match/{id}/result";
+            public const string UpdateMatch = "api/activity-match/{id}";
+            public const string DeleteBracket = "api/activity-match/bracket";
+            public const string DeleteMatch = "api/activity-match/{id}";
+            public const string GetEligibleClassGroups = "api/activity-match/eligible-classes";
         }
         public static class Post
         {

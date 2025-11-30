@@ -21,6 +21,7 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<Activity> Activities { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
+    public virtual DbSet<ActivityMatch> ActivityMatches { get; set; }
     public virtual DbSet<ActivityReward> ActivityRewards { get; set; }
     public virtual DbSet<ActivitySpeaker> ActivitySpeakers { get; set; }
     public virtual DbSet<ActivityProgram> ActivityPrograms { get; set; }
@@ -164,6 +165,10 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ActivityParticipants)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ActivityP__UserI__6EC0713C");
+
+            entity.HasOne(d => d.Sport).WithMany(p => p.ActivityParticipants)
+                .HasForeignKey(d => d.SportId)
+                .HasConstraintName("FK__ActivityP__SportI__72C60C4A");
         });
 
         modelBuilder.Entity<ActivityReward>(entity =>

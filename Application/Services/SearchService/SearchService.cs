@@ -161,6 +161,65 @@ namespace EduShpere.Application.Services.SearchService
                 throw new Exception($"User search failed: {ex.Message}", ex);
             }
         }
+
+        public async Task<UserSearchResultDto?> SearchUserByEmailAsync(string email)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    return null;
+                }
+
+                var trimmedEmail = email.Trim();
+                Console.WriteLine($"Searching user by email: '{trimmedEmail}'");
+
+                // Get user by exact email match (case-insensitive)
+                var user = await _userRepository.GetUserByEmail(trimmedEmail);
+                
+                if (user == null)
+                {
+                    Console.WriteLine($"User not found with email: '{trimmedEmail}'");
+                    return null;
+                }
+
+                if (user.IsDeleted)
+                {
+                    Console.WriteLine($"User is deleted: '{trimmedEmail}'");
+                    return null;
+                }
+
+                Console.WriteLine($"Found user: ID={user.Id}, Email={user.Email}, FirstName={user.FirstName}, LastName={user.LastName}");
+
+                // Map to DTO
+                var userDto = _mapper.Map<UserSearchResultDto>(user);
+                
+                // Get class name if student
+                if (user.StudentProfile != null && user.ClassGroupMembers != null && user.ClassGroupMembers.Any())
+                {
+                    var currentClass = user.ClassGroupMembers
+                        .Where(cgm => cgm.ClassGroup != null && !cgm.ClassGroup.IsDeleted)
+                        .OrderByDescending(cgm => cgm.ClassGroup.CreatedAt)
+                        .FirstOrDefault();
+                    
+                    if (currentClass?.ClassGroup != null)
+                    {
+                        userDto.ClassName = currentClass.ClassGroup.Name;
+                        Console.WriteLine($"User class name: {userDto.ClassName}");
+                    }
+                }
+
+                Console.WriteLine($"Mapped user DTO: ID={userDto.Id}, Email={userDto.Email}, ClassName={userDto.ClassName}");
+                return userDto;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Search user by email failed: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Search user by email failed: {ex.Message}", ex);
+            }
+        }
+
         public async Task<IEnumerable<PostSearchResultDto>> SearchPostsAsync(string query, int pageSize = 10)
         {
             try

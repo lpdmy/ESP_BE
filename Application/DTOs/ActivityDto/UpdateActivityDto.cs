@@ -44,6 +44,7 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // SportsFestival fields
         public List<string>? SportsCategories { get; set; }
+        public List<ActivitySportConfigDto>? SportsConfigurations { get; set; }
         public string? CompetitionType { get; set; }
         
         // CreativeContest fields
@@ -70,5 +71,9 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // Registration Settings
         public bool? OnlyTeacherCanRegister { get; set; }
+        public ActivityRegistrationSettingsDto? RegistrationSettings { get; set; }
+        
+        // Soft delete flag
+        public bool? IsDeleted { get; set; }
     }
 }

@@ -49,4 +49,16 @@ public partial class ClassGroup : BaseEntity
 
     [InverseProperty("ClassGroup")]
     public virtual ICollection<ClassGroupSchedule> Schedules { get; set; } = new List<ClassGroupSchedule>();
+
+    [InverseProperty("ClassGroup")]
+    public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
+
+    [InverseProperty("ClassGroup1")]
+    public virtual ICollection<ActivityMatch> ActivityMatchesAsClassGroup1 { get; set; } = new List<ActivityMatch>();
+
+    [InverseProperty("ClassGroup2")]
+    public virtual ICollection<ActivityMatch> ActivityMatchesAsClassGroup2 { get; set; } = new List<ActivityMatch>();
+
+    [InverseProperty("WinnerClassGroup")]
+    public virtual ICollection<ActivityMatch> ActivityMatchesAsWinner { get; set; } = new List<ActivityMatch>();
 }

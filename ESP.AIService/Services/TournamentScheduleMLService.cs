@@ -5,10 +5,10 @@ using System.Linq;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using ESP.AIService.Models;
-using ESP.AIService.Entities;
 using EduShpere.Infrastructure;
-using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using AiActivityMatch = ESP.AIService.Entities.ActivityMatch;
+using AiMatchStatus = ESP.AIService.Entities.MatchStatus;
 
 namespace ESP.AIService.Services;
 
@@ -56,7 +56,7 @@ public class TournamentScheduleMLService
     {
         // Lấy tất cả matches đã hoàn thành từ database
         // Sử dụng raw SQL để query từ table ActivityMatches
-        List<ActivityMatch> matches = new();
+        List<AiActivityMatch> matches = new();
         
         try
         {
@@ -93,7 +93,7 @@ public class TournamentScheduleMLService
                   AND IsDeleted = 0";
             
             var matchDtos = dbContext.Database
-                .SqlQueryRaw<Models.ActivityMatchDto>(sql, (int)MatchStatus.Completed)
+                .SqlQueryRaw<Models.ActivityMatchDto>(sql, (int)AiMatchStatus.Completed)
                 .ToList();
             
             matches = matchDtos.Select(dto => dto.ToActivityMatch()).ToList();
@@ -103,7 +103,7 @@ public class TournamentScheduleMLService
             // Nếu không có table hoặc có lỗi
             Console.WriteLine($"⚠️ Không thể query ActivityMatches: {ex.Message}");
             Console.WriteLine("   Table có thể chưa được tạo. Sẽ train với dữ liệu mẫu hoặc bỏ qua.");
-            matches = new List<ActivityMatch>();
+            matches = new List<AiActivityMatch>();
         }
 
         if (matches.Count < 20)
@@ -630,14 +630,14 @@ public class TournamentScheduleMLService
         }
     }
 
-    private float CalculateSuccessScore(ActivityMatch match, TimeSpan duration)
+    private float CalculateSuccessScore(AiActivityMatch match, TimeSpan duration)
     {
         // Tính success score dựa trên các yếu tố:
         // 1. Match đã completed = 0.8 điểm
         // 2. Duration hợp lý (30 phút - 2 giờ) = 0.2 điểm
         float score = 0.0f;
 
-        if (match.Status == MatchStatus.Completed)
+        if (match.Status == AiMatchStatus.Completed)
         {
             score += 0.8f;
         }
