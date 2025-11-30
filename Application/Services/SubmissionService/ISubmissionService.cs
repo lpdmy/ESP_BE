@@ -27,6 +27,8 @@ namespace EduShpere.Application.Services
     string? search = null);
         Task<List<SubmissionResponseDto>> GetRankByActivityId(int id);
         Task<SubmissionResponseDto> GetSubmissionById(int id);
-
+        Task<SubmissionStatusDto> GetSubmissionStatusAsync(int activityId, int userId);
+        Task<SubmissionResponseDto> CreateSubmissionAsync(CreateSubmissionDto dto, int userId);
+        Task<SubmissionResponseDto?> GetMySubmissionAsync(int activityId, int userId);
     }
 }

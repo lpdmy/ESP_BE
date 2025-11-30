@@ -8,6 +8,7 @@ using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using AiActivityMatch = ESP.AIService.Entities.ActivityMatch;
 using AiMatchStatus = ESP.AIService.Entities.MatchStatus;
+using EduShpere.Infrastructure.Repositories;
 
 namespace ESP.AIService.Services;
 
@@ -195,14 +196,32 @@ public class ORToolsScheduler
         var classGroupSchedules = GetClassGroupSchedules(request.ClassGroupIds, dbContext);
         Console.WriteLine($"   📚 Đã load {classGroupSchedules.Count} lịch học từ {request.ClassGroupIds.Count} lớp tham gia");
 
+        // Lấy tất cả participants của các lớp tham gia để check conflict với activities khác
+        var participantsInClassGroups = GetParticipantsInClassGroups(request.ClassGroupIds, dbContext);
+        Console.WriteLine($"   👥 Đã load {participantsInClassGroups.Count} participants từ {request.ClassGroupIds.Count} lớp tham gia");
+        
+        // Lấy tất cả activities khác mà participants đã tham gia (để check conflict)
+        var participantActivityConflicts = GetParticipantActivityConflicts(
+            participantsInClassGroups, 
+            request.ActivityId, 
+            request.StartDate, 
+            request.EndDate, 
+            dbContext);
+        Console.WriteLine($"   ⚠️ Đã phát hiện {participantActivityConflicts.Count} activities khác có thể conflict với participants");
+
         // Tạo dictionary để lookup nhanh lịch học theo ClassGroupId
         var schedulesByClassGroup = classGroupSchedules
             .GroupBy(s => s.ClassGroupId)
             .ToDictionary(g => g.Key, g => g.ToList());
+        
+        // Phân tích lịch học để tối ưu hóa: xác định lớp nào học buổi sáng/chiều
+        var classGroupScheduleAnalysis = AnalyzeClassGroupSchedules(classGroupSchedules, request.ClassGroupIds);
+        Console.WriteLine($"   📊 Phân tích lịch học: {classGroupScheduleAnalysis.MorningClasses.Count} lớp buổi sáng, {classGroupScheduleAnalysis.AfternoonClasses.Count} lớp buổi chiều");
 
         int conflictWithMatches = 0;
         int conflictWithSchedules = 0;
         int conflictWithLocation = 0;
+        int conflictWithParticipantActivities = 0;
 
         foreach (var slot in slots)
         {
@@ -273,6 +292,145 @@ public class ORToolsScheduler
                     if (!isAvailable) break;
                 }
             }
+            
+            // Check conflict với các activities khác của participants
+            // Một học sinh không được có hai activity tại cùng thời điểm
+            if (isAvailable && participantActivityConflicts.Any())
+            {
+                var slotDateTime = slot.MatchDate.Date.Add(slot.StartTime);
+                var slotEndDateTime = slot.MatchDate.Date.Add(slot.EndTime);
+                
+                foreach (var conflict in participantActivityConflicts)
+                {
+                    // Check overlap thời gian với activity khác
+                    if (conflict.StartDate.HasValue && conflict.EndDate.HasValue)
+                    {
+                        var conflictStart = conflict.StartDate.Value;
+                        var conflictEnd = conflict.EndDate.Value;
+                        
+                        // Check overlap
+                        if (slotDateTime < conflictEnd && slotEndDateTime > conflictStart)
+                        {
+                            // Có conflict - kiểm tra xem có participant nào trong conflict này thuộc các lớp tham gia không
+                            var hasParticipantConflict = participantsInClassGroups.Any(p => 
+                                conflict.ParticipantIds.Contains(p.UserId));
+                            
+                            if (hasParticipantConflict)
+                            {
+                                isAvailable = false;
+                                conflictWithParticipantActivities++;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Tăng ML Score dựa trên heuristic: ưu tiên slot không conflict với lịch học
+            // Nếu slot nằm trong giờ trống của các lớp tham gia → tăng score
+            if (isAvailable && classGroupScheduleAnalysis != null)
+            {
+                var slotHour = slot.StartTime.Hours;
+                var isMorningSlot = slotHour >= 6 && slotHour < 12;
+                var isAfternoonSlot = slotHour >= 12 && slotHour < 18;
+                var isWeekend = slot.MatchDate.DayOfWeek == DayOfWeek.Saturday || slot.MatchDate.DayOfWeek == DayOfWeek.Sunday;
+                
+                float heuristicBonus = 0.0f;
+                
+                // Heuristic 1: Ưu tiên xếp các lớp có lịch học buổi sáng đấu với nhau vào buổi chiều
+                // và ngược lại (lớp buổi chiều đấu với nhau vào buổi sáng)
+                if (isAfternoonSlot && classGroupScheduleAnalysis.MorningClasses.Count >= 2)
+                {
+                    heuristicBonus += 5.0f; // Tăng điểm cao cho việc xếp lớp buổi sáng đấu buổi chiều
+                }
+                
+                if (isMorningSlot && classGroupScheduleAnalysis.AfternoonClasses.Count >= 2)
+                {
+                    heuristicBonus += 5.0f; // Tăng điểm cao cho việc xếp lớp buổi chiều đấu buổi sáng
+                }
+                
+                // Heuristic 2: Ưu tiên slot mà nhiều lớp đều trống cùng lúc
+                // Check xem slot này có phù hợp với tất cả các lớp không
+                bool slotFitsAllTimetables = true;
+                int classesWithFreeSlot = 0;
+                var dayOfWeek = (int)slot.MatchDate.DayOfWeek;
+                var dayOfWeekNormalized = dayOfWeek == 0 ? 7 : dayOfWeek;
+                
+                foreach (var classGroupId in request.ClassGroupIds)
+                {
+                    bool classHasFreeSlot = true;
+                    if (schedulesByClassGroup.TryGetValue(classGroupId, out var schedules))
+                    {
+                        foreach (var schedule in schedules)
+                        {
+                            if (schedule.DayOfWeek == dayOfWeekNormalized)
+                            {
+                                if (slot.StartTime < schedule.EndTime && slot.EndTime > schedule.StartTime)
+                                {
+                                    classHasFreeSlot = false;
+                                    slotFitsAllTimetables = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (classHasFreeSlot)
+                    {
+                        classesWithFreeSlot++;
+                    }
+                }
+                
+                // Nếu slot phù hợp với tất cả các lớp → tăng điểm cao
+                if (slotFitsAllTimetables && request.ClassGroupIds.Count >= 2)
+                {
+                    heuristicBonus += 10.0f;
+                }
+                // Nếu slot phù hợp với nhiều lớp → tăng điểm vừa
+                else if (classesWithFreeSlot >= request.ClassGroupIds.Count * 0.8) // 80% lớp trống
+                {
+                    heuristicBonus += 7.0f;
+                }
+                
+                // Heuristic 3: Ưu tiên lớp có cùng lịch học đấu với nhau
+                // Check xem có cặp lớp nào có lịch học tương đồng không
+                var similarTimetablePairs = 0;
+                for (int i = 0; i < request.ClassGroupIds.Count; i++)
+                {
+                    for (int j = i + 1; j < request.ClassGroupIds.Count; j++)
+                    {
+                        var classA = request.ClassGroupIds[i];
+                        var classB = request.ClassGroupIds[j];
+                        
+                        if (ClassesHaveSimilarTimetable(classA, classB, schedulesByClassGroup, dayOfWeekNormalized))
+                        {
+                            similarTimetablePairs++;
+                        }
+                    }
+                }
+                
+                // Nếu có nhiều cặp lớp có lịch học tương đồng → tăng điểm
+                if (similarTimetablePairs > 0)
+                {
+                    heuristicBonus += similarTimetablePairs * 2.0f;
+                }
+                
+                // Heuristic 4: Không ưu tiên cuối tuần (score = 0, không cộng điểm)
+                if (isWeekend)
+                {
+                    heuristicBonus += 0.0f; // Không cộng điểm cho cuối tuần
+                }
+                else
+                {
+                    // Ngày thường có thể có bonus nhỏ nếu phù hợp
+                    heuristicBonus += 1.0f;
+                }
+                
+                // Penalty cho conflicts (đã được xử lý ở trên, nhưng có thể thêm penalty nhỏ)
+                // Nếu có conflict → score đã bị set isAvailable = false ở trên
+                
+                // Áp dụng heuristic bonus vào ML Score
+                slot.MLScore = Math.Min(1.0f, slot.MLScore + (heuristicBonus / 100.0f)); // Normalize về 0-1
+            }
 
             // Check location có trong danh sách available không
             if (isAvailable && request.AvailableLocations.Any())
@@ -292,19 +450,206 @@ public class ORToolsScheduler
             }
         }
 
-        Console.WriteLine($"   ⚠️ Conflicts: {conflictWithMatches} với matches cũ, {conflictWithSchedules} với lịch học, {conflictWithLocation} với location");
+        Console.WriteLine($"   ⚠️ Conflicts: {conflictWithMatches} với matches cũ, {conflictWithSchedules} với lịch học, {conflictWithLocation} với location, {conflictWithParticipantActivities} với activities khác của participants");
         Console.WriteLine($"   ✅ Slots available: {availableSlots.Count}/{slots.Count}");
 
         return availableSlots;
+    }
+    
+    /// <summary>
+    /// Lấy danh sách participants của các lớp tham gia
+    /// </summary>
+    private List<ParticipantInfo> GetParticipantsInClassGroups(List<int> classGroupIds, EduShpereDbContext dbContext)
+    {
+        try
+        {
+            var participants = dbContext.Set<EduShpere.Domain.Models.ActivityParticipant>()
+                .Where(ap => classGroupIds.Contains(ap.ClassGroupId ?? 0) && !ap.IsDeleted)
+                .Select(ap => new ParticipantInfo
+                {
+                    UserId = ap.UserId,
+                    ClassGroupId = ap.ClassGroupId ?? 0
+                })
+                .Distinct()
+                .ToList();
+            
+            return participants;
+        }
+        catch
+        {
+            return new List<ParticipantInfo>();
+        }
+    }
+    
+    /// <summary>
+    /// Lấy danh sách activities khác mà participants đã tham gia (để check conflict)
+    /// </summary>
+    private List<ParticipantActivityConflict> GetParticipantActivityConflicts(
+        List<ParticipantInfo> participants,
+        int currentActivityId,
+        DateTime startDate,
+        DateTime endDate,
+        EduShpereDbContext dbContext)
+    {
+        try
+        {
+            var participantIds = participants.Select(p => p.UserId).ToList();
+            if (!participantIds.Any())
+                return new List<ParticipantActivityConflict>();
+            
+            // Lấy tất cả activities khác (không phải activity hiện tại) mà participants đã tham gia
+            // và có thời gian overlap với khoảng thời gian của tournament
+            var conflicts = dbContext.Set<EduShpere.Domain.Models.Activity>()
+                .Where(a => a.Id != currentActivityId && 
+                           !a.IsDeleted &&
+                           a.StartDate.HasValue && 
+                           a.EndDate.HasValue &&
+                           a.StartDate.Value <= endDate &&
+                           a.EndDate.Value >= startDate)
+                .Select(a => new
+                {
+                    ActivityId = a.Id,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate,
+                    Participants = a.ActivityParticipants
+                        .Where(ap => participantIds.Contains(ap.UserId) && !ap.IsDeleted)
+                        .Select(ap => ap.UserId)
+                        .ToList()
+                })
+                .Where(x => x.Participants.Any())
+                .ToList()
+                .Select(x => new ParticipantActivityConflict
+                {
+                    ActivityId = x.ActivityId,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    ParticipantIds = x.Participants.ToHashSet()
+                })
+                .ToList();
+            
+            return conflicts;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Lỗi khi lấy participant activity conflicts: {ex.Message}");
+            return new List<ParticipantActivityConflict>();
+        }
+    }
+    
+    /// <summary>
+    /// Phân tích lịch học để xác định lớp nào học buổi sáng/chiều
+    /// </summary>
+    private ClassGroupScheduleAnalysis AnalyzeClassGroupSchedules(
+        List<ClassGroupSchedule> schedules,
+        List<int> classGroupIds)
+    {
+        var analysis = new ClassGroupScheduleAnalysis
+        {
+            MorningClasses = new HashSet<int>(),
+            AfternoonClasses = new HashSet<int>()
+        };
+        
+        // Phân loại lớp theo giờ học chính
+        // Buổi sáng: 6h - 12h
+        // Buổi chiều: 12h - 18h
+        var classGroupScheduleTimes = schedules
+            .GroupBy(s => s.ClassGroupId)
+            .ToDictionary(g => g.Key, g => g.Select(s => new { s.StartTime, s.EndTime }).ToList());
+        
+        foreach (var classGroupId in classGroupIds)
+        {
+            if (classGroupScheduleTimes.TryGetValue(classGroupId, out var times))
+            {
+                bool hasMorningClass = false;
+                bool hasAfternoonClass = false;
+                
+                foreach (var time in times)
+                {
+                    var startHour = time.StartTime.Hours;
+                    var endHour = time.EndTime.Hours;
+                    
+                    // Nếu có lớp học trong khoảng 6h-12h → buổi sáng
+                    if (startHour >= 6 && startHour < 12)
+                    {
+                        hasMorningClass = true;
+                    }
+                    
+                    // Nếu có lớp học trong khoảng 12h-18h → buổi chiều
+                    if (startHour >= 12 && startHour < 18)
+                    {
+                        hasAfternoonClass = true;
+                    }
+                }
+                
+                // Phân loại: nếu chủ yếu học buổi sáng → morning class
+                // Nếu chủ yếu học buổi chiều → afternoon class
+                if (hasMorningClass && !hasAfternoonClass)
+                {
+                    analysis.MorningClasses.Add(classGroupId);
+                }
+                else if (hasAfternoonClass && !hasMorningClass)
+                {
+                    analysis.AfternoonClasses.Add(classGroupId);
+                }
+                else if (hasMorningClass && hasAfternoonClass)
+                {
+                    // Có cả sáng và chiều → đếm số tiết
+                    var morningCount = times.Count(t => t.StartTime.Hours >= 6 && t.StartTime.Hours < 12);
+                    var afternoonCount = times.Count(t => t.StartTime.Hours >= 12 && t.StartTime.Hours < 18);
+                    
+                    if (morningCount > afternoonCount)
+                    {
+                        analysis.MorningClasses.Add(classGroupId);
+                    }
+                    else
+                    {
+                        analysis.AfternoonClasses.Add(classGroupId);
+                    }
+                }
+            }
+        }
+        
+        return analysis;
     }
 
     private List<ClassGroupSchedule> GetClassGroupSchedules(List<int> classGroupIds, EduShpereDbContext dbContext)
     {
         try
         {
-            return dbContext.Set<ClassGroupSchedule>()
+            // Lấy lịch học từ ClassGroupSchedule (lịch học khi tạo lớp)
+            var schedules = dbContext.Set<ClassGroupSchedule>()
                 .Where(s => classGroupIds.Contains(s.ClassGroupId) && !s.IsDeleted)
                 .ToList();
+            
+            // Lấy lịch học từ Timetable (lịch học import từ CSV/Excel/ICS)
+            try
+            {
+                var timetables = dbContext.Set<Timetable>()
+                    .Where(t => classGroupIds.Contains(t.ClassGroupId) && !t.IsDeleted)
+                    .ToList();
+                
+                // Convert Timetable sang ClassGroupSchedule format để sử dụng chung logic
+                var timetableSchedules = timetables.Select(t => new ClassGroupSchedule
+                {
+                    Id = t.Id,
+                    ClassGroupId = t.ClassGroupId,
+                    DayOfWeek = t.DayOfWeek,
+                    StartTime = t.StartTime,
+                    EndTime = t.EndTime,
+                    Subject = t.SubjectName,
+                    Period = 0 // Timetable không có Period, set 0
+                }).ToList();
+                
+                // Merge cả hai danh sách
+                schedules.AddRange(timetableSchedules);
+            }
+            catch
+            {
+                // Nếu bảng Timetable chưa tồn tại, chỉ dùng ClassGroupSchedule
+                Console.WriteLine("   ⚠️ Bảng Timetables chưa tồn tại, chỉ sử dụng ClassGroupSchedule");
+            }
+            
+            return schedules;
         }
         catch
         {
@@ -629,6 +974,67 @@ public class ORToolsScheduler
         }
 
         return matches;
+    }
+    
+    // Helper classes cho conflict detection
+    private class ParticipantInfo
+    {
+        public int UserId { get; set; }
+        public int ClassGroupId { get; set; }
+    }
+    
+    private class ParticipantActivityConflict
+    {
+        public int ActivityId { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public HashSet<int> ParticipantIds { get; set; } = new();
+    }
+    
+    /// <summary>
+    /// Kiểm tra xem hai lớp có lịch học tương đồng không (cùng thứ, overlapping time ranges)
+    /// </summary>
+    private bool ClassesHaveSimilarTimetable(
+        int classAId, 
+        int classBId, 
+        Dictionary<int, List<ClassGroupSchedule>> schedulesByClassGroup,
+        int dayOfWeek)
+    {
+        if (!schedulesByClassGroup.TryGetValue(classAId, out var schedulesA) ||
+            !schedulesByClassGroup.TryGetValue(classBId, out var schedulesB))
+        {
+            return false;
+        }
+        
+        // Lấy schedules của cả hai lớp cho cùng một thứ
+        var schedulesAForDay = schedulesA.Where(s => s.DayOfWeek == dayOfWeek).ToList();
+        var schedulesBForDay = schedulesB.Where(s => s.DayOfWeek == dayOfWeek).ToList();
+        
+        if (!schedulesAForDay.Any() || !schedulesBForDay.Any())
+        {
+            return false; // Một trong hai lớp không có lịch học thứ này
+        }
+        
+        // Check xem có overlapping time ranges không
+        foreach (var scheduleA in schedulesAForDay)
+        {
+            foreach (var scheduleB in schedulesBForDay)
+            {
+                // Nếu có overlap → có lịch học tương đồng
+                if (scheduleA.StartTime < scheduleB.EndTime && scheduleA.EndTime > scheduleB.StartTime)
+                {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    private class ClassGroupScheduleAnalysis
+    {
+        public HashSet<int> MorningClasses { get; set; } = new(); // Lớp học chủ yếu buổi sáng
+        public HashSet<int> AfternoonClasses { get; set; } = new(); // Lớp học chủ yếu buổi chiều
     }
 }
 

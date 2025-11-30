@@ -39,6 +39,9 @@ namespace EduShpere.Application.Mappings
                 .ForMember(dest => dest.ActivityDetail, opt => opt.MapFrom(src => src.ActivityDetail != null && !src.ActivityDetail.IsDeleted ? src.ActivityDetail : null))
                 .ForMember(dest => dest.GradingSettings, opt => opt.Ignore()) // Ignore default mapping, handle in AfterMap
                 .ForMember(dest => dest.RegistrationSettings, opt => opt.Ignore()) // Ignore default mapping, handle in AfterMap
+                .ForMember(dest => dest.ProblemText, opt => opt.Ignore()) // Handle in AfterMap để kiểm tra thời gian mở đề
+                .ForMember(dest => dest.ProblemFileUrl, opt => opt.Ignore()) // Handle in AfterMap để kiểm tra thời gian mở đề
+                .ForMember(dest => dest.IsProblemVisible, opt => opt.Ignore()) // Handle in AfterMap
                 .AfterMap((src, dest) => 
                 {
                     // Deserialize GradingSettings from JSON string and set Enabled from IsGrade (handle nullable)
@@ -125,6 +128,43 @@ namespace EduShpere.Application.Mappings
                         {
                             dest.RegistrationSettings = null; // No registration settings for non-CreativeContest
                         }
+                    }
+                    
+                    // Logic hiển thị đề bài: chỉ hiển thị sau StartDate
+                    var now = DateTime.UtcNow;
+                    var hasSubmission = string.Equals(src.SubType, "CreativeContest", StringComparison.OrdinalIgnoreCase) ||
+                                       src.SubType?.ToLower().Contains("submission") == true ||
+                                       src.SubType?.ToLower().Contains("contest") == true;
+                    
+                    if (hasSubmission && src.StartDate.HasValue)
+                    {
+                        // Kiểm tra đã đến thời gian mở đề chưa (StartDate là thời điểm mở đề)
+                        var startDateUtc = src.StartDate.Value.ToUniversalTime();
+                        dest.IsProblemVisible = now >= startDateUtc;
+                        
+                        if (dest.IsProblemVisible)
+                        {
+                            // Đã đến thời gian mở đề - hiển thị đầy đủ
+                            dest.ProblemText = src.ProblemText;
+                            dest.ProblemFileUrl = src.ProblemFileUrl;
+                        }
+                        else
+                        {
+                            // Chưa đến thời gian mở đề - ẩn đề bài
+                            dest.ProblemText = null;
+                            dest.ProblemFileUrl = null;
+                        }
+                        
+                        // Luôn trả về SubmissionDeadline (không phụ thuộc thời gian)
+                        dest.SubmissionDeadline = src.SubmissionDeadline;
+                    }
+                    else
+                    {
+                        // Không phải activity có submission - không có đề bài
+                        dest.ProblemText = null;
+                        dest.ProblemFileUrl = null;
+                        dest.SubmissionDeadline = null;
+                        dest.IsProblemVisible = false;
                     }
                 });
 

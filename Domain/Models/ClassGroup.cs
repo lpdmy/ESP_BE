@@ -61,4 +61,7 @@ public partial class ClassGroup : BaseEntity
 
     [InverseProperty("WinnerClassGroup")]
     public virtual ICollection<ActivityMatch> ActivityMatchesAsWinner { get; set; } = new List<ActivityMatch>();
+
+    [InverseProperty("ClassGroup")]
+    public virtual ICollection<Timetable> Timetables { get; set; } = new List<Timetable>();
 }
