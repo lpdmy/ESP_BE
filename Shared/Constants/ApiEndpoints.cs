@@ -61,6 +61,7 @@ namespace EduShpere.Shared.Constants
             public const string GetActivityById = "api/activity/{id}";
             public const string GetListItems = "api/activity/list-items";
             public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
+            public const string ApplyTournamentSchedule = "api/activity/{id}/apply-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
         }
 

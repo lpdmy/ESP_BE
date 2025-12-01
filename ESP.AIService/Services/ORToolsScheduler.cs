@@ -104,6 +104,7 @@ public class ORToolsScheduler
                        CAST(CreatedBy AS INT) AS CreatedBy, 
                        UpdatedAt, 
                        CAST(UpdatedBy AS INT) AS UpdatedBy, 
+                       CAST(IsPublished AS BIT) AS IsPublished,
                        CAST(IsDeleted AS BIT) AS IsDeleted
                 FROM ActivityMatches 
                 WHERE ActivityId = {0} 
@@ -208,10 +209,22 @@ public class ORToolsScheduler
         }
 
         // Constraint 3: Không overlap thời gian - đảm bảo các matches không trùng thời gian
-        // Với mỗi cặp slots có overlap thời gian, chỉ có thể chọn 1 trong 2
+        // QUAN TRỌNG: Nếu có 2 sân trở lên, cho phép overlap thời gian nếu matches ở sân khác nhau
+        // Với mỗi cặp slots có overlap thời gian, chỉ có thể chọn cả 2 nếu chúng ở sân khác nhau
         // TỐI ƯU: Chỉ tạo constraints cho các cặp slots thực sự overlap (giảm số lượng constraints)
         var overlapConstraints = new List<Constraint>();
         var overlapCount = 0;
+        var hasMultipleLocations = request.AvailableLocations != null && request.AvailableLocations.Count >= 2;
+        
+        Console.WriteLine($"   🏟️ Số sân available: {request.AvailableLocations?.Count ?? 0} {(hasMultipleLocations ? "(có thể overlap nếu khác sân)" : "(không overlap)")}");
+        if (request.AvailableLocations != null && request.AvailableLocations.Any())
+        {
+            Console.WriteLine($"   🏟️ Danh sách sân: [{string.Join(", ", request.AvailableLocations)}]");
+        }
+        
+        var overlapAllowedCount = 0; // Số cặp slots được phép overlap (khác sân)
+        var overlapBlockedCount = 0; // Số cặp slots bị chặn overlap (cùng sân hoặc 1 sân)
+        
         for (int i = 0; i < availableSlots.Count; i++)
         {
             for (int j = i + 1; j < availableSlots.Count; j++)
@@ -225,18 +238,48 @@ public class ORToolsScheduler
                     // Check time overlap: slotI.StartTime < slotJ.EndTime && slotI.EndTime > slotJ.StartTime
                     if (slotI.StartTime < slotJ.EndTime && slotI.EndTime > slotJ.StartTime)
                     {
+                        // QUAN TRỌNG: Nếu có 2 sân trở lên và 2 slots ở sân khác nhau, cho phép overlap
+                        bool sameLocation = !string.IsNullOrEmpty(slotI.Location) && 
+                                          !string.IsNullOrEmpty(slotJ.Location) && 
+                                          slotI.Location == slotJ.Location;
+                        
+                        // Chỉ tạo constraint nếu:
+                        // 1. Không có nhiều sân (chỉ có 1 sân hoặc không có sân) → không cho phép overlap
+                        // 2. Có nhiều sân NHƯNG 2 slots ở cùng sân → không cho phép overlap
+                        if (!hasMultipleLocations || sameLocation)
+                    {
                         // Tạo constraint: chỉ có thể chọn 1 trong 2 slots này
                         var overlapConstraint = solver.MakeConstraint(0, 1, $"no_overlap_{i}_{j}");
                         overlapConstraint.SetCoefficient(variables[i], 1);
                         overlapConstraint.SetCoefficient(variables[j], 1);
                         overlapConstraints.Add(overlapConstraint);
-                        overlapCount++;
+                            overlapCount++;
+                            overlapBlockedCount++;
+                            
+                            // Log chi tiết cho các cặp bị chặn
+                            if (overlapBlockedCount <= 5) // Chỉ log 5 cặp đầu tiên để tránh spam
+                            {
+                                Console.WriteLine($"      🔒 Chặn overlap: Slot {i} ({slotI.MatchDate:yyyy-MM-dd} {slotI.StartTime:hh\\:mm}, Sân: {slotI.Location ?? "N/A"}) vs Slot {j} ({slotJ.MatchDate:yyyy-MM-dd} {slotJ.StartTime:hh\\:mm}, Sân: {slotJ.Location ?? "N/A"}) - {(sameLocation ? "Cùng sân" : "Chỉ có 1 sân")}");
+                            }
+                        }
+                        else
+                        {
+                            // Nếu có nhiều sân và 2 slots ở sân khác nhau → KHÔNG tạo constraint (cho phép overlap)
+                            overlapAllowedCount++;
+                            
+                            // Log chi tiết cho các cặp được phép overlap
+                            if (overlapAllowedCount <= 5) // Chỉ log 5 cặp đầu tiên để tránh spam
+                            {
+                                Console.WriteLine($"      ✅ Cho phép overlap: Slot {i} ({slotI.MatchDate:yyyy-MM-dd} {slotI.StartTime:hh\\:mm}, Sân: {slotI.Location ?? "N/A"}) vs Slot {j} ({slotJ.MatchDate:yyyy-MM-dd} {slotJ.StartTime:hh\\:mm}, Sân: {slotJ.Location ?? "N/A"}) - Khác sân");
+                            }
+                        }
                     }
                 }
             }
         }
         
         Console.WriteLine($"   🔒 Đã tạo {overlapCount} constraints để tránh overlap thời gian (tổng {overlapConstraints.Count} constraints)");
+        Console.WriteLine($"   📊 Thống kê overlap: {overlapBlockedCount} cặp bị chặn, {overlapAllowedCount} cặp được phép overlap (khác sân)");
 
         // Objective: Tối đa hóa tổng ML score
         var objective = solver.Objective();
@@ -395,11 +438,11 @@ public class ORToolsScheduler
                                       $"Objective value: {response.ObjectiveValue:F2}";
             }
             else
-            {
-                response.Explanation = $"⚠️ CẢNH BÁO: Chỉ tạo được {matches.Count}/{expectedMatches} matches! " +
-                                      $"Thiếu {expectedMatches - matches.Count} matches. " +
-                                      $"Lý do: Không đủ slots hợp lệ để tạo đủ các vòng. " +
-                                      $"Objective value: {response.ObjectiveValue:F2}";
+        {
+            response.Explanation = $"⚠️ CẢNH BÁO: Chỉ tạo được {matches.Count}/{expectedMatches} matches! " +
+                                  $"Thiếu {expectedMatches - matches.Count} matches. " +
+                                  $"Lý do: Không đủ slots hợp lệ để tạo đủ các vòng. " +
+                                  $"Objective value: {response.ObjectiveValue:F2}";
             }
         }
         else
@@ -555,6 +598,32 @@ public class ORToolsScheduler
                 }
             }
             
+            // QUAN TRỌNG: Heuristic ưu tiên phân bổ đều các sân
+            // Tính số lượng slots mỗi sân để ưu tiên sân có ít slots hơn (phân bổ đều)
+            if (isAvailable && request.AvailableLocations != null && request.AvailableLocations.Count >= 2)
+            {
+                // Đếm số slots mỗi sân
+                var slotsByLocation = slots
+                    .Where(s => !string.IsNullOrEmpty(s.Location))
+                    .GroupBy(s => s.Location)
+                    .ToDictionary(g => g.Key, g => g.Count());
+                
+                // Ưu tiên sân có ít slots hơn (để phân bổ đều)
+                if (!string.IsNullOrEmpty(slot.Location) && slotsByLocation.ContainsKey(slot.Location))
+                {
+                    var totalSlots = slots.Count;
+                    var slotsInThisLocation = slotsByLocation[slot.Location];
+                    var averageSlotsPerLocation = (float)totalSlots / request.AvailableLocations.Count;
+                    
+                    // Nếu sân này có ít slots hơn trung bình → tăng điểm (ưu tiên sử dụng sân này)
+                    if (slotsInThisLocation < averageSlotsPerLocation)
+                    {
+                        var locationBonus = (averageSlotsPerLocation - slotsInThisLocation) / averageSlotsPerLocation * 15.0f; // Tối đa 15 điểm
+                        slot.MLScore += locationBonus;
+                    }
+                }
+            }
+            
             // Tăng ML Score dựa trên heuristic: ưu tiên slot không conflict với lịch học
             // Nếu slot nằm trong giờ trống của các lớp tham gia → tăng score
             if (isAvailable && classGroupScheduleAnalysis != null)
@@ -678,7 +747,7 @@ public class ORToolsScheduler
                     continue; // Bỏ qua slot này
                 }
             }
-            
+
             // Check location có trong danh sách available không
             if (isAvailable && request.AvailableLocations.Any())
             {
@@ -1013,11 +1082,11 @@ public class ORToolsScheduler
         var afternoonClasses = scheduleAnalysis?.AfternoonClasses ?? new HashSet<int>();
         
         // PHÂN LOẠI: Tách các đội thành 2 nhóm theo quy tắc mới:
-        // Nhóm A (Học sáng - Chỉ đá được chiều): Rảnh từ 13:00 - 18:00
-        // Nhóm B (Học chiều - Chỉ đá được sáng): Rảnh từ 07:00 - 11:00
+        // Nhóm A (Học sáng): Ưu tiên đá Chiều (13:00+) + Tối (17:00+)
+        // Nhóm B (Học chiều): Ưu tiên đá Sáng (07:00-11:30) + Tối (17:00+) - học xong chiều 17h thì 17h30 hoặc 18h có thể đá
         // QUAN TRỌNG: Logic đảo ngược so với trước:
-        // - MorningClasses = các lớp học buổi sáng → thuộc Nhóm A (chỉ đá được chiều)
-        // - AfternoonClasses = các lớp học buổi chiều → thuộc Nhóm B (chỉ đá được sáng)
+        // - MorningClasses = các lớp học buổi sáng → thuộc Nhóm A (ưu tiên đá chiều + tối)
+        // - AfternoonClasses = các lớp học buổi chiều → thuộc Nhóm B (ưu tiên đá sáng + tối)
         var groupA_AfternoonOnly = classGroupIds.Where(id => morningClasses.Contains(id)).ToList(); // Nhóm A: Học sáng, đá chiều
         var groupB_MorningOnly = classGroupIds.Where(id => afternoonClasses.Contains(id)).ToList(); // Nhóm B: Học chiều, đá sáng
         var unknownTeams = classGroupIds.Where(id => !morningClasses.Contains(id) && !afternoonClasses.Contains(id)).ToList();
@@ -1038,43 +1107,92 @@ public class ORToolsScheduler
             }
         }
         
-        Console.WriteLine($"   📊 Phân loại nhóm: {groupA_AfternoonOnly.Count} đội Nhóm A (Học sáng, đá chiều 13:00-18:00), {groupB_MorningOnly.Count} đội Nhóm B (Học chiều, đá sáng 07:00-11:00)");
+        Console.WriteLine($"   📊 Phân loại nhóm: {groupA_AfternoonOnly.Count} đội Nhóm A (Học sáng, ưu tiên đá chiều), {groupB_MorningOnly.Count} đội Nhóm B (Học chiều, ưu tiên đá sáng)");
+        Console.WriteLine($"   ℹ️ Lưu ý: Các nhóm có thể đá ngoài giờ học nếu không conflict với lịch học thực tế");
         
-        // Phân loại slots theo quy tắc mới:
-        // - Nhóm B (đá sáng): 07:00 - 11:30 (End Time không được vượt quá 11:30)
-        // - Nhóm A (đá chiều): 13:00 - 18:00 (Start Time phải từ 13:00)
-        // QUAN TRỌNG: KHÔNG có crossover slots. Nếu cần trận chung kết giữa 2 nhóm, yêu cầu thêm ngày thứ 7, chủ nhật
+        // QUAN TRỌNG: Sử dụng PreferredStartTime và PreferredEndTime từ request để giới hạn thời gian thi đấu
+        // PreferredStartTime: Giờ bắt đầu sớm nhất (ví dụ: 07:00)
+        // PreferredEndTime: Giờ kết thúc muộn nhất trong ngày (ví dụ: 20:00) - đây là giới hạn muộn nhất 1 trận có thể có
+        var minStartTime = request.PreferredStartTime ?? TimeSpan.FromHours(7); // Mặc định 07:00
+        var maxEndTime = request.PreferredEndTime ?? TimeSpan.FromHours(18); // Mặc định 18:00
+        
+        var minStartTotalMinutes = minStartTime.Hours * 60 + minStartTime.Minutes;
+        var maxEndTotalMinutes = maxEndTime.Hours * 60 + maxEndTime.Minutes;
+        
+        Console.WriteLine($"   ⏰ Giới hạn thời gian: Bắt đầu từ {minStartTime:hh\\:mm}, Kết thúc trước {maxEndTime:hh\\:mm}");
+        
+        // Phân loại slots để ưu tiên (không cấm hoàn toàn):
+        // - Nhóm B (học chiều): Ưu tiên slots sáng (07:00 - 11:30) + buổi tối (từ 17:00 trở đi)
+        // - Nhóm A (học sáng): Ưu tiên slots chiều (13:00 trở đi) + buổi tối (từ 17:00 trở đi)
+        // QUAN TRỌNG: Áp dụng PreferredStartTime và PreferredEndTime
         var morningSlots = slots.Where(s => {
             var startTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
             var endTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
-            // Buổi sáng: 07:00 - 11:30 (End Time không được vượt quá 11:30)
-            return startTotalMinutes >= 7 * 60 && endTotalMinutes <= 11 * 60 + 30;
+            // Buổi sáng: Từ PreferredStartTime đến 11:30, nhưng không được vượt quá PreferredEndTime
+            return startTotalMinutes >= minStartTotalMinutes && 
+                   endTotalMinutes <= 11 * 60 + 30 &&
+                   endTotalMinutes <= maxEndTotalMinutes;
         }).OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).ToList();
         
+        // QUAN TRỌNG: Loại bỏ giới hạn cứng 18h, nhưng vẫn phải tuân theo PreferredEndTime
         var afternoonSlots = slots.Where(s => {
             var startTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
-            // Buổi chiều: 13:00 - 18:00 (Start Time phải từ 13:00)
-            return startTotalMinutes >= 13 * 60 && s.StartTime.Hours < 18;
+            var endTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
+            // Buổi chiều: 13:00 đến 16:59, nhưng không được vượt quá PreferredEndTime
+            return startTotalMinutes >= 13 * 60 && 
+                   startTotalMinutes < 17 * 60 &&
+                   endTotalMinutes <= maxEndTotalMinutes;
+        }).OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).ToList();
+        
+        // QUAN TRỌNG: Thêm eveningSlots (từ 17:00 trở đi) - cho phép đá buổi tối
+        // Nhưng vẫn phải tuân theo PreferredEndTime
+        var eveningSlots = slots.Where(s => {
+            var startTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
+            var endTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
+            // Buổi tối: Từ 17:00 trở đi, nhưng không được vượt quá PreferredEndTime
+            return startTotalMinutes >= 17 * 60 &&
+                   startTotalMinutes >= minStartTotalMinutes &&
+                   endTotalMinutes <= maxEndTotalMinutes;
         }).OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).ToList();
         
         var otherSlots = slots.Where(s => {
             var startTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
             var endTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
-            // Loại bỏ slots trong khung giờ cấm và các slots không phù hợp
-            var isMorning = startTotalMinutes >= 7 * 60 && endTotalMinutes <= 11 * 60 + 30;
-            var isAfternoon = startTotalMinutes >= 13 * 60 && s.StartTime.Hours < 18;
-            return !isMorning && !isAfternoon;
+            // Loại bỏ slots trong khung giờ cấm và các slots đã được phân loại
+            // QUAN TRỌNG: Vẫn phải tuân theo PreferredStartTime và PreferredEndTime
+            var isMorning = startTotalMinutes >= minStartTotalMinutes && 
+                           endTotalMinutes <= 11 * 60 + 30 &&
+                           endTotalMinutes <= maxEndTotalMinutes;
+            var isAfternoon = startTotalMinutes >= 13 * 60 && 
+                             startTotalMinutes < 17 * 60 &&
+                             endTotalMinutes <= maxEndTotalMinutes;
+            var isEvening = startTotalMinutes >= 17 * 60 &&
+                           startTotalMinutes >= minStartTotalMinutes &&
+                           endTotalMinutes <= maxEndTotalMinutes;
+            return !isMorning && !isAfternoon && !isEvening &&
+                   startTotalMinutes >= minStartTotalMinutes &&
+                   endTotalMinutes <= maxEndTotalMinutes;
         }).OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).ToList();
         
-        Console.WriteLine($"   ⏰ Phân loại slots: {morningSlots.Count} buổi sáng (07:00-11:30), {afternoonSlots.Count} buổi chiều (13:00-18:00), {otherSlots.Count} khác");
+        Console.WriteLine($"   ⏰ Phân loại slots: {morningSlots.Count} buổi sáng ({minStartTime:hh\\:mm}-11:30), {afternoonSlots.Count} buổi chiều (13:00-16:59), {eveningSlots.Count} buổi tối (17:00-{maxEndTime:hh\\:mm}), {otherSlots.Count} khác");
         
         // Tạo danh sách slots đã sử dụng để track
         var usedSlots = new HashSet<ScheduleSlot>();
+        
+        // QUAN TRỌNG: Track số lần sử dụng mỗi sân để ưu tiên phân bổ đều (dùng chung cho tất cả các method)
+        var locationUsageCount = new Dictionary<string, int>();
+        if (request.AvailableLocations != null && request.AvailableLocations.Count >= 2)
+        {
+            foreach (var location in request.AvailableLocations)
+            {
+                locationUsageCount[location] = 0;
+            }
+        }
 
-        // CÂN BẰNG NHÁNH: Tạo 2 nhánh đấu riêng biệt theo quy tắc mới
-        // Nhánh 1: Nhóm B (Học chiều, đá sáng) → đấu vào buổi Sáng (07:00-11:30)
-        // Nhánh 2: Nhóm A (Học sáng, đá chiều) → đấu vào buổi Chiều (13:00-18:00)
-        // QUAN TRỌNG: KHÔNG có crossover slots. Nếu cần trận chung kết giữa 2 nhóm, yêu cầu thêm ngày thứ 7, chủ nhật
+        // CÂN BẰNG NHÁNH: Tạo 2 nhánh đấu riêng biệt
+        // QUAN TRỌNG: Lớp buổi chiều (Nhóm B) vẫn có thể đá ngoài giờ học nếu không conflict
+        // Logic: Ưu tiên slots phù hợp (sáng cho Nhóm B, chiều cho Nhóm A) nhưng không cấm hoàn toàn
+        // Chỉ check conflict với lịch học thực tế thay vì cấm theo khung giờ
         
         // Sử dụng schedulesByClassGroup đã được truyền vào (tránh query lại database)
         if (schedulesByClassGroup == null)
@@ -1091,15 +1209,31 @@ public class ORToolsScheduler
         
         // Xử lý Bye cho từng nhóm riêng biệt
         // Đặt tên nhánh theo số đội tham gia (chuyên nghiệp hơn)
+        // QUAN TRỌNG: Không truyền minStartTime/maxEndTime cứng nhắc
+        // Logic "Late Match":
+        // - Nhóm B (Học chiều): Ưu tiên đá Sáng + Tối (học xong chiều 17h thì 17h30 hoặc 18h có thể đá)
+        // - Nhóm A (Học sáng): Ưu tiên đá Chiều + Tối
+        // Nhưng vẫn cho phép dùng otherSlots nếu không conflict với lịch học
+        
+        // Nhóm B: Ưu tiên morningSlots + eveningSlots (sáng + tối)
+        var groupB_PreferredSlots = new List<ScheduleSlot>();
+        groupB_PreferredSlots.AddRange(morningSlots);
+        groupB_PreferredSlots.AddRange(eveningSlots);
+        groupB_PreferredSlots = groupB_PreferredSlots.OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).ToList();
+        
         var groupB_MorningBranchMatches = GenerateBranchMatches(
-            request, groupB_MorningOnly, morningSlots, otherSlots, 
-            $"Nhánh {groupB_MorningOnly.Count} đội (Nhóm B - Đá sáng)", "Nhóm B", ref matchNumber, ref usedSlots, schedulesByClassGroup, 
-            minStartTime: TimeSpan.FromHours(7), maxEndTime: TimeSpan.FromHours(11).Add(TimeSpan.FromMinutes(30)));
+            request, groupB_MorningOnly, groupB_PreferredSlots, otherSlots, 
+            $"Nhánh {groupB_MorningOnly.Count} đội (Nhóm B - Ưu tiên đá sáng + tối)", "Nhóm B", ref matchNumber, ref usedSlots, schedulesByClassGroup, locationUsageCount);
+        
+        // Nhóm A: Ưu tiên afternoonSlots + eveningSlots (chiều + tối)
+        var groupA_PreferredSlots = new List<ScheduleSlot>();
+        groupA_PreferredSlots.AddRange(afternoonSlots);
+        groupA_PreferredSlots.AddRange(eveningSlots);
+        groupA_PreferredSlots = groupA_PreferredSlots.OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).ToList();
         
         var groupA_AfternoonBranchMatches = GenerateBranchMatches(
-            request, groupA_AfternoonOnly, afternoonSlots, otherSlots, 
-            $"Nhánh {groupA_AfternoonOnly.Count} đội (Nhóm A - Đá chiều)", "Nhóm A", ref matchNumber, ref usedSlots, schedulesByClassGroup,
-            minStartTime: TimeSpan.FromHours(13), maxEndTime: TimeSpan.FromHours(18));
+            request, groupA_AfternoonOnly, groupA_PreferredSlots, otherSlots, 
+            $"Nhánh {groupA_AfternoonOnly.Count} đội (Nhóm A - Ưu tiên đá chiều + tối)", "Nhóm A", ref matchNumber, ref usedSlots, schedulesByClassGroup, locationUsageCount);
         
         // Gộp matches từ 2 nhánh
         matches.AddRange(groupB_MorningBranchMatches);
@@ -1109,7 +1243,7 @@ public class ORToolsScheduler
         // QUAN TRỌNG: KHÔNG có crossover slots. Nếu không có slot phù hợp, yêu cầu thêm ngày thứ 7, chủ nhật
         var (finalMatches, finalRequiresWeekend) = GenerateFinalMatchesBetweenBranches(
             request, groupB_MorningBranchMatches, groupA_AfternoonBranchMatches, 
-            slots, ref matchNumber, ref usedSlots);
+            slots, ref matchNumber, ref usedSlots, schedulesByClassGroup, locationUsageCount);
         
         matches.AddRange(finalMatches);
         
@@ -1121,6 +1255,19 @@ public class ORToolsScheduler
         }
         
         Console.WriteLine($"   ✅ Đã tạo {matches.Count} matches: {groupB_MorningBranchMatches.Count} nhánh Nhóm B (Sáng), {groupA_AfternoonBranchMatches.Count} nhánh Nhóm A (Chiều), {finalMatches.Count} trận chung kết");
+        
+        // Log thống kê sử dụng sân
+        if (locationUsageCount.Any())
+        {
+            Console.WriteLine($"\n🏟️ THỐNG KÊ SỬ DỤNG SÂN:");
+            var totalUsage = locationUsageCount.Values.Sum();
+            foreach (var kvp in locationUsageCount.OrderByDescending(x => x.Value))
+            {
+                var percentage = totalUsage > 0 ? (kvp.Value * 100.0 / totalUsage) : 0;
+                Console.WriteLine($"   - Sân '{kvp.Key}': {kvp.Value} trận ({percentage:F1}%)");
+            }
+            Console.WriteLine($"   - Tổng: {totalUsage} trận");
+        }
         
         // KIỂM TRA: Đảm bảo đã tạo đủ matches cho tất cả các vòng
         var expectedGroupBMatches = CalculateExpectedMatchesForBranch(groupB_MorningOnly.Count);
@@ -1183,18 +1330,23 @@ public class ORToolsScheduler
     
     /// <summary>
     /// Check xem slot có conflict với lịch học của 2 lớp cụ thể không
+    /// Bao gồm: Conflict trực tiếp và rule đấu muộn (phải sau lịch học buổi chiều cuối + minGapBetweenMatches phút)
     /// </summary>
     private bool HasScheduleConflict(
         ScheduleSlot slot,
         int? classGroup1Id,
         int? classGroup2Id,
-        Dictionary<int, List<ClassGroupSchedule>> schedulesByClassGroup)
+        Dictionary<int, List<ClassGroupSchedule>> schedulesByClassGroup,
+        int minGapBetweenMatches)
     {
         if (!classGroup1Id.HasValue && !classGroup2Id.HasValue)
             return false; // Không có lớp nào → không conflict
         
         var dayOfWeek = (int)slot.MatchDate.DayOfWeek;
         var dayOfWeekNormalized = dayOfWeek == 0 ? 7 : dayOfWeek;
+        
+        // Tìm lịch học buổi chiều cuối cùng của cả 2 lớp (để check rule đấu muộn)
+        TimeSpan? latestAfternoonClassEndTime = null;
         
         // Check conflict với lớp 1
         if (classGroup1Id.HasValue && schedulesByClassGroup.TryGetValue(classGroup1Id.Value, out var schedules1))
@@ -1203,9 +1355,19 @@ public class ORToolsScheduler
             {
                 if (schedule.DayOfWeek == dayOfWeekNormalized)
                 {
+                    // Check conflict trực tiếp
                     if (slot.StartTime < schedule.EndTime && slot.EndTime > schedule.StartTime)
                     {
-                        return true; // Conflict với lớp 1
+                        return true; // Conflict trực tiếp với lớp 1
+                    }
+                    
+                    // Tìm lịch học buổi chiều cuối cùng (StartTime >= 12:00)
+                    if (schedule.StartTime.Hours >= 12)
+                    {
+                        if (!latestAfternoonClassEndTime.HasValue || schedule.EndTime > latestAfternoonClassEndTime.Value)
+                        {
+                            latestAfternoonClassEndTime = schedule.EndTime;
+                        }
                     }
                 }
             }
@@ -1218,10 +1380,36 @@ public class ORToolsScheduler
             {
                 if (schedule.DayOfWeek == dayOfWeekNormalized)
                 {
+                    // Check conflict trực tiếp
                     if (slot.StartTime < schedule.EndTime && slot.EndTime > schedule.StartTime)
                     {
-                        return true; // Conflict với lớp 2
+                        return true; // Conflict trực tiếp với lớp 2
                     }
+                    
+                    // Tìm lịch học buổi chiều cuối cùng (StartTime >= 12:00)
+                    if (schedule.StartTime.Hours >= 12)
+                    {
+                        if (!latestAfternoonClassEndTime.HasValue || schedule.EndTime > latestAfternoonClassEndTime.Value)
+                        {
+                            latestAfternoonClassEndTime = schedule.EndTime;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // QUAN TRỌNG: Rule đấu muộn - Nếu đấu sau giờ học buổi chiều, phải sau lịch học buổi chiều cuối cùng + minGapBetweenMatches phút
+        // Ví dụ: Lớp A1 học buổi chiều xong lúc 5h thì 5h + minGapBetweenMatches mới bắt đầu có trận đấu
+        if (latestAfternoonClassEndTime.HasValue)
+        {
+            // Nếu slot bắt đầu sau giờ học buổi chiều cuối cùng
+            if (slot.StartTime >= latestAfternoonClassEndTime.Value)
+            {
+                // Phải sau lịch học buổi chiều cuối cùng + minGapBetweenMatches phút
+                var requiredStartTime = latestAfternoonClassEndTime.Value.Add(TimeSpan.FromMinutes(minGapBetweenMatches));
+                if (slot.StartTime < requiredStartTime)
+                {
+                    return true; // Conflict với rule đấu muộn
                 }
             }
         }
@@ -1242,6 +1430,7 @@ public class ORToolsScheduler
         ref int matchNumber,
         ref HashSet<ScheduleSlot> usedSlots,
         Dictionary<int, List<ClassGroupSchedule>> schedulesByClassGroup,
+        Dictionary<string, int> locationUsageCount,
         TimeSpan? minStartTime = null,
         TimeSpan? maxEndTime = null)
     {
@@ -1334,7 +1523,7 @@ public class ORToolsScheduler
                 .OrderBy(s => s.MatchDate)
                 .ThenBy(s => s.StartTime)
                 .ThenBy(s => preferredSlots.Contains(s) ? 0 : 1)
-                .ToList();
+            .ToList();
         }
         
         if (sortedByTime.Any())
@@ -1359,6 +1548,7 @@ public class ORToolsScheduler
             
             // Tìm slot phù hợp cho 2 lớp này
             // Ưu tiên: slot không conflict với lịch học của 2 lớp
+            // QUAN TRỌNG: Ưu tiên phân bổ đều các sân (chọn sân ít được sử dụng nhất)
             // Nếu không có, vẫn chọn slot (không bắt buộc tất cả lớp phải rảnh)
             ScheduleSlot? selectedSlot = null;
             bool foundNonConflictSlot = false;
@@ -1366,101 +1556,177 @@ public class ORToolsScheduler
             // Bước 1: Tìm slot không conflict với lịch học của 2 lớp (ưu tiên)
             // QUAN TRỌNG: Phải lấp đầy slots theo thứ tự thời gian, không được bỏ qua
             // QUAN TRỌNG: Không được để trống slot ngày Thứ 2, Thứ 3 nếu vẫn còn trận Round 1 chưa xếp
-            for (int j = slotIndex; j < sortedByTime.Count; j++)
+            // QUAN TRỌNG: Ưu tiên sân ít được sử dụng nhất để phân bổ đều
+            // QUAN TRỌNG: Tăng trọng số ưu tiên sân bằng cách nhân với một số lớn để đảm bảo sân ít được sử dụng nhất luôn được chọn trước
+            var availableSlotsForMatch = sortedByTime
+                .Where(s => !usedSlotsCopy.Contains(s))
+                .OrderBy(s => {
+                    // Ưu tiên 1: Sân ít được sử dụng nhất (nhân với 1000000 để ưu tiên cao hơn thời gian)
+                    var locationPriority = int.MaxValue;
+                    if (!string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location))
+                    {
+                        locationPriority = locationUsageCount[s.Location] * 1000000;
+                    }
+                    // Ưu tiên 2: Ngày sớm nhất (cộng thêm số ngày từ epoch để so sánh)
+                    var datePriority = (s.MatchDate.Date - new DateTime(2000, 1, 1)).TotalDays;
+                    // Ưu tiên 3: Giờ sớm nhất (cộng thêm số phút trong ngày)
+                    var timePriority = s.StartTime.TotalMinutes;
+                    // Tổng hợp: locationPriority (ưu tiên cao nhất) + datePriority + timePriority
+                    return locationPriority + datePriority + timePriority;
+                })
+                .ToList();
+            
+            // Debug: Log top 3 slots được ưu tiên và locationUsageCount
+            if (availableSlotsForMatch.Any() && matchCount == 0)
             {
-                var slot = sortedByTime[j];
-                if (usedSlotsCopy.Contains(slot)) continue;
-                
-                // QUAN TRỌNG: Kiểm tra ràng buộc thời gian (minStartTime, maxEndTime)
-                if (minStartTime.HasValue)
+                Console.WriteLine($"   🔍 DEBUG Round 1 Match {matchCount + 1}: locationUsageCount = {string.Join(", ", locationUsageCount.Select(kvp => $"{kvp.Key}:{kvp.Value}"))}");
+                Console.WriteLine($"   🔍 DEBUG Round 1 Match {matchCount + 1}: Top 3 slots được ưu tiên:");
+                for (int idx = 0; idx < Math.Min(3, availableSlotsForMatch.Count); idx++)
                 {
-                    var slotStartTotalMinutes = slot.StartTime.Hours * 60 + slot.StartTime.Minutes;
-                    var minStartTotalMinutes = minStartTime.Value.Hours * 60 + minStartTime.Value.Minutes;
-                    if (slotStartTotalMinutes < minStartTotalMinutes) continue;
+                    var s = availableSlotsForMatch[idx];
+                    var locCount = !string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location) 
+                        ? locationUsageCount[s.Location] 
+                        : -1;
+                    Console.WriteLine($"      [{idx + 1}] {s.MatchDate:yyyy-MM-dd} {s.StartTime:hh\\:mm} - Sân: {s.Location ?? "N/A"} (đã dùng: {locCount} lần)");
                 }
-                if (maxEndTime.HasValue)
-                {
-                    var slotEndTotalMinutes = slot.EndTime.Hours * 60 + slot.EndTime.Minutes;
-                    var maxEndTotalMinutes = maxEndTime.Value.Hours * 60 + maxEndTime.Value.Minutes;
-                    if (slotEndTotalMinutes > maxEndTotalMinutes) continue;
-                }
+            }
+            
+            for (int j = 0; j < availableSlotsForMatch.Count; j++)
+            {
+                var slot = availableSlotsForMatch[j];
+                var originalIndex = sortedByTime.IndexOf(slot);
+                if (originalIndex >= 0) slotIndex = originalIndex + 1;
                 
-                // QUAN TRỌNG: Đảm bảo thời gian nghỉ 30 phút giữa các trận
-                // Start Time của trận sau >= End Time của trận trước + 30 phút nghỉ
+                // QUAN TRỌNG: Không còn ràng buộc thời gian cứng nhắc (minStartTime, maxEndTime)
+                // Thay vào đó, chỉ check conflict với lịch học thực tế
+                // Lớp buổi chiều có thể đá ngoài giờ học nếu không conflict
+                
+                // QUAN TRỌNG: Đảm bảo thời gian nghỉ giữa các trận (từ request.MinGapBetweenMatches)
+                // QUAN TRỌNG: Nếu có 2 sân trở lên, cho phép overlap thời gian nếu matches ở sân khác nhau
+                // Start Time của trận sau >= End Time của trận trước + minGapBetweenMatches phút nghỉ (chỉ nếu cùng sân)
                 bool hasEnoughGap = true;
+                var hasMultipleLocations = request.AvailableLocations != null && request.AvailableLocations.Count >= 2;
+                var minGapMinutes = request.MinGapBetweenMatches;
+                
                 foreach (var usedMatch in matches.Where(m => m.MatchDate.HasValue && m.EndTime.HasValue))
                 {
                     if (usedMatch.MatchDate.Value.Date == slot.MatchDate.Date)
                     {
-                        var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
-                        var slotStart = slot.MatchDate.Date.Add(slot.StartTime);
-                        var gapMinutes = (slotStart - usedMatchEnd).TotalMinutes;
-                        if (gapMinutes < 30) // Cần ít nhất 30 phút nghỉ
+                        // QUAN TRỌNG: Nếu có nhiều sân và 2 matches ở sân khác nhau, cho phép overlap
+                        bool sameLocation = !string.IsNullOrEmpty(slot.Location) && 
+                                          !string.IsNullOrEmpty(usedMatch.Location) && 
+                                          slot.Location == usedMatch.Location;
+                        
+                        // Chỉ check gap nếu:
+                        // 1. Không có nhiều sân → luôn cần gap
+                        // 2. Có nhiều sân NHƯNG 2 matches ở cùng sân → cần gap
+                        if (!hasMultipleLocations || sameLocation)
                         {
-                            hasEnoughGap = false;
-                            break;
+                            var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
+                            var slotStart = slot.MatchDate.Date.Add(slot.StartTime);
+                            var gapMinutes = (slotStart - usedMatchEnd).TotalMinutes;
+                            if (gapMinutes < minGapMinutes) // Cần ít nhất minGapMinutes phút nghỉ
+                            {
+                                hasEnoughGap = false;
+                                Console.WriteLine($"      ⚠️ Round 1: Slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} (Sân: {slot.Location ?? "N/A"}) không đủ gap {minGapMinutes} phút với match {usedMatch.MatchNumber} ({usedMatch.MatchDate:yyyy-MM-dd} {usedMatch.EndTime:hh\\:mm}, Sân: {usedMatch.Location ?? "N/A"}) - Gap: {gapMinutes} phút");
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            // Nếu có nhiều sân và 2 matches ở sân khác nhau → KHÔNG check gap (cho phép overlap)
+                            Console.WriteLine($"      ✅ Round 1: Cho phép overlap - Slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} (Sân: {slot.Location ?? "N/A"}) với match {usedMatch.MatchNumber} ({usedMatch.MatchDate:yyyy-MM-dd} {usedMatch.EndTime:hh\\:mm}, Sân: {usedMatch.Location ?? "N/A"}) - Khác sân");
                         }
                     }
                 }
                 if (!hasEnoughGap) continue;
                 
                 // Check conflict với lịch học của 2 lớp tham gia match này
-                if (!HasScheduleConflict(slot, team1, team2, schedulesByClassGroup))
+                if (!HasScheduleConflict(slot, team1, team2, schedulesByClassGroup, request.MinGapBetweenMatches))
                 {
                     selectedSlot = slot;
                     foundNonConflictSlot = true;
-                    slotIndex = j + 1;
-                    Console.WriteLine($"   ✅ Round 1 Match {matchCount + 1}: Chọn slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} ({slot.MatchDate.DayOfWeek}) - Không conflict");
+                    // Cập nhật số lần sử dụng sân này
+                    if (!string.IsNullOrEmpty(slot.Location) && locationUsageCount.ContainsKey(slot.Location))
+                    {
+                        locationUsageCount[slot.Location]++;
+                    }
+                    Console.WriteLine($"   ✅ Round 1 Match {matchCount + 1}: Chọn slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} ({slot.MatchDate.DayOfWeek}) - Sân: {slot.Location ?? "N/A"} - Không conflict");
                     break;
                 }
             }
             
-            // Bước 2: Nếu không tìm thấy slot rảnh, chọn slot đầu tiên còn lại theo thứ tự thời gian
+            // Bước 2: Nếu không tìm thấy slot rảnh, chọn slot đầu tiên còn lại
             // QUAN TRỌNG: Vẫn phải tuân theo ràng buộc thời gian và thời gian nghỉ
             // QUAN TRỌNG: KHÔNG được bỏ qua slots ngày Thứ 2, Thứ 3 nếu vẫn còn trận Round 1 chưa xếp
-            // Phải lấp đầy các slot sớm nhất có thể, không được nhảy cóc
+            // QUAN TRỌNG: Ưu tiên sân ít được sử dụng nhất để phân bổ đều
             if (selectedSlot == null)
             {
-                for (int j = slotIndex; j < sortedByTime.Count; j++)
+                var fallbackSlotsForMatch = sortedByTime
+                    .Where(s => !usedSlotsCopy.Contains(s))
+                    .OrderBy(s => {
+                        // Ưu tiên 1: Sân ít được sử dụng nhất (nhân với 1000000 để ưu tiên cao hơn thời gian)
+                        var locationPriority = int.MaxValue;
+                        if (!string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location))
+                        {
+                            locationPriority = locationUsageCount[s.Location] * 1000000;
+                        }
+                        // Ưu tiên 2: Ngày sớm nhất
+                        var datePriority = (s.MatchDate.Date - new DateTime(2000, 1, 1)).TotalDays;
+                        // Ưu tiên 3: Giờ sớm nhất
+                        var timePriority = s.StartTime.TotalMinutes;
+                        return locationPriority + datePriority + timePriority;
+                    })
+                    .ToList();
+                
+                for (int j = 0; j < fallbackSlotsForMatch.Count; j++)
                 {
-                    var slot = sortedByTime[j];
-                    if (usedSlotsCopy.Contains(slot)) continue;
+                    var slot = fallbackSlotsForMatch[j];
+                    var originalIndex = sortedByTime.IndexOf(slot);
+                    if (originalIndex >= 0) slotIndex = originalIndex + 1;
                     
-                    // Kiểm tra ràng buộc thời gian
-                    if (minStartTime.HasValue)
-                    {
-                        var slotStartTotalMinutes = slot.StartTime.Hours * 60 + slot.StartTime.Minutes;
-                        var minStartTotalMinutes = minStartTime.Value.Hours * 60 + minStartTime.Value.Minutes;
-                        if (slotStartTotalMinutes < minStartTotalMinutes) continue;
-                    }
-                    if (maxEndTime.HasValue)
-                    {
-                        var slotEndTotalMinutes = slot.EndTime.Hours * 60 + slot.EndTime.Minutes;
-                        var maxEndTotalMinutes = maxEndTime.Value.Hours * 60 + maxEndTime.Value.Minutes;
-                        if (slotEndTotalMinutes > maxEndTotalMinutes) continue;
-                    }
+                    // QUAN TRỌNG: Không còn ràng buộc thời gian cứng nhắc
+                    // Chỉ check conflict với lịch học thực tế (HasScheduleConflict)
+                    // Lớp buổi chiều có thể đá ngoài giờ học nếu không conflict
                     
-                    // Đảm bảo thời gian nghỉ 30 phút
+                    // QUAN TRỌNG: Đảm bảo thời gian nghỉ (chỉ nếu cùng sân) - sử dụng request.MinGapBetweenMatches
+                    // Nếu có 2 sân trở lên, cho phép overlap thời gian nếu matches ở sân khác nhau
                     bool hasEnoughGap = true;
+                    var hasMultipleLocations = request.AvailableLocations != null && request.AvailableLocations.Count >= 2;
+                    var minGapMinutes = request.MinGapBetweenMatches;
+                    
                     foreach (var usedMatch in matches.Where(m => m.MatchDate.HasValue && m.EndTime.HasValue))
                     {
                         if (usedMatch.MatchDate.Value.Date == slot.MatchDate.Date)
                         {
-                            var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
-                            var slotStart = slot.MatchDate.Date.Add(slot.StartTime);
-                            var gapMinutes = (slotStart - usedMatchEnd).TotalMinutes;
-                            if (gapMinutes < 30)
+                            // QUAN TRỌNG: Nếu có nhiều sân và 2 matches ở sân khác nhau, cho phép overlap
+                            bool sameLocation = !string.IsNullOrEmpty(slot.Location) && 
+                                              !string.IsNullOrEmpty(usedMatch.Location) && 
+                                              slot.Location == usedMatch.Location;
+                            
+                            // Chỉ check gap nếu không có nhiều sân hoặc cùng sân
+                            if (!hasMultipleLocations || sameLocation)
                             {
-                                hasEnoughGap = false;
-                                break;
+                                var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
+                                var slotStart = slot.MatchDate.Date.Add(slot.StartTime);
+                                var gapMinutes = (slotStart - usedMatchEnd).TotalMinutes;
+                                if (gapMinutes < minGapMinutes)
+                                {
+                                    hasEnoughGap = false;
+                        break;
+                    }
                             }
                         }
                     }
                     if (!hasEnoughGap) continue;
                     
                     selectedSlot = slot;
-                    slotIndex = j + 1;
-                    Console.WriteLine($"   ⚠️ Round 1 Match {matchCount + 1}: Không tìm thấy slot rảnh, sử dụng slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} ({slot.MatchDate.DayOfWeek}) - Có thể conflict với lịch học");
+                    // Cập nhật số lần sử dụng sân này
+                    if (!string.IsNullOrEmpty(slot.Location) && locationUsageCount.ContainsKey(slot.Location))
+                    {
+                        locationUsageCount[slot.Location]++;
+                    }
+                    Console.WriteLine($"   ⚠️ Round 1 Match {matchCount + 1}: Không tìm thấy slot rảnh, sử dụng slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} ({slot.MatchDate.DayOfWeek}) - Sân: {slot.Location ?? "N/A"} - Có thể conflict với lịch học");
                     break;
                 }
             }
@@ -1530,18 +1796,11 @@ public class ORToolsScheduler
             var roundMatches = new List<AiActivityMatch>();
             
             // QUAN TRỌNG: Xác định round này có phải Bán kết hoặc Chung kết không
-            // Bán kết và Chung kết chỉ dùng slots cuối tuần (Thứ 7, Chủ Nhật)
+            // Bán kết và Chung kết có thể đá linh hoạt miễn là giờ rảnh chung (không conflict với lịch học)
             bool isSemifinalOrFinal = roundName.Contains("Bán kết") || roundName.Contains("Chung kết");
             
             Console.WriteLine($"   🔄 {branchName}: Tạo Round {round} ({roundName}) - Số participants: {currentRoundParticipants.Count}");
-            if (isSemifinalOrFinal)
-            {
-                Console.WriteLine($"   📅 Round {round} ({roundName}): Chỉ sử dụng slots cuối tuần (Thứ 7, Chủ Nhật)");
-            }
-            else
-            {
-                Console.WriteLine($"   📅 Round {round} ({roundName}): Ưu tiên slots ngày thường (Thứ 2 - Thứ 6), fallback cuối tuần nếu không có");
-            }
+            Console.WriteLine($"   📅 Round {round} ({roundName}): Ưu tiên slot gần nhất thỏa mãn trước (không phân biệt ngày thường hay cuối tuần)");
             
             // Tạo matches cho round này
             var nextRoundParticipants = new List<(int? TeamId, int? PreviousMatchId, bool IsBye)>();
@@ -1550,49 +1809,15 @@ public class ORToolsScheduler
             var allAvailableSlotsForRound = preferredSlots.Where(s => !usedSlotsCopy.Contains(s)).ToList();
             allAvailableSlotsForRound.AddRange(fallbackSlots.Where(s => !usedSlotsCopy.Contains(s)));
             
-            // QUAN TRỌNG: Lọc slots theo loại round
-            // Bán kết và Chung kết: chỉ dùng slots cuối tuần (Thứ 7, Chủ Nhật)
-            // Các rounds khác: ưu tiên slots ngày thường, nhưng có thể dùng cuối tuần nếu không có
-            if (isSemifinalOrFinal)
-            {
-                allAvailableSlotsForRound = allAvailableSlotsForRound
-                    .Where(s => {
-                        var dayOfWeek = s.MatchDate.DayOfWeek;
-                        return dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday;
-                    })
-                    .ToList();
-                Console.WriteLine($"   📅 Round {round}: Đã lọc {allAvailableSlotsForRound.Count} slots cuối tuần");
-            }
-            else
-            {
-                // Ưu tiên slots ngày thường, nhưng vẫn giữ slots cuối tuần làm fallback
-                var weekdaySlotsForRound = allAvailableSlotsForRound
-                    .Where(s => {
-                        var dayOfWeek = s.MatchDate.DayOfWeek;
-                        return dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday;
-                    })
-                    .ToList();
-                
-                var weekendSlotsForRound = allAvailableSlotsForRound
-                    .Where(s => {
-                        var dayOfWeek = s.MatchDate.DayOfWeek;
-                        return dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday;
-                    })
-                    .ToList();
-                
-                // Nếu có slots ngày thường, chỉ dùng slots ngày thường
-                // Nếu không có, dùng slots cuối tuần
-                if (weekdaySlotsForRound.Any())
-                {
-                    allAvailableSlotsForRound = weekdaySlotsForRound;
-                    Console.WriteLine($"   📅 Round {round}: Ưu tiên {allAvailableSlotsForRound.Count} slots ngày thường (bỏ qua {weekendSlotsForRound.Count} slots cuối tuần)");
-                }
-                else
-                {
-                    allAvailableSlotsForRound = weekendSlotsForRound;
-                    Console.WriteLine($"   ⚠️ Round {round}: Không có slots ngày thường, sử dụng {allAvailableSlotsForRound.Count} slots cuối tuần");
-                }
-            }
+            // QUAN TRỌNG: Sắp xếp tất cả slots theo thời gian (ngày gần nhất, giờ sớm nhất)
+            // Ưu tiên: MatchDate (sớm nhất) -> StartTime (sớm nhất) -> Preferred slots trước
+            allAvailableSlotsForRound = allAvailableSlotsForRound
+                .OrderBy(s => s.MatchDate)
+                .ThenBy(s => s.StartTime)
+                .ThenBy(s => preferredSlots.Contains(s) ? 0 : 1) // Preferred slots trước
+                .ToList();
+            
+            Console.WriteLine($"   📅 Round {round}: Tổng số slots: {allAvailableSlotsForRound.Count} (sắp xếp theo thời gian)");
             
             // QUAN TRỌNG: Đảm bảo round sau diễn ra sau round trước
             // Tìm thời gian muộn nhất của các matches ở round trước
@@ -1602,27 +1827,19 @@ public class ORToolsScheduler
                 .DefaultIfEmpty(DateTime.MinValue)
                 .Max();
             
-            // Lọc slots: chỉ lấy slots sau thời gian muộn nhất của round trước + 30 phút nghỉ
-            // QUAN TRỌNG: Phải đảm bảo thời gian nghỉ 30 phút giữa các trận
+            // Lọc slots: chỉ lấy slots sau thời gian muộn nhất của round trước + minGapBetweenMatches phút nghỉ
+            // QUAN TRỌNG: Phải đảm bảo thời gian nghỉ giữa các trận (từ request.MinGapBetweenMatches)
+            var minGapMinutes = request.MinGapBetweenMatches; // Khai báo ở đây để dùng cho cả method
+            var minGapMinutesForLambda = minGapMinutes; // Capture vào lambda
+            var latestPreviousMatchTimeForLambda = latestPreviousMatchTime; // Capture vào lambda
             var validSlotsForRound = allAvailableSlotsForRound
                 .Where(s => {
                     var slotStartTime = s.MatchDate.Date.Add(s.StartTime);
-                    // Phải sau round trước + 30 phút nghỉ
-                    if (slotStartTime <= latestPreviousMatchTime.AddMinutes(30)) return false;
+                    // Phải sau round trước + minGapBetweenMatches phút nghỉ
+                    if (slotStartTime <= latestPreviousMatchTimeForLambda.AddMinutes(minGapMinutesForLambda)) return false;
                     
-                    // Kiểm tra ràng buộc thời gian (minStartTime, maxEndTime)
-                    if (minStartTime.HasValue)
-                    {
-                        var slotStartTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
-                        var minStartTotalMinutes = minStartTime.Value.Hours * 60 + minStartTime.Value.Minutes;
-                        if (slotStartTotalMinutes < minStartTotalMinutes) return false;
-                    }
-                    if (maxEndTime.HasValue)
-                    {
-                        var slotEndTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
-                        var maxEndTotalMinutes = maxEndTime.Value.Hours * 60 + maxEndTime.Value.Minutes;
-                        if (slotEndTotalMinutes > maxEndTotalMinutes) return false;
-                    }
+                    // QUAN TRỌNG: Không còn ràng buộc thời gian cứng nhắc
+                    // Chỉ check conflict với lịch học thực tế khi tạo match cụ thể
                     
                     return true;
                 })
@@ -1649,8 +1866,7 @@ public class ORToolsScheduler
             }
             
             // QUAN TRỌNG: Sắp xếp slots theo thứ tự thời gian
-            // Bán kết và Chung kết: ưu tiên slots cuối tuần sớm nhất
-            // Các rounds khác: ưu tiên slots ngày thường sớm nhất
+            // Tất cả các rounds: ưu tiên slot gần nhất thỏa mãn trước (không phân biệt ngày thường hay cuối tuần)
             var sortedSlotsForRound = validSlotsForRound
                 .OrderBy(s => s.MatchDate) // Ngày sớm nhất trước
                 .ThenBy(s => s.StartTime) // Giờ sớm nhất trước
@@ -1736,56 +1952,76 @@ public class ORToolsScheduler
                 
                 // Bước 1: Tìm slot không conflict với lịch học của các lớp có thể tham gia (ưu tiên)
                 // QUAN TRỌNG: Slot PHẢI sau thời gian kết thúc của previous matches (nghiêm ngặt, không fallback)
-                // QUAN TRỌNG: Phải lấp đầy slots theo thứ tự thời gian, không được bỏ qua
-                for (int j = slotIdx; j < sortedSlotsForRound.Count; j++)
+                // QUAN TRỌNG: Ưu tiên sân ít được sử dụng nhất để phân bổ đều
+                var availableSlotsForRoundMatch = sortedSlotsForRound
+                    .Where(s => !usedSlotsCopy.Contains(s))
+                    .OrderBy(s => {
+                        // Ưu tiên 1: Sân ít được sử dụng nhất (nhân với 1000000 để ưu tiên cao hơn thời gian)
+                        var locationPriority = int.MaxValue;
+                        if (!string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location))
+                        {
+                            locationPriority = locationUsageCount[s.Location] * 1000000;
+                        }
+                        // Ưu tiên 2: Ngày sớm nhất
+                        var datePriority = (s.MatchDate.Date - new DateTime(2000, 1, 1)).TotalDays;
+                        // Ưu tiên 3: Giờ sớm nhất
+                        var timePriority = s.StartTime.TotalMinutes;
+                        return locationPriority + datePriority + timePriority;
+                    })
+                    .ToList();
+                
+                for (int j = 0; j < availableSlotsForRoundMatch.Count; j++)
                 {
-                    var slot = sortedSlotsForRound[j];
-                    if (usedSlotsCopy.Contains(slot)) continue;
+                    var slot = availableSlotsForRoundMatch[j];
+                    var originalIndex = sortedSlotsForRound.IndexOf(slot);
+                    if (originalIndex >= 0) slotIdx = originalIndex + 1;
                     
                     var slotStartTime = slot.MatchDate.Date.Add(slot.StartTime);
                     
-                    // QUAN TRỌNG: Kiểm tra ràng buộc thời gian (minStartTime, maxEndTime)
-                    if (minStartTime.HasValue)
+                    // QUAN TRỌNG: Không còn ràng buộc thời gian cứng nhắc
+                    // Chỉ check conflict với lịch học thực tế (HasScheduleConflict)
+                    
+                    // NGHIÊM NGẶT: Phải sau round trước + minGapBetweenMatches phút nghỉ
+                    if (slotStartTime <= latestPreviousMatchTime.AddMinutes(minGapMinutes))
                     {
-                        var slotStartTotalMinutes = slot.StartTime.Hours * 60 + slot.StartTime.Minutes;
-                        var minStartTotalMinutes = minStartTime.Value.Hours * 60 + minStartTime.Value.Minutes;
-                        if (slotStartTotalMinutes < minStartTotalMinutes) continue;
-                    }
-                    if (maxEndTime.HasValue)
-                    {
-                        var slotEndTotalMinutes = slot.EndTime.Hours * 60 + slot.EndTime.Minutes;
-                        var maxEndTotalMinutes = maxEndTime.Value.Hours * 60 + maxEndTime.Value.Minutes;
-                        if (slotEndTotalMinutes > maxEndTotalMinutes) continue;
+                        continue; // Bỏ qua slot này vì không đủ minGapBetweenMatches phút nghỉ sau round trước
                     }
                     
-                    // NGHIÊM NGẶT: Phải sau round trước + 30 phút nghỉ
-                    if (slotStartTime <= latestPreviousMatchTime.AddMinutes(30))
-                    {
-                        continue; // Bỏ qua slot này vì không đủ 30 phút nghỉ sau round trước
-                    }
-                    
-                    // NGHIÊM NGẶT: Phải sau previous matches (nếu có) + 30 phút nghỉ
+                    // NGHIÊM NGẶT: Phải sau previous matches (nếu có) + minGapBetweenMatches phút nghỉ
                     if (latestPreviousMatchEndTime.HasValue)
                     {
-                        if (slotStartTime <= latestPreviousMatchEndTime.Value.AddMinutes(30))
+                        if (slotStartTime <= latestPreviousMatchEndTime.Value.AddMinutes(minGapMinutes))
                         {
-                            continue; // Bỏ qua slot này vì không đủ 30 phút nghỉ sau previous match
+                            continue; // Bỏ qua slot này vì không đủ minGapBetweenMatches phút nghỉ sau previous match
                         }
                     }
                     
-                    // QUAN TRỌNG: Đảm bảo thời gian nghỉ 30 phút với tất cả matches đã tạo trong cùng ngày
+                    // QUAN TRỌNG: Đảm bảo thời gian nghỉ với tất cả matches đã tạo trong cùng ngày (chỉ nếu cùng sân)
+                    // Nếu có 2 sân trở lên, cho phép overlap thời gian nếu matches ở sân khác nhau
                     bool hasEnoughGap = true;
+                    var hasMultipleLocations = request.AvailableLocations != null && request.AvailableLocations.Count >= 2;
+                    
                     foreach (var usedMatch in matches.Where(m => m.MatchDate.HasValue && m.EndTime.HasValue))
                     {
                         if (usedMatch.MatchDate.Value.Date == slot.MatchDate.Date)
                         {
-                            var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
-                            var gapMinutes = (slotStartTime - usedMatchEnd).TotalMinutes;
-                            if (gapMinutes < 30) // Cần ít nhất 30 phút nghỉ
+                            // QUAN TRỌNG: Nếu có nhiều sân và 2 matches ở sân khác nhau, cho phép overlap
+                            bool sameLocation = !string.IsNullOrEmpty(slot.Location) && 
+                                              !string.IsNullOrEmpty(usedMatch.Location) && 
+                                              slot.Location == usedMatch.Location;
+                            
+                            // Chỉ check gap nếu không có nhiều sân hoặc cùng sân
+                            if (!hasMultipleLocations || sameLocation)
                             {
-                                hasEnoughGap = false;
-                                break;
-                            }
+                                var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
+                                var gapMinutes = (slotStartTime - usedMatchEnd).TotalMinutes;
+                                if (gapMinutes < minGapMinutes) // Cần ít nhất minGapMinutes phút nghỉ
+                                {
+                                    hasEnoughGap = false;
+                                    Console.WriteLine($"      ⚠️ Round {round}: Slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} (Sân: {slot.Location ?? "N/A"}) không đủ gap {minGapMinutes} phút với match {usedMatch.MatchNumber} ({usedMatch.MatchDate:yyyy-MM-dd} {usedMatch.EndTime:hh\\:mm}, Sân: {usedMatch.Location ?? "N/A"}) - Gap: {gapMinutes} phút");
+                                    break;
+                        }
+                    }
                         }
                     }
                     if (!hasEnoughGap) continue;
@@ -1795,7 +2031,7 @@ public class ORToolsScheduler
                     bool hasConflict = false;
                     foreach (var classGroupId in possibleClassGroupIds)
                     {
-                        if (HasScheduleConflict(slot, classGroupId, null, schedulesByClassGroup))
+                        if (HasScheduleConflict(slot, classGroupId, null, schedulesByClassGroup, request.MinGapBetweenMatches))
                         {
                             hasConflict = true;
                             break;
@@ -1806,73 +2042,108 @@ public class ORToolsScheduler
                     {
                         selectedSlot = slot;
                         foundNonConflictSlot = true;
-                        slotIdx = j + 1;
+                        // Cập nhật số lần sử dụng sân này
+                        if (!string.IsNullOrEmpty(slot.Location) && locationUsageCount.ContainsKey(slot.Location))
+                        {
+                            locationUsageCount[slot.Location]++;
+                        }
+                        Console.WriteLine($"   ✅ Round {round} Match {i + 1}: Chọn slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} ({slot.MatchDate.DayOfWeek}) - Sân: {slot.Location ?? "N/A"} - Không conflict");
                         break;
                     }
                 }
                 
-                // Bước 2: Nếu không tìm thấy slot rảnh, chọn slot đầu tiên còn lại theo thứ tự thời gian
+                // Bước 2: Nếu không tìm thấy slot rảnh, chọn slot đầu tiên còn lại
                 // (không bắt buộc tất cả lớp phải rảnh, nhưng vẫn ưu tiên slot rảnh)
                 // QUAN TRỌNG: Vẫn phải đảm bảo slot sau previous matches (nghiêm ngặt)
-                // QUAN TRỌNG: Phải lấp đầy slots theo thứ tự thời gian, không được bỏ qua
+                // QUAN TRỌNG: Ưu tiên sân ít được sử dụng nhất để phân bổ đều
                 if (selectedSlot == null)
                 {
-                    for (int j = slotIdx; j < sortedSlotsForRound.Count; j++)
+                    var fallbackSlotsForRoundMatch = sortedSlotsForRound
+                        .Where(s => !usedSlotsCopy.Contains(s))
+                        .OrderBy(s => {
+                            // Ưu tiên 1: Sân ít được sử dụng nhất (nhân với 1000000 để ưu tiên cao hơn thời gian)
+                            var locationPriority = int.MaxValue;
+                            if (!string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location))
+                            {
+                                locationPriority = locationUsageCount[s.Location] * 1000000;
+                            }
+                            // Ưu tiên 2: Ngày sớm nhất
+                            var datePriority = (s.MatchDate.Date - new DateTime(2000, 1, 1)).TotalDays;
+                            // Ưu tiên 3: Giờ sớm nhất
+                            var timePriority = s.StartTime.TotalMinutes;
+                            return locationPriority + datePriority + timePriority;
+                        })
+                        .ToList();
+                    
+                    for (int j = 0; j < fallbackSlotsForRoundMatch.Count; j++)
                     {
-                        var slot = sortedSlotsForRound[j];
-                        if (usedSlotsCopy.Contains(slot)) continue;
+                        var slot = fallbackSlotsForRoundMatch[j];
+                        var originalIndex = sortedSlotsForRound.IndexOf(slot);
+                        if (originalIndex >= 0) slotIdx = originalIndex + 1;
                         
                         var slotStartTime = slot.MatchDate.Date.Add(slot.StartTime);
                         
-                        // Kiểm tra ràng buộc thời gian
-                        if (minStartTime.HasValue)
+                        // QUAN TRỌNG: Không còn ràng buộc thời gian cứng nhắc
+                        // Chỉ check conflict với lịch học thực tế (HasScheduleConflict)
+                        
+                        // NGHIÊM NGẶT: Phải sau round trước + minGapBetweenMatches phút nghỉ
+                        // minGapMinutes đã được khai báo ở đầu vòng lặp round (dòng 1717)
+                        if (slotStartTime <= latestPreviousMatchTime.AddMinutes(minGapMinutes))
                         {
-                            var slotStartTotalMinutes = slot.StartTime.Hours * 60 + slot.StartTime.Minutes;
-                            var minStartTotalMinutes = minStartTime.Value.Hours * 60 + minStartTime.Value.Minutes;
-                            if (slotStartTotalMinutes < minStartTotalMinutes) continue;
-                        }
-                        if (maxEndTime.HasValue)
-                        {
-                            var slotEndTotalMinutes = slot.EndTime.Hours * 60 + slot.EndTime.Minutes;
-                            var maxEndTotalMinutes = maxEndTime.Value.Hours * 60 + maxEndTime.Value.Minutes;
-                            if (slotEndTotalMinutes > maxEndTotalMinutes) continue;
+                            continue; // Bỏ qua slot này vì không đủ minGapBetweenMatches phút nghỉ sau round trước
                         }
                         
-                        // NGHIÊM NGẶT: Phải sau round trước + 30 phút nghỉ
-                        if (slotStartTime <= latestPreviousMatchTime.AddMinutes(30))
-                        {
-                            continue; // Bỏ qua slot này vì không đủ 30 phút nghỉ sau round trước
-                        }
-                        
-                        // NGHIÊM NGẶT: Phải sau previous matches (nếu có) + 30 phút nghỉ
+                        // NGHIÊM NGẶT: Phải sau previous matches (nếu có) + minGapBetweenMatches phút nghỉ
                         if (latestPreviousMatchEndTime.HasValue)
                         {
-                            if (slotStartTime <= latestPreviousMatchEndTime.Value.AddMinutes(30))
+                            if (slotStartTime <= latestPreviousMatchEndTime.Value.AddMinutes(minGapMinutes))
                             {
-                                continue; // Bỏ qua slot này vì không đủ 30 phút nghỉ sau previous match
+                                continue; // Bỏ qua slot này vì không đủ minGapBetweenMatches phút nghỉ sau previous match
                             }
                         }
                         
-                        // Đảm bảo thời gian nghỉ 30 phút với tất cả matches đã tạo trong cùng ngày
+                        // QUAN TRỌNG: Đảm bảo thời gian nghỉ với tất cả matches đã tạo trong cùng ngày (chỉ nếu cùng sân)
+                        // Nếu có 2 sân trở lên, cho phép overlap thời gian nếu matches ở sân khác nhau
                         bool hasEnoughGap = true;
+                        var hasMultipleLocations = request.AvailableLocations != null && request.AvailableLocations.Count >= 2;
+                        
                         foreach (var usedMatch in matches.Where(m => m.MatchDate.HasValue && m.EndTime.HasValue))
                         {
                             if (usedMatch.MatchDate.Value.Date == slot.MatchDate.Date)
                             {
-                                var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
-                                var gapMinutes = (slotStartTime - usedMatchEnd).TotalMinutes;
-                                if (gapMinutes < 30)
+                                // QUAN TRỌNG: Nếu có nhiều sân và 2 matches ở sân khác nhau, cho phép overlap
+                                bool sameLocation = !string.IsNullOrEmpty(slot.Location) && 
+                                                  !string.IsNullOrEmpty(usedMatch.Location) && 
+                                                  slot.Location == usedMatch.Location;
+                                
+                                // Chỉ check gap nếu không có nhiều sân hoặc cùng sân
+                                if (!hasMultipleLocations || sameLocation)
                                 {
-                                    hasEnoughGap = false;
-                                    break;
+                                    var usedMatchEnd = usedMatch.MatchDate.Value.Date.Add(usedMatch.EndTime.Value);
+                                    var gapMinutes = (slotStartTime - usedMatchEnd).TotalMinutes;
+                                    if (gapMinutes < minGapMinutes)
+                                    {
+                                        hasEnoughGap = false;
+                                        Console.WriteLine($"      ⚠️ Round {round} (fallback): Slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} (Sân: {slot.Location ?? "N/A"}) không đủ gap {minGapMinutes} phút với match {usedMatch.MatchNumber} ({usedMatch.MatchDate:yyyy-MM-dd} {usedMatch.EndTime:hh\\:mm}, Sân: {usedMatch.Location ?? "N/A"}) - Gap: {gapMinutes} phút");
+                                        break;
+                                    }
                                 }
+                                else
+                                {
+                                    // Nếu có nhiều sân và 2 matches ở sân khác nhau → KHÔNG check gap (cho phép overlap)
+                                    Console.WriteLine($"      ✅ Round {round} (fallback): Cho phép overlap - Slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} (Sân: {slot.Location ?? "N/A"}) với match {usedMatch.MatchNumber} ({usedMatch.MatchDate:yyyy-MM-dd} {usedMatch.EndTime:hh\\:mm}, Sân: {usedMatch.Location ?? "N/A"}) - Khác sân");
                             }
+                        }
                         }
                         if (!hasEnoughGap) continue;
                         
                         selectedSlot = slot;
-                        slotIdx = j + 1;
-                        Console.WriteLine($"   ⚠️ Round {round} Match {i + 1}: Không tìm thấy slot rảnh cho tất cả lớp có thể tham gia, sử dụng slot có thể conflict");
+                        // Cập nhật số lần sử dụng sân này
+                        if (!string.IsNullOrEmpty(slot.Location) && locationUsageCount.ContainsKey(slot.Location))
+                        {
+                            locationUsageCount[slot.Location]++;
+                        }
+                        Console.WriteLine($"   ⚠️ Round {round} Match {i + 1}: Không tìm thấy slot rảnh cho tất cả lớp có thể tham gia, sử dụng slot {slot.MatchDate:yyyy-MM-dd} {slot.StartTime:hh\\:mm} - Sân: {slot.Location ?? "N/A"} - Có thể conflict");
                         break;
                     }
                 }
@@ -1975,7 +2246,9 @@ public class ORToolsScheduler
         List<AiActivityMatch> afternoonBranchMatches,
         List<ScheduleSlot> allSlots,
         ref int matchNumber,
-        ref HashSet<ScheduleSlot> usedSlots)
+        ref HashSet<ScheduleSlot> usedSlots,
+        Dictionary<int, List<ClassGroupSchedule>>? schedulesByClassGroup,
+        Dictionary<string, int> locationUsageCount)
     {
         var matches = new List<AiActivityMatch>();
         bool requiresWeekend = false;
@@ -2087,100 +2360,263 @@ public class ORToolsScheduler
         if (afternoonWinnerEndTime.HasValue)
             Console.WriteLine($"      - Afternoon winner kết thúc: {afternoonWinnerEndTime.Value:yyyy-MM-dd HH:mm}");
         
-        // QUAN TRỌNG: Trận chung kết giữa Nhóm A (đá chiều) vs Nhóm B (đá sáng)
-        // Nhóm A chỉ đá được chiều (13:00-18:00), Nhóm B chỉ đá được sáng (07:00-11:30)
-        // KHÔNG có crossover slots, nên cần tìm slot trong ngày thứ 7 hoặc chủ nhật
-        // để cả 2 nhóm đều có thể tham gia (không bị ràng buộc bởi lịch học)
+        // QUAN TRỌNG: Trận chung kết có thể đá linh hoạt miễn là giờ rảnh chung
+        // Không bắt buộc phải đá cuối tuần, chỉ cần không conflict với lịch học của cả 2 đội
+        // Ưu tiên slot gần nhất thỏa mãn trước (không phân biệt ngày thường hay cuối tuần)
+        
+        // QUAN TRỌNG: Lấy danh sách tất cả các lớp có thể tham gia chung kết
+        // (tất cả các lớp trong 2 nhánh, vì chưa biết chính xác winner là lớp nào)
+        var allPossibleClassGroupIds = new HashSet<int>();
+        foreach (var match in morningBranchMatches)
+        {
+            if (match.ClassGroup1Id.HasValue) allPossibleClassGroupIds.Add(match.ClassGroup1Id.Value);
+            if (match.ClassGroup2Id.HasValue) allPossibleClassGroupIds.Add(match.ClassGroup2Id.Value);
+        }
+        foreach (var match in afternoonBranchMatches)
+        {
+            if (match.ClassGroup1Id.HasValue) allPossibleClassGroupIds.Add(match.ClassGroup1Id.Value);
+            if (match.ClassGroup2Id.HasValue) allPossibleClassGroupIds.Add(match.ClassGroup2Id.Value);
+        }
+        
+        Console.WriteLine($"   🔍 Chung kết: Có {allPossibleClassGroupIds.Count} lớp có thể tham gia (từ 2 nhánh)");
         
         // Tìm slot phù hợp cho chung kết: 
         // 1. Phải sau tất cả các trận khác VÀ sau cả 2 branch winners
-        // 2. Phải là ngày thứ 7 hoặc chủ nhật (để cả 2 nhóm đều rảnh)
-        // 3. Hoặc nếu không có ngày cuối tuần, yêu cầu thêm ngày cuối tuần
+        // 2. Ưu tiên slot gần nhất thỏa mãn trước (không phân biệt ngày thường hay cuối tuần)
+        // 3. QUAN TRỌNG: Phải không conflict với lịch học của TẤT CẢ các lớp có thể tham gia
+        
+        // Debug: Log tất cả slots còn lại
+        var allRemainingSlots = allSlots.Where(s => !usedSlotsCopy.Contains(s)).ToList();
+        Console.WriteLine($"   🔍 Chung kết: Tổng số slots còn lại: {allRemainingSlots.Count}");
+        if (allRemainingSlots.Any())
+        {
+            var firstSlot = allRemainingSlots.OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).First();
+            var lastSlot = allRemainingSlots.OrderByDescending(s => s.MatchDate).ThenByDescending(s => s.StartTime).First();
+            Console.WriteLine($"   🔍 Chung kết: Slot đầu tiên còn lại = {firstSlot.MatchDate:yyyy-MM-dd} {firstSlot.StartTime:hh\\:mm}");
+            Console.WriteLine($"   🔍 Chung kết: Slot cuối cùng còn lại = {lastSlot.MatchDate:yyyy-MM-dd} {lastSlot.StartTime:hh\\:mm}");
+        }
+        
+        // Capture các biến vào lambda
+        var minGapMinutes = request.MinGapBetweenMatches;
+        var finalLatestTimeForLambda = finalLatestTime;
+        var morningWinnerEndTimeForLambda = morningWinnerEndTime;
+        var afternoonWinnerEndTimeForLambda = afternoonWinnerEndTime;
+        
         var availableSlotsAfter = allSlots
             .Where(s => !usedSlotsCopy.Contains(s))
             .Where(s => {
                 var slotStartTime = s.MatchDate.Date.Add(s.StartTime);
-                // Phải sau tất cả matches + 30 phút nghỉ
-                if (slotStartTime <= finalLatestTime.AddMinutes(30)) return false;
-                // Phải sau morning winner (nếu có) + 30 phút nghỉ
-                if (morningWinnerEndTime.HasValue && slotStartTime <= morningWinnerEndTime.Value.AddMinutes(30)) return false;
-                // Phải sau afternoon winner (nếu có) + 30 phút nghỉ
-                if (afternoonWinnerEndTime.HasValue && slotStartTime <= afternoonWinnerEndTime.Value.AddMinutes(30)) return false;
                 
-                // QUAN TRỌNG: Ưu tiên ngày thứ 7, chủ nhật (để cả 2 nhóm đều rảnh)
-                var dayOfWeek = s.MatchDate.DayOfWeek;
-                if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+                // Phải sau tất cả matches + minGapBetweenMatches phút nghỉ
+                if (slotStartTime <= finalLatestTimeForLambda.AddMinutes(minGapMinutes))
                 {
-                    // Ngày cuối tuần: có thể đá bất kỳ giờ nào (07:00-18:00, trừ khung giờ cấm 11:30-13:00)
-                    var slotStartTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
-                    var slotEndTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
-                    var forbiddenStartMinutes = 11 * 60 + 30; // 11:30
-                    var forbiddenEndMinutes = 13 * 60; // 13:00
-                    
-                    // Không được overlap với khung giờ cấm
-                    if (slotStartTotalMinutes < forbiddenEndMinutes && slotEndTotalMinutes > forbiddenStartMinutes)
+                    return false; // Quá sớm
+                }
+                
+                // Phải sau morning winner (nếu có) + minGapBetweenMatches phút nghỉ
+                if (morningWinnerEndTimeForLambda.HasValue && slotStartTime <= morningWinnerEndTimeForLambda.Value.AddMinutes(minGapMinutes))
+                {
+                    return false; // Quá sớm
+                }
+                
+                // Phải sau afternoon winner (nếu có) + minGapBetweenMatches phút nghỉ
+                if (afternoonWinnerEndTimeForLambda.HasValue && slotStartTime <= afternoonWinnerEndTimeForLambda.Value.AddMinutes(minGapMinutes))
+                {
+                    return false; // Quá sớm
+                }
+                
+                // Kiểm tra khung giờ cấm (11:30-13:00)
+                var slotStartTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
+                var slotEndTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
+                var forbiddenStartMinutes = 11 * 60 + 30; // 11:30
+                var forbiddenEndMinutes = 13 * 60; // 13:00
+                
+                // Không được overlap với khung giờ cấm
+                if (slotStartTotalMinutes < forbiddenEndMinutes && slotEndTotalMinutes > forbiddenStartMinutes)
+                {
+                    return false; // Trùng khung giờ cấm
+                }
+                
+                // QUAN TRỌNG: Sử dụng PreferredStartTime và PreferredEndTime từ request
+                var minStartTime = request.PreferredStartTime ?? TimeSpan.FromHours(7);
+                var maxEndTime = request.PreferredEndTime ?? TimeSpan.FromHours(18);
+                var minStartTotalMinutes = minStartTime.Hours * 60 + minStartTime.Minutes;
+                var maxEndTotalMinutes = maxEndTime.Hours * 60 + maxEndTime.Minutes;
+                
+                // Phải bắt đầu từ PreferredStartTime trở đi
+                if (slotStartTotalMinutes < minStartTotalMinutes)
+                {
+                    return false; // Quá sớm (trước PreferredStartTime)
+                }
+                
+                // Phải kết thúc trước PreferredEndTime
+                if (slotEndTotalMinutes > maxEndTotalMinutes)
+                {
+                    return false; // Quá muộn (sau PreferredEndTime)
+                }
+                
+                // QUAN TRỌNG: Check conflict với lịch học của TẤT CẢ các lớp có thể tham gia chung kết
+                // Chung kết cần giờ rảnh chung của tất cả các lớp có thể tham gia
+                // LƯU Ý: Nếu check quá strict (tất cả 8 lớp), có thể không tìm được slot
+                // Giải pháp: Chỉ check conflict với các lớp thực sự có thể tham gia (từ 2 nhánh)
+                // Nhưng vì chưa biết chính xác winner, nên check với tất cả các lớp có thể tham gia
+                if (schedulesByClassGroup != null && allPossibleClassGroupIds.Any())
+                {
+                    // Check conflict với từng lớp có thể tham gia
+                    foreach (var classGroupId in allPossibleClassGroupIds)
                     {
-                        return false;
-                    }
-                    
-                    // Phải trong khoảng 07:00-18:00
-                    if (slotStartTotalMinutes >= 7 * 60 && slotEndTotalMinutes <= 18 * 60)
-                    {
-                        return true;
+                        if (HasScheduleConflict(s, classGroupId, null, schedulesByClassGroup, minGapMinutes))
+                        {
+                            return false; // Conflict với lịch học của lớp này
+                        }
                     }
                 }
                 
-                return false; // Chỉ chấp nhận ngày cuối tuần
+                return true; // Không conflict với bất kỳ lớp nào
             })
             .ToList();
+        
+        Console.WriteLine($"   🔍 Chung kết: Sau filter tất cả điều kiện: {availableSlotsAfter.Count} slots");
+        if (availableSlotsAfter.Any())
+        {
+            var firstAvailable = availableSlotsAfter.OrderBy(s => s.MatchDate).ThenBy(s => s.StartTime).First();
+            Console.WriteLine($"   🔍 Chung kết: Slot đầu tiên phù hợp = {firstAvailable.MatchDate:yyyy-MM-dd} {firstAvailable.StartTime:hh\\:mm} - Sân: {firstAvailable.Location ?? "N/A"}");
+            }
+            else
+            {
+            Console.WriteLine($"   ⚠️ Chung kết: KHÔNG TÌM ĐƯỢC slot nào phù hợp!");
+            Console.WriteLine($"      - Có thể do: Tất cả slots đều trước {finalLatestTime.AddMinutes(minGapMinutes):yyyy-MM-dd HH:mm}");
+            Console.WriteLine($"      - Hoặc: Tất cả slots đều conflict với lịch học của {allPossibleClassGroupIds.Count} lớp");
+            
+            // QUAN TRỌNG: Nếu không tìm được slot với tất cả các lớp, thử chỉ check với 2 lớp có khả năng cao nhất
+            // (các lớp trong Round 2 của mỗi nhánh - có khả năng cao nhất vào chung kết)
+            var likelyClassGroupIds = new HashSet<int>();
+            if (morningBranchWinner != null)
+            {
+                if (morningBranchWinner.ClassGroup1Id.HasValue) likelyClassGroupIds.Add(morningBranchWinner.ClassGroup1Id.Value);
+                if (morningBranchWinner.ClassGroup2Id.HasValue) likelyClassGroupIds.Add(morningBranchWinner.ClassGroup2Id.Value);
+            }
+            if (afternoonBranchWinner != null)
+            {
+                if (afternoonBranchWinner.ClassGroup1Id.HasValue) likelyClassGroupIds.Add(afternoonBranchWinner.ClassGroup1Id.Value);
+                if (afternoonBranchWinner.ClassGroup2Id.HasValue) likelyClassGroupIds.Add(afternoonBranchWinner.ClassGroup2Id.Value);
+            }
+            
+            if (likelyClassGroupIds.Any() && likelyClassGroupIds.Count < allPossibleClassGroupIds.Count)
+            {
+                Console.WriteLine($"   🔄 Chung kết: Thử lại với chỉ {likelyClassGroupIds.Count} lớp có khả năng cao nhất (từ Round 2)");
+                
+                // Thử lại với chỉ các lớp có khả năng cao nhất
+                var relaxedSlots = allSlots
+                .Where(s => !usedSlotsCopy.Contains(s))
+                .Where(s => {
+                    var slotStartTime = s.MatchDate.Date.Add(s.StartTime);
+                        if (slotStartTime <= finalLatestTimeForLambda.AddMinutes(minGapMinutes)) return false;
+                        if (morningWinnerEndTimeForLambda.HasValue && slotStartTime <= morningWinnerEndTimeForLambda.Value.AddMinutes(minGapMinutes)) return false;
+                        if (afternoonWinnerEndTimeForLambda.HasValue && slotStartTime <= afternoonWinnerEndTimeForLambda.Value.AddMinutes(minGapMinutes)) return false;
+                        
+                        var slotStartTotalMinutes = s.StartTime.Hours * 60 + s.StartTime.Minutes;
+                        var slotEndTotalMinutes = s.EndTime.Hours * 60 + s.EndTime.Minutes;
+                        var forbiddenStartMinutes = 11 * 60 + 30;
+                        var forbiddenEndMinutes = 13 * 60;
+                        
+                        if (slotStartTotalMinutes < forbiddenEndMinutes && slotEndTotalMinutes > forbiddenStartMinutes) return false;
+                        // QUAN TRỌNG: Loại bỏ giới hạn cứng 18h - chỉ cần bắt đầu từ 07:00 trở đi
+                        if (slotStartTotalMinutes < 7 * 60) return false; // Quá sớm (trước 07:00)
+                        // Không giới hạn giờ kết thúc - cho phép đá buổi tối
+                        
+                        // Chỉ check conflict với các lớp có khả năng cao nhất
+                        if (schedulesByClassGroup != null && likelyClassGroupIds.Any())
+                        {
+                            foreach (var classGroupId in likelyClassGroupIds)
+                            {
+                                if (HasScheduleConflict(s, classGroupId, null, schedulesByClassGroup, minGapMinutes))
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                        
+                    return true;
+                })
+                .ToList();
+            
+                if (relaxedSlots.Any())
+                {
+                    Console.WriteLine($"   ✅ Chung kết: Tìm thấy {relaxedSlots.Count} slots với logic linh hoạt hơn!");
+                    // QUAN TRỌNG: Ưu tiên sân ít được sử dụng nhất để phân bổ đều
+                    availableSlotsAfter = relaxedSlots
+                        .OrderBy(s => {
+                            // Ưu tiên 1: Sân ít được sử dụng nhất (nhân với 1000000 để ưu tiên cao hơn thời gian)
+                            var locationPriority = int.MaxValue;
+                            if (!string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location))
+            {
+                                locationPriority = locationUsageCount[s.Location] * 1000000;
+                            }
+                            // Ưu tiên 2: Ngày sớm nhất
+                            var datePriority = (s.MatchDate.Date - new DateTime(2000, 1, 1)).TotalDays;
+                            // Ưu tiên 3: Giờ sớm nhất
+                            var timePriority = s.StartTime.TotalMinutes;
+                            return locationPriority + datePriority + timePriority;
+                        })
+                        .ToList();
+                }
+            }
+        }
+        
+        // Sắp xếp tất cả slots theo thời gian (ngày gần nhất, giờ sớm nhất)
+        // Ưu tiên: MatchDate (sớm nhất) -> StartTime (sớm nhất)
+        availableSlotsAfter = availableSlotsAfter
+            .OrderBy(s => s.MatchDate)
+            .ThenBy(s => s.StartTime)
+            .ToList();
+        
+        Console.WriteLine($"   📅 Chung kết: Tìm thấy {availableSlotsAfter.Count} slots (sắp xếp theo thời gian, không phân biệt ngày thường hay cuối tuần)");
         
         ScheduleSlot? selectedSlot = null;
         
         if (availableSlotsAfter.Any())
         {
-            // Chọn slot MUỘN NHẤT sau tất cả matches (không phải sớm nhất)
+            // Chọn slot SỚM NHẤT sau tất cả matches (để kết thúc giải sớm hơn)
+            // QUAN TRỌNG: Ưu tiên sân ít được sử dụng nhất để phân bổ đều
             selectedSlot = availableSlotsAfter
-                .OrderByDescending(s => s.MatchDate)
-                .ThenByDescending(s => s.StartTime)
-                .First();
-            Console.WriteLine($"   ✅ Chung kết: Chọn slot sau tất cả matches = {selectedSlot.MatchDate:yyyy-MM-dd} {selectedSlot.StartTime:hh\\:mm}");
-        }
-        else
-        {
-            // QUAN TRỌNG: Nếu không có slot phù hợp (ngày cuối tuần), yêu cầu thêm ngày thứ 7, chủ nhật
-            Console.WriteLine($"   ❌ Chung kết: KHÔNG THỂ tìm slot phù hợp cho trận chung kết giữa 2 nhóm!");
-            Console.WriteLine($"      - Morning winner kết thúc: {(morningWinnerEndTime.HasValue ? morningWinnerEndTime.Value.ToString("yyyy-MM-dd HH:mm") : "N/A")}");
-            Console.WriteLine($"      - Afternoon winner kết thúc: {(afternoonWinnerEndTime.HasValue ? afternoonWinnerEndTime.Value.ToString("yyyy-MM-dd HH:mm") : "N/A")}");
-            Console.WriteLine($"      - Tổng số slots còn lại: {allSlots.Count(s => !usedSlotsCopy.Contains(s))}");
-            
-            // Kiểm tra xem có slot nào trong ngày cuối tuần không
-            var weekendSlots = allSlots
-                .Where(s => !usedSlotsCopy.Contains(s))
-                .Where(s => {
-                    var dayOfWeek = s.MatchDate.DayOfWeek;
-                    return dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday;
+                .OrderBy(s => {
+                    // Ưu tiên 1: Sân ít được sử dụng nhất (nhân với 1000000 để ưu tiên cao hơn thời gian)
+                    var locationPriority = int.MaxValue;
+                    if (!string.IsNullOrEmpty(s.Location) && locationUsageCount.ContainsKey(s.Location))
+                    {
+                        locationPriority = locationUsageCount[s.Location] * 1000000;
+                    }
+                    // Ưu tiên 2: Ngày sớm nhất
+                    var datePriority = (s.MatchDate.Date - new DateTime(2000, 1, 1)).TotalDays;
+                    // Ưu tiên 3: Giờ sớm nhất
+                    var timePriority = s.StartTime.TotalMinutes;
+                    return locationPriority + datePriority + timePriority;
                 })
-                .ToList();
-            
-            if (!weekendSlots.Any())
-            {
-                Console.WriteLine($"   ⚠️ YÊU CẦU: Cần thêm ngày thứ 7, chủ nhật để đảm bảo sức khỏe học sinh cho trận chung kết!");
-                Console.WriteLine($"      - Lý do: Nhóm A (học sáng) chỉ đá được chiều (13:00-18:00)");
-                Console.WriteLine($"      - Lý do: Nhóm B (học chiều) chỉ đá được sáng (07:00-11:30)");
-                Console.WriteLine($"      - Giải pháp: Thêm ngày thứ 7, chủ nhật để cả 2 nhóm đều rảnh");
-                requiresWeekend = true;
+                    .First();
+            Console.WriteLine($"   ✅ Chung kết: Chọn slot sau tất cả matches = {selectedSlot.MatchDate:yyyy-MM-dd} {selectedSlot.StartTime:hh\\:mm} ({selectedSlot.MatchDate.DayOfWeek}) - Sân: {selectedSlot.Location ?? "N/A"}");
+            Console.WriteLine($"   ✅ Chung kết: Slot đã được validate không conflict với lịch học của {allPossibleClassGroupIds.Count} lớp có thể tham gia");
             }
             else
             {
-                Console.WriteLine($"   ⚠️ Có {weekendSlots.Count} slots trong ngày cuối tuần, nhưng không phù hợp với thời gian yêu cầu");
-                Console.WriteLine($"   ⚠️ YÊU CẦU: Cần thêm ngày thứ 7, chủ nhật với slots sau {finalLatestTime.AddMinutes(30):yyyy-MM-dd HH:mm}");
-                requiresWeekend = true;
-            }
+            // QUAN TRỌNG: Nếu không có slot phù hợp, báo lỗi
+            Console.WriteLine($"   ❌ Chung kết: KHÔNG THỂ tìm slot phù hợp cho trận chung kết giữa 2 nhóm!");
+                Console.WriteLine($"      - Morning winner kết thúc: {(morningWinnerEndTime.HasValue ? morningWinnerEndTime.Value.ToString("yyyy-MM-dd HH:mm") : "N/A")}");
+                Console.WriteLine($"      - Afternoon winner kết thúc: {(afternoonWinnerEndTime.HasValue ? afternoonWinnerEndTime.Value.ToString("yyyy-MM-dd HH:mm") : "N/A")}");
+                Console.WriteLine($"      - Tổng số slots còn lại: {allSlots.Count(s => !usedSlotsCopy.Contains(s))}");
+            Console.WriteLine($"      - Thời gian muộn nhất cần: {finalLatestTime.AddMinutes(minGapMinutes):yyyy-MM-dd HH:mm}");
+            Console.WriteLine($"   ⚠️ YÊU CẦU: Cần thêm slots sau {finalLatestTime.AddMinutes(minGapMinutes):yyyy-MM-dd HH:mm} để đảm bảo có đủ slots cho trận chung kết");
+            requiresWeekend = false; // Không còn bắt buộc phải cuối tuần
         }
         
         if (selectedSlot != null)
         {
             var slot = selectedSlot;
+            // Cập nhật số lần sử dụng sân này
+            if (!string.IsNullOrEmpty(slot.Location) && locationUsageCount.ContainsKey(slot.Location))
+            {
+                locationUsageCount[slot.Location]++;
+            }
             usedSlots.Add(slot);
             
             var finalMatch = new AiActivityMatch

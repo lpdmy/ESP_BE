@@ -38,8 +38,12 @@ namespace EduShpere.Application.Services
             _context = context;
         }
 
+        private Task EnsureSchemaAsync()
+            => ActivityMatchSchemaHelper.EnsureIsPublishedColumnExistsAsync(_context);
+
         public async Task<BracketResponseDto> GenerateSingleEliminationBracketAsync(GenerateBracketDto dto)
         {
+            await EnsureSchemaAsync();
             // 1. Kiểm tra Activity tồn tại
             var activity = await _activityRepo.GetByIdWithIncludesAsync(dto.ActivityId);
             if (activity == null)
@@ -257,6 +261,7 @@ namespace EduShpere.Application.Services
 
         public async Task<BracketResponseDto> GetBracketByActivityAsync(int activityId, int sportId, int? grade = null)
         {
+            await EnsureSchemaAsync();
             var matches = await _matchRepo.GetByActivityAndSportAndGradeAsync(activityId, sportId, grade);
             var activity = await _activityRepo.GetByIdWithIncludesAsync(activityId);
             var sport = activity?.Sports?.FirstOrDefault(s => s.Id == sportId);
@@ -293,12 +298,14 @@ namespace EduShpere.Application.Services
 
         public async Task<IEnumerable<MatchResponseDto>> GetMatchesByRoundAsync(int activityId, int sportId, int round, int? grade = null)
         {
+            await EnsureSchemaAsync();
             var matches = await _matchRepo.GetByRoundAsync(activityId, sportId, round, grade);
             return matches.Select(m => _mapper.Map<MatchResponseDto>(m));
         }
 
         public async Task<MatchResponseDto> GetMatchByIdAsync(int matchId)
         {
+            await EnsureSchemaAsync();
             var match = await _matchRepo.GetByIdWithIncludesAsync(matchId);
             if (match == null)
             {
@@ -310,6 +317,7 @@ namespace EduShpere.Application.Services
 
         public async Task<MatchResponseDto> CreateMatchAsync(CreateMatchDto dto)
         {
+            await EnsureSchemaAsync();
             // Validate Activity tồn tại
             var activity = await _activityRepo.GetByIdWithIncludesAsync(dto.ActivityId);
             if (activity == null)
@@ -384,6 +392,7 @@ namespace EduShpere.Application.Services
 
         public async Task<MatchResponseDto> UpdateMatchResultAsync(int matchId, UpdateMatchResultDto dto)
         {
+            await EnsureSchemaAsync();
             var match = await _matchRepo.GetByIdWithIncludesAsync(matchId);
             if (match == null)
             {
@@ -456,6 +465,7 @@ namespace EduShpere.Application.Services
 
         public async Task<MatchResponseDto> UpdateMatchAsync(int matchId, UpdateMatchDto dto)
         {
+            await EnsureSchemaAsync();
             var match = await _matchRepo.GetByIdWithIncludesAsync(matchId);
             if (match == null)
             {
@@ -557,6 +567,7 @@ namespace EduShpere.Application.Services
 
         public async Task<bool> DeleteMatchAsync(int matchId)
         {
+            await EnsureSchemaAsync();
             var match = await _matchRepo.GetByIdAsync(matchId);
             if (match == null || match.IsDeleted)
             {
@@ -598,12 +609,14 @@ namespace EduShpere.Application.Services
 
         public async Task<bool> DeleteBracketAsync(int activityId, int sportId, int? grade = null)
         {
+            await EnsureSchemaAsync();
             await _matchRepo.DeleteBracketAsync(activityId, sportId, grade);
             return true;
         }
 
         public async Task<IEnumerable<EligibleClassGroupsByGradeDto>> GetEligibleClassGroupsAsync(int activityId, int sportId)
         {
+            await EnsureSchemaAsync();
             // Lấy danh sách lớp đã đăng ký Activity và có ClassGroupId
             var participants = await _context.ActivityParticipants
                 .Where(ap => ap.ActivityId == activityId && 

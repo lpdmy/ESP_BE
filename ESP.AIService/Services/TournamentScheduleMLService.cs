@@ -234,6 +234,11 @@ public class TournamentScheduleMLService
         var endTime = request.PreferredEndTime ?? TimeSpan.FromHours(17);
         var currentDate = request.StartDate.Date;
 
+        // Nếu không cấu hình sân, vẫn tạo slot với Location = null (giống cũ)
+        var locations = request.AvailableLocations != null && request.AvailableLocations.Any()
+            ? request.AvailableLocations
+            : new List<string?> { null };
+
         while (currentDate <= request.EndDate.Date)
         {
             var currentTime = startTime;
@@ -241,46 +246,47 @@ public class TournamentScheduleMLService
             while (currentTime + request.MatchDuration <= endTime)
             {
                 var slotEndTime = currentTime + request.MatchDuration;
-                
-                // Tạo data để predict
-                var data = new TournamentScheduleData
+
+                foreach (var loc in locations)
                 {
-                    ActivityId = (float)request.ActivityId,
-                    SportId = (float)request.SportId,
-                    NumberOfTeams = (float)request.ClassGroupIds.Count,
-                    NumberOfRounds = 1.0f, // Sẽ được tính sau
-                    HourOfDay = (float)currentTime.Hours,
-                    DayOfWeek = (float)currentDate.DayOfWeek,
-                    Month = (float)currentDate.Month,
-                    DayOfMonth = (float)currentDate.Day,
-                    Round = 1.0f,
-                    MatchNumber = 1.0f,
-                    Grade = request.Grade.HasValue ? (float)request.Grade.Value : 0.0f,
-                    LocationHash = request.AvailableLocations.Any() 
-                        ? (float)request.AvailableLocations[0].GetHashCode() 
-                        : 0.0f,
-                    MatchDurationMinutes = (float)request.MatchDuration.TotalMinutes,
-                    SuccessScore = 0.0f // Không cần cho prediction
-                };
+                    // Tạo data để predict – LocationHash theo từng sân
+                    var data = new TournamentScheduleData
+                    {
+                        ActivityId = (float)request.ActivityId,
+                        SportId = (float)request.SportId,
+                        NumberOfTeams = (float)request.ClassGroupIds.Count,
+                        NumberOfRounds = 1.0f, // Sẽ được tính sau
+                        HourOfDay = (float)currentTime.Hours,
+                        DayOfWeek = (float)currentDate.DayOfWeek,
+                        Month = (float)currentDate.Month,
+                        DayOfMonth = (float)currentDate.Day,
+                        Round = 1.0f,
+                        MatchNumber = 1.0f,
+                        Grade = request.Grade.HasValue ? (float)request.Grade.Value : 0.0f,
+                        LocationHash = loc != null ? (float)loc.GetHashCode() : 0.0f,
+                        MatchDurationMinutes = (float)request.MatchDuration.TotalMinutes,
+                        SuccessScore = 0.0f // Không cần cho prediction
+                    };
 
-                var mlScore = PredictSuccessScore(data);
-                
-                // Điều chỉnh score dựa trên UserNotes
-                var adjustedScore = AdjustScoreByUserNotes(mlScore, request.UserNotes, currentTime, currentDate);
-                
-                var slot = new ScheduleSlot
-                {
-                    MatchDate = currentDate,
-                    StartTime = currentTime,
-                    EndTime = slotEndTime,
-                    Location = request.AvailableLocations.FirstOrDefault(),
-                    MLScore = adjustedScore,
-                    Explanation = $"ML Score: {adjustedScore:F2} - {currentDate:dd/MM/yyyy} {currentTime:hh\\:mm}"
-                };
+                    var mlScore = PredictSuccessScore(data);
 
-                slots.Add(slot);
+                    // Điều chỉnh score dựa trên UserNotes
+                    var adjustedScore = AdjustScoreByUserNotes(mlScore, request.UserNotes, currentTime, currentDate);
 
-                // Tăng thời gian với gap
+                    var slot = new ScheduleSlot
+                    {
+                        MatchDate = currentDate,
+                        StartTime = currentTime,
+                        EndTime = slotEndTime,
+                        Location = loc,
+                        MLScore = adjustedScore,
+                        Explanation = $"ML Score: {adjustedScore:F2} - {currentDate:dd/MM/yyyy} {currentTime:hh\\:mm} - Sân: {loc ?? "N/A"}"
+                    };
+
+                    slots.Add(slot);
+                }
+
+                // Tăng thời gian với gap (trên cùng một sân)
                 currentTime = currentTime.Add(TimeSpan.FromMinutes(request.MatchDuration.TotalMinutes + request.MinGapBetweenMatches));
             }
 
