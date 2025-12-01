@@ -53,6 +53,8 @@ public DateTime? ActualStartTime { get; set; }
 
     public bool IsBye { get; set; } = false;
 
+    public bool IsPublished { get; set; } = false;
+
     [StringLength(1000)]
     public string? Notes { get; set; }
 

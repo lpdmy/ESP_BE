@@ -61,6 +61,7 @@ namespace EduShpere.Shared.Constants
             public const string GetActivityById = "api/activity/{id}";
             public const string GetListItems = "api/activity/list-items";
             public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
+            public const string ApplyTournamentSchedule = "api/activity/{id}/apply-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
         }
 
@@ -72,6 +73,7 @@ namespace EduShpere.Shared.Constants
             public const string GroupRegistration = "api/activityparticipant/group";
             public const string SportRegistration = "api/activityparticipant/sport";
             public const string CancelRegistration = "api/activityparticipant/cancel/{activityId}";
+            public const string GetSportRosters = "api/activityparticipant/sport-rosters";
         }
 
         public static class ActivityMatch
@@ -250,6 +252,9 @@ namespace EduShpere.Shared.Constants
             public const string GetRankByActivityId = "api/submission/activity/{id}/rank";
             public const string GetAllByUser = "api/submission/activity/user";
             public const string GetSubmissionById = "api/submission/{id}";
+            public const string GetSubmissionStatus = "api/activities/{activityId}/submission-status";
+            public const string CreateSubmission = "api/activities/{activityId}/submissions";
+            public const string GetMySubmission = "api/activities/{activityId}/submissions/my";
         }
     }
 }

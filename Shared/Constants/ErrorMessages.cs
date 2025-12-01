@@ -105,6 +105,8 @@
             public const string StartDayAfterEndDayRegister = "Ngày bắt đầu đăng ký phải trước ngày kết thúc đăng ký.";
             public const string EndDayRegisterAfterStarDay = "Ngày kết thúc đăng ký phải trước Ngày bắt đầu sự kiện.";
             public const string MaxParticipantGreaterThanZero = "số lượng người đăng ký phải lớn hơn 0.";
+            public const string SubmissionDeadlineBeforeStartDate = "Hạn cuối nộp bài phải sau hoặc bằng ngày bắt đầu hoạt động.";
+            public const string SubmissionDeadlineAfterEndDate = "Hạn cuối nộp bài phải trước hoặc bằng ngày kết thúc hoạt động.";
         }
         
 

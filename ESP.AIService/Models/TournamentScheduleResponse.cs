@@ -15,5 +15,15 @@ public class TournamentScheduleResponse
     public float ObjectiveValue { get; set; }
     public int TotalMatches { get; set; }
     public int TotalRounds { get; set; }
+    
+    /// <summary>
+    /// Danh sách explanations cho từng match - giải thích logic AI
+    /// </summary>
+    public List<ScheduleExplanation> Explanations { get; set; } = new();
+    
+    /// <summary>
+    /// Danh sách conflicts đã phát hiện và tránh
+    /// </summary>
+    public List<ConflictInfo> DetectedConflicts { get; set; } = new();
 }
 

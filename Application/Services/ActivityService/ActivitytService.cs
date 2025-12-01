@@ -383,6 +383,30 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Activity.MaxParticipantGreaterThanZero);
             }
 
+            // Validation cho SubmissionDeadline (chỉ áp dụng cho Activity có nộp bài)
+            if (dto.SubmissionDeadline.HasValue)
+            {
+                // Kiểm tra SubType có phải là CreativeContest hoặc có submission không
+                var hasSubmission = string.Equals(dto.SubType, "CreativeContest", StringComparison.OrdinalIgnoreCase) ||
+                                   dto.SubType?.ToLower().Contains("submission") == true ||
+                                   dto.SubType?.ToLower().Contains("contest") == true;
+                
+                if (hasSubmission)
+                {
+                    // SubmissionDeadline phải >= StartDate
+                    if (dto.SubmissionDeadline.Value < dto.StartDate)
+                    {
+                        throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineBeforeStartDate);
+                    }
+                    
+                    // SubmissionDeadline phải <= EndDate
+                    if (dto.SubmissionDeadline.Value > dto.EndDate)
+                    {
+                        throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineAfterEndDate);
+                    }
+                }
+            }
+
             // Map StarPointRewards from frontend format if provided
             if (dto.StarPointRewards != null)
             {
@@ -450,6 +474,14 @@ namespace EduShpere.Application.Services
                 // Registration Settings
                 OnlyTeacherCanRegister = dto.OnlyTeacherCanRegister,
                 RegistrationSettings = SerializeRegistrationSettings(dto.RegistrationSettings),
+                // Problem/Submission fields
+                ProblemText = dto.ProblemText,
+                ProblemFileUrl = dto.ProblemFileUrl,
+                SubmissionDeadline = dto.SubmissionDeadline.HasValue
+                    ? (dto.SubmissionDeadline.Value.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(dto.SubmissionDeadline.Value, DateTimeKind.Utc)
+                        : dto.SubmissionDeadline.Value.ToUniversalTime())
+                    : null,
                 };
 
                 _auditService.SetAuditFieldsForCreate(activity);
@@ -700,6 +732,40 @@ namespace EduShpere.Application.Services
                         : dto.EndRegisterDate.Value.ToUniversalTime();
                 }
                 if (dto.ClubId.HasValue) existingActivity.ClubId = dto.ClubId;
+                
+                // Validation cho SubmissionDeadline (chỉ áp dụng cho Activity có nộp bài)
+                if (dto.SubmissionDeadline.HasValue)
+                {
+                    var finalStartDate = dto.StartDate ?? existingActivity.StartDate;
+                    var finalEndDate = dto.EndDate ?? existingActivity.EndDate;
+                    
+                    if (finalStartDate.HasValue && dto.SubmissionDeadline.Value < finalStartDate.Value)
+                    {
+                        throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineBeforeStartDate);
+                    }
+                    
+                    if (finalEndDate.HasValue && dto.SubmissionDeadline.Value > finalEndDate.Value)
+                    {
+                        throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineAfterEndDate);
+                    }
+                    
+                    existingActivity.SubmissionDeadline = dto.SubmissionDeadline.Value.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(dto.SubmissionDeadline.Value, DateTimeKind.Utc)
+                        : dto.SubmissionDeadline.Value.ToUniversalTime();
+                }
+                else if (dto.SubmissionDeadline == null && dto.SubType != null)
+                {
+                    // Nếu SubmissionDeadline được set thành null (xóa), chỉ xóa nếu không phải CreativeContest
+                    var hasSubmission = string.Equals(dto.SubType, "CreativeContest", StringComparison.OrdinalIgnoreCase);
+                    if (!hasSubmission)
+                    {
+                        existingActivity.SubmissionDeadline = null;
+                    }
+                }
+                
+                // Update ProblemText và ProblemFileUrl
+                if (dto.ProblemText != null) existingActivity.ProblemText = dto.ProblemText;
+                if (dto.ProblemFileUrl != null) existingActivity.ProblemFileUrl = dto.ProblemFileUrl;
                 
                 // Update IsGrade flag (nullable bool)
                 if (dto.GradingSettings != null)

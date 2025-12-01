@@ -1,6 +1,7 @@
 ﻿
 
 using EduShpere.Domain.Models;
+using System.Linq;
 
 namespace EduShpere.Infrastructure.Repositories
 {
@@ -16,5 +17,6 @@ namespace EduShpere.Infrastructure.Repositories
         Task SoftDeleteAsync(int id);
         Task<int> CountNumberParticipantInActivity(int activityId);
         Task<IEnumerable<ActivityParticipant>> GetByActivityIdAndUserIdAsync(int activityId, int userId);
+        IQueryable<ActivityParticipant> GetQueryable();
     }
 }

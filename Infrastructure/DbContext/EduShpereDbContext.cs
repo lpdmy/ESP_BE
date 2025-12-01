@@ -37,6 +37,8 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<ClassGroupSchedule> ClassGroupSchedules { get; set; }
 
+    public virtual DbSet<Timetable> Timetables { get; set; }
+
     public virtual DbSet<Club> Clubs { get; set; }
 
     public virtual DbSet<ClubJoinRequest> ClubJoinRequests { get; set; }

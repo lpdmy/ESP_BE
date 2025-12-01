@@ -206,6 +206,28 @@ namespace EduShpere.Controllers
             ));
         }
 
+        [HttpPost(ApiEndpoints.Activity.ApplyTournamentSchedule)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> ApplyTournamentSchedule(int id, [FromBody] ApplyTournamentScheduleRequestDto dto)
+        {
+            var activity = await _Service.GetByIdAsync(id);
+            if (activity == null)
+            {
+                return NotFound(new ResponseDto<string>(
+                    null,
+                    ErrorMessages.Activity.ActivityNotFound,
+                    (int)HttpStatusCode.NotFound
+                ));
+            }
+
+            var response = await _tournamentScheduleService.ApplyScheduleAsync(id, dto, _dbContext);
+            return Ok(new ResponseDto<ApplyTournamentScheduleResponseDto>(
+                response,
+                "Áp dụng lịch thi đấu thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
         [HttpPost(ApiEndpoints.Activity.TrainScheduleModel)]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> TrainScheduleModel()

@@ -79,5 +79,18 @@ namespace EduShpere.Controllers
             var result = await _service.CancelRegistrationAsync(activityId, userId);
             return Ok(new ResponseDto<bool>(result, "Hủy đăng ký tham gia hoạt động thành công", 200));
         }
+
+        [HttpGet(ApiEndpoints.ActivityParticipant.GetSportRosters)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetSportRosters([FromQuery] SportRosterPaginationRequestDto request)
+        {
+            if (request == null || request.ActivityId <= 0)
+            {
+                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+            }
+
+            var result = await _service.GetSportRostersAsync(request);
+            return Ok(new ResponseDto<SportRosterPaginationResponseDto>(result, "Lấy danh sách đội hình thành công", 200));
+        }
     }
 }
