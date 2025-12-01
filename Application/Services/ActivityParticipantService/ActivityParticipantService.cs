@@ -6,6 +6,8 @@ using System.Text.Json;
 using AutoMapper;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.ActivityDto;
+using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Application.Services;
 using EduShpere.Domain;
 using EduShpere.Domain.Enum;
 using EduShpere.Domain.Models;
@@ -26,6 +28,7 @@ namespace EduShpere.Application.Services
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
         private readonly EduShpereDbContext _context;
+        private readonly IPaginationService _paginationService;
         private static readonly JsonSerializerOptions RegistrationJsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -38,7 +41,8 @@ namespace EduShpere.Application.Services
             IActivitySportRepository activitySportRepo,
             IUserRepository userRepo,
             IMapper mapper,
-            EduShpereDbContext context) {
+            EduShpereDbContext context,
+            IPaginationService paginationService) {
             _repo = repo;
             _activityRepo = activityRepo;
             _classGroupRepo = classGroupRepo;
@@ -46,6 +50,7 @@ namespace EduShpere.Application.Services
             _userRepo = userRepo;
             _mapper = mapper;
             _context = context;
+            _paginationService = paginationService;
         }
         public async Task<ActivityParticipantResponseDto> AddActivityParticipant(AddParticipantDto dto) {
             if (dto.UserId == null || dto.ActivityId == null) {
@@ -456,6 +461,153 @@ namespace EduShpere.Application.Services
                     MaxMembers = null, // Unlimited
                     RequireLeader = false
                 }
+            };
+        }
+
+        public async Task<SportRosterPaginationResponseDto> GetSportRostersAsync(SportRosterPaginationRequestDto request)
+        {
+            // Validate activity
+            var activity = await _activityRepo.GetByIdAsync(request.ActivityId);
+            if (activity == null || activity.IsDeleted)
+            {
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+            }
+
+            // Lấy tất cả participants có sportId và classGroupId
+            var participantsQuery = _repo.GetQueryable()
+                .Where(p => p.ActivityId == request.ActivityId 
+                    && p.SportId.HasValue 
+                    && p.ClassGroupId.HasValue);
+
+            // Filter by sportId nếu có
+            if (request.SportId.HasValue)
+            {
+                participantsQuery = participantsQuery.Where(p => p.SportId == request.SportId.Value);
+            }
+
+            // Include related entities
+            var participants = await participantsQuery
+                .Include(p => p.Sport)
+                .Include(p => p.ClassGroup)
+                .Include(p => p.User)
+                .ToListAsync();
+
+            // Group by SportId và ClassGroupId
+            var sportRosterMap = new Dictionary<int, SportRosterDto>();
+
+            foreach (var participant in participants)
+            {
+                if (!participant.SportId.HasValue || !participant.ClassGroupId.HasValue)
+                    continue;
+
+                var sportId = participant.SportId.Value;
+                var classGroupId = participant.ClassGroupId.Value;
+
+                // Tạo hoặc lấy sport roster
+                if (!sportRosterMap.ContainsKey(sportId))
+                {
+                    sportRosterMap[sportId] = new SportRosterDto
+                    {
+                        SportId = sportId,
+                        SportName = participant.Sport?.SportName ?? "Môn thi đấu",
+                        MaxMembers = participant.Sport?.MaxMembers,
+                        Classes = new List<SportRosterClassDto>()
+                    };
+                }
+
+                var sportRoster = sportRosterMap[sportId];
+
+                // Tìm hoặc tạo class roster
+                var classRoster = sportRoster.Classes
+                    .FirstOrDefault(c => c.ClassGroupId == classGroupId);
+
+                if (classRoster == null)
+                {
+                    // Format className với grade (ví dụ: "10A1")
+                    var grade = participant.ClassGroup?.Grade;
+                    var className = participant.ClassGroup?.Name ?? $"Lớp {classGroupId}";
+                    var formattedClassName = grade.HasValue && !string.IsNullOrEmpty(className)
+                        ? $"{grade}{className}"
+                        : className;
+
+                    classRoster = new SportRosterClassDto
+                    {
+                        ClassGroupId = classGroupId,
+                        ClassGroupName = formattedClassName,
+                        Grade = grade,
+                        Members = new List<SportRosterMemberDto>()
+                    };
+                    sportRoster.Classes.Add(classRoster);
+                }
+
+                // Thêm member vào class roster
+                if (participant.User != null)
+                {
+                    classRoster.Members.Add(new SportRosterMemberDto
+                    {
+                        Id = participant.Id,
+                        UserId = participant.UserId,
+                        UserFullName = $"{participant.User.FirstName} {participant.User.LastName}".Trim(),
+                        UserAvatarUrl = participant.User.AvatarUrl
+                    });
+                }
+            }
+
+            // Update member count cho mỗi class
+            foreach (var sportRoster in sportRosterMap.Values)
+            {
+                foreach (var classRoster in sportRoster.Classes)
+                {
+                    classRoster.MemberCount = classRoster.Members.Count;
+                }
+            }
+
+            // Convert to list và sort
+            var sportRosters = sportRosterMap.Values
+                .OrderBy(s => s.SportName)
+                .ToList();
+
+            // Apply search filter nếu có
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var searchLower = request.Search.ToLower();
+                sportRosters = sportRosters
+                    .Where(s => s.SportName.ToLower().Contains(searchLower)
+                        || s.Classes.Any(c => c.ClassGroupName.ToLower().Contains(searchLower)
+                            || c.Members.Any(m => m.UserFullName.ToLower().Contains(searchLower))))
+                    .ToList();
+            }
+
+            // Apply sorting
+            if (!string.IsNullOrWhiteSpace(request.SortBy))
+            {
+                switch (request.SortBy.ToLower())
+                {
+                    case "sportname":
+                        sportRosters = request.SortDescending
+                            ? sportRosters.OrderByDescending(s => s.SportName).ToList()
+                            : sportRosters.OrderBy(s => s.SportName).ToList();
+                        break;
+                    default:
+                        // Default sort by SportName
+                        sportRosters = sportRosters.OrderBy(s => s.SportName).ToList();
+                        break;
+                }
+            }
+
+            // Manual pagination (vì đã group rồi)
+            var totalCount = sportRosters.Count;
+            var pagedData = sportRosters
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+
+            return new SportRosterPaginationResponseDto
+            {
+                Data = pagedData,
+                TotalCount = totalCount,
+                PageNumber = request.PageNumber,
+                PageSize = request.PageSize
             };
         }
 

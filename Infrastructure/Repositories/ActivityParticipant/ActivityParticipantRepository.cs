@@ -44,5 +44,9 @@ namespace EduShpere.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public IQueryable<ActivityParticipant> GetQueryable()
+        {
+            return _dbSet.Where(ap => !ap.IsDeleted);
+        }
     }
 }

@@ -73,6 +73,7 @@ namespace EduShpere.Shared.Constants
             public const string GroupRegistration = "api/activityparticipant/group";
             public const string SportRegistration = "api/activityparticipant/sport";
             public const string CancelRegistration = "api/activityparticipant/cancel/{activityId}";
+            public const string GetSportRosters = "api/activityparticipant/sport-rosters";
         }
 
         public static class ActivityMatch

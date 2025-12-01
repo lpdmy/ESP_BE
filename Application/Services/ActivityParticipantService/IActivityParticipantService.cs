@@ -1,4 +1,5 @@
 ﻿using EduShpere.Application.DTOs;
+using EduShpere.Application.DTOs.CommonDto;
 
 namespace EduShpere.Application.Services
 {
@@ -10,5 +11,6 @@ namespace EduShpere.Application.Services
         Task<ActivityParticipantResponseDto> RemoveActivityParticipant(int participationId);
         Task<bool> CancelRegistrationAsync(int activityId, int userId);
         Task<int> CountNumberParticipantInActivity(int activityId);
+        Task<SportRosterPaginationResponseDto> GetSportRostersAsync(SportRosterPaginationRequestDto request);
     }
 }
