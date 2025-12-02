@@ -232,5 +232,13 @@ namespace EduShpere.Shared.Constants
             public const string GetAllByUser = "api/submission/activity/user";
             public const string GetSubmissionById = "api/submission/{id}";
         }
+        public static class Modertaion
+        {
+            public const string GetAllReports = "api/moderation/report";
+            public const string CreateReport = "api/moderation/report";
+            public const string UserViolations = "api/moderation/user-violations";
+            public const string CreateAlert = "api/moderation/alert";
+            public const string UpdateStatus = "api/moderation/update-status";
+        }
     }
 }

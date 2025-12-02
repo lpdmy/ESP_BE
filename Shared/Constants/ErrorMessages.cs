@@ -245,6 +245,8 @@
         public struct Moderation
         {
             public const string ContentViolation = "Nội dung vi phạm môi trường học đường.";
+            public const string ListNotFound = "Danh sách báo cáo không tồn tại.";
+            public const string NotFound = "Báo cáo không tồn tại.";
         }
         public struct Submission
         {

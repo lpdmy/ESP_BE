@@ -25,12 +25,6 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
-	<ItemGroup>
-		<Content Include="models\model.zip">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
-		</Content>
-	</ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Application\EduShpere.Application.csproj" />
     <ProjectReference Include="..\Domain\EduShpere.Domain.csproj" />
@@ -41,6 +35,11 @@
 	  </ProjectReference>
 	  <ProjectReference Include="..\Infrastructure\EduShpere.Infrastructure.csproj" />
     <ProjectReference Include="..\Shared\EduShpere.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="models\model.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <!-- Exclude ESP.AIService output files from publish to avoid conflicts -->
