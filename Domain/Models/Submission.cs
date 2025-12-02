@@ -18,8 +18,7 @@ public partial class Submission
     [StringLength(1000)]
     public string? FileUrl { get; set; }
 
-    [Column(TypeName = "decimal(9, 2)")]
-    public decimal? Score { get; set; }
+    public double? Score { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -30,8 +29,8 @@ public partial class Submission
     public int? UpdatedBy { get; set; }
 
     public bool IsDeleted { get; set; }
-
     public byte[] RowVersion { get; set; } = null!;
+    public string? Comment { get; set; }
 
     public string? Title { get; set; }
 

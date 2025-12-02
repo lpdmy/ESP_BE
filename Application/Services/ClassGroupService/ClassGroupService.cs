@@ -142,11 +142,25 @@ public class ClassGroupService : IClassGroupService
 
         var classGroup = _mapper.Map<ClassGroup>(dto);
         
+        // Xử lý schedules nếu có
+        if (dto.Schedules != null && dto.Schedules.Any())
+        {
+            classGroup.Schedules = dto.Schedules.Select(scheduleDto =>
+            {
+                var schedule = _mapper.Map<ClassGroupSchedule>(scheduleDto);
+                schedule.ClassGroupId = classGroup.Id; // Sẽ được set sau khi save
+                _auditService.SetAuditFieldsForCreate(schedule);
+                return schedule;
+            }).ToList();
+        }
+        
         _auditService.SetAuditFieldsForCreate(classGroup);
         
         await _repository.AddAsync(classGroup);
         
-        return _mapper.Map<ClassGroupDto>(classGroup);
+        // Load lại với schedules để return
+        var createdClassGroup = await _repository.GetByIdAsync(classGroup.Id);
+        return _mapper.Map<ClassGroupDto>(createdClassGroup);
     }
 
     public async Task<ClassGroupDto> UpdateAsync(UpdateClassGroupDto dto)
@@ -165,11 +179,36 @@ public class ClassGroupService : IClassGroupService
 
         _mapper.Map(dto, classGroup);
         
+        // Xử lý schedules nếu có (thay thế toàn bộ lịch cũ)
+        if (dto.Schedules != null)
+        {
+            // Soft delete các schedules cũ
+            if (classGroup.Schedules != null)
+            {
+                foreach (var oldSchedule in classGroup.Schedules.Where(s => !s.IsDeleted))
+                {
+                    _auditService.SetAuditFieldsForDelete(oldSchedule);
+                }
+            }
+
+            // Thêm schedules mới
+            classGroup.Schedules ??= new List<ClassGroupSchedule>();
+            foreach (var scheduleDto in dto.Schedules)
+            {
+                var schedule = _mapper.Map<ClassGroupSchedule>(scheduleDto);
+                schedule.ClassGroupId = classGroup.Id;
+                _auditService.SetAuditFieldsForCreate(schedule);
+                classGroup.Schedules.Add(schedule);
+            }
+        }
+        
         _auditService.SetAuditFieldsForUpdate(classGroup);
         
         await _repository.UpdateAsync(classGroup);
         
-        return _mapper.Map<ClassGroupDto>(classGroup);
+        // Load lại với schedules để return
+        var updatedClassGroup = await _repository.GetByIdAsync(classGroup.Id);
+        return _mapper.Map<ClassGroupDto>(updatedClassGroup);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -249,6 +288,15 @@ public class ClassGroupService : IClassGroupService
 
         var homeroomTeacher = await _repository.GetHomeroomTeacherAsync(id);
         
+        // Map schedules
+        var schedules = classGroup.Schedules != null 
+            ? classGroup.Schedules.Where(s => !s.IsDeleted)
+                .OrderBy(s => s.DayOfWeek)
+                .ThenBy(s => s.Period)
+                .Select(s => _mapper.Map<ClassGroupScheduleDto>(s))
+                .ToList()
+            : null;
+        
         return new ClassGroupDetailDto
         {
             Id = classGroup.Id,
@@ -267,7 +315,8 @@ public class ClassGroupService : IClassGroupService
             } : null,
             CreatedAt = classGroup.CreatedAt,
             UpdatedAt = classGroup.UpdatedAt,
-            IsDeleted = classGroup.IsDeleted
+            IsDeleted = classGroup.IsDeleted,
+            Schedules = schedules
         };
     }
 
@@ -423,6 +472,15 @@ public class ClassGroupService : IClassGroupService
         // Xác định role của user
         var userRole = homeroomTeacher?.Id == userId ? "Teacher" : "Student";
 
+        // Map schedules
+        var schedules = classGroup.Schedules != null 
+            ? classGroup.Schedules.Where(s => !s.IsDeleted)
+                .OrderBy(s => s.DayOfWeek)
+                .ThenBy(s => s.Period)
+                .Select(s => _mapper.Map<ClassGroupScheduleDto>(s))
+                .ToList()
+            : null;
+
         return new CurrentClassDto
         {
             Id = classGroup.Id,
@@ -446,7 +504,8 @@ public class ClassGroupService : IClassGroupService
             StudentCount = studentCount,
             UserRole = userRole,
             JoinedAt = userRole == "Student" ? DateTime.UtcNow : null, // TODO: Lấy từ ClassGroupMember
-            AssignedAt = userRole == "Teacher" ? DateTime.UtcNow : null // TODO: Lấy từ ClassGroup
+            AssignedAt = userRole == "Teacher" ? DateTime.UtcNow : null, // TODO: Lấy từ ClassGroup
+            Schedules = schedules
         };
     }
 

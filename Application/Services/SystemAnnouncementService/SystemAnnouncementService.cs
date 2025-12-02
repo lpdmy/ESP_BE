@@ -236,8 +236,7 @@ public class SystemAnnouncementService : ISystemAnnouncementService
                 .OrderByDescending(p => p.IsUrgent)
                 .ThenByDescending(p => p.CreatedAt)
                 .ToListAsync();
-
-            return _mapper.Map<List<SystemAnnouncementDto>>(publicAnnouncements);
+            return _mapper.Map<List<SystemAnnouncementDto>>(publicAnnouncements);   
         }
         catch (Exception ex)
         {

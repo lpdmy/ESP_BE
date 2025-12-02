@@ -21,6 +21,11 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public DateTime RegisterDate { get; set; }
         public DateTime EndRegisterDate { get; set; }
         
+        // Problem/Submission fields - chỉ áp dụng cho Activity có nộp bài
+        public DateTime? SubmissionDeadline { get; set; } // Hạn cuối nộp bài
+        public string? ProblemText { get; set; } // Đề bài (text) - null nếu chưa đến thời gian mở đề
+        public string? ProblemFileUrl { get; set; } // URL hoặc path đến file đề bài - null nếu chưa đến thời gian mở đề
+        
         // User participation info
         public DateTime? RegisteredAt { get; set; }
         public int? StarPoints { get; set; }

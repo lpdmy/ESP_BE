@@ -26,7 +26,12 @@ namespace EduShpere.Application
                        FileName = a.FileName ?? string.Empty,
                        FileType = a.FileType ?? string.Empty
                    })
-               ));
+               ))
+               .ForMember(dest => dest.Users, opt => opt.MapFrom(p =>
+                p.JuryAssignments.Select(j => j.UserId).ToList()
+                ))
+               .ForMember(dest => dest.Score, opt => opt.MapFrom(p => p.Score))
+               .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(p => p.Activity.Title));
             CreateMap<ClassGroup, ClassGroupDto>();
             CreateMap<Attachment, SubmissionAttachmentDto>()
                 .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.FileUrl ?? string.Empty))

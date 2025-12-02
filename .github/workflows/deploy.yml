@@ -1,0 +1,131 @@
+name: Build and Deploy EduShpere API to EC2
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup .NET 8
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # 3️⃣ Build & Publish Project
+      - name: Build and Publish
+        run: |
+          dotnet restore ./EduShpere/EduShpere.csproj
+          dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
+          
+      # 3b 🔎 KIỂM TRA CẤU TRÚC FILE (DIAGNOSTICS)
+      - name: Inspect Published Files Structure
+        run: |
+          echo "Listing contents of the publish directory to confirm DLL location:"
+          find ./publish -print
+          
+      # ----------------------------------------------------------------------
+      # 4️⃣ TRUYỀN FILE LÊN EC2 (Giữ nguyên cấu hình SCP)
+      # ----------------------------------------------------------------------
+      - name: Copy published files to EC2 Temp Directory
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./publish"           # Không có dấu "/" ở cuối để SCP đẩy cả thư mục publish
+          target: "/tmp/esp-deployment"
+          tar_dereference: false
+
+      # ----------------------------------------------------------------------
+      # 5️⃣ KIỂM TRA LỖI TRUYỀN FILE TRÊN EC2 (ĐÃ SỬA ĐƯỜNG DẪN KIỂM TRA) 🌟
+      # ----------------------------------------------------------------------
+      - name: 🔎 Verify DLL exists on EC2 (Post-SCP Check)
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            # 🌟 SỬA ĐƯỜNG DẪN: Trỏ vào thư mục con "publish" vừa được tạo
+            TARGET_FILE="/tmp/esp-deployment/publish/EduShpere.dll" 
+            
+            echo "Checking if ${TARGET_FILE} exists after SCP..."
+            
+            if test -f "${TARGET_FILE}"; then
+              echo "✅ Success: EduShpere.dll found in temp directory. Proceeding with deployment."
+              ls -l "${TARGET_FILE}"
+            else
+              echo "❌ CRITICAL ERROR: EduShpere.dll NOT found in temp directory. Deployment FAILED."
+              echo "Contents of /tmp/esp-deployment/ (Check for file presence):"
+              ls -l /tmp/esp-deployment/ 
+              exit 1 
+            fi
+            
+      # ----------------------------------------------------------------------
+      # 6️⃣ THỰC THI LỆNH TRIỂN KHAI (ĐÃ SỬA ĐƯỜNG DẪN NGUỒN RSYNC) 🌟
+      # ----------------------------------------------------------------------
+      - name: Run Deployment Commands on EC2
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            # 📚 Định nghĩa biến
+            DEPLOY_DIR="/var/www/esp-api"
+            BACKUP_DIR="/var/www/esp-api-backup"
+            TEMP_DIR="/tmp/esp-deployment"
+            APP_USER="ec2-user"
+            SERVICE_NAME="espapi"
+            
+            # 🌟 ĐỊNH NGHĨA NGUỒN RSYNC MỚI: Thư mục con 'publish'
+            SOURCE_RSYNC_DIR="${TEMP_DIR}/publish/" 
+            
+            # 1️⃣ Tạo folder deploy nếu chưa có + backup
+            sudo mkdir -p ${DEPLOY_DIR}
+            sudo mkdir -p ${BACKUP_DIR}
+            
+            # Backup thư mục cũ trước khi ghi đè
+            if [ -d "${DEPLOY_DIR}" ]; then
+              echo "✅ Backing up old deployment..."
+              sudo cp -r ${DEPLOY_DIR} ${BACKUP_DIR}/$(date +%F_%H-%M-%S)
+            fi
+
+            # 2️⃣ Stop service trước khi deploy
+            echo "🛑 Stopping service ${SERVICE_NAME}..."
+            sudo systemctl stop ${SERVICE_NAME} || true
+
+            # 3️⃣ Đồng bộ file đã truyền vào thư mục đích (rsync cục bộ)
+            echo "🔄 Synchronizing files to deployment directory..."
+            # 🌟 SỬ DỤNG SOURCE_RSYNC_DIR MỚI
+            sudo rsync -av --delete ${SOURCE_RSYNC_DIR} ${DEPLOY_DIR}/
+            
+            # 4️⃣ Chỉnh quyền an toàn cho folder
+            echo "🔒 Setting directory permissions..."
+            sudo chown -R ${APP_USER}:${APP_USER} ${DEPLOY_DIR}
+            sudo chmod -R 755 ${DEPLOY_DIR}
+
+            # 5️⃣ Xóa thư mục tạm (Xóa toàn bộ /tmp/esp-deployment)
+            sudo rm -rf ${TEMP_DIR}
+
+            # 6️⃣ Start service lại & kiểm tra trạng thái
+            echo "🚀 Starting service ${SERVICE_NAME}..."
+            sudo systemctl start ${SERVICE_NAME}
+            sudo systemctl status ${SERVICE_NAME} --no-pager
+
+            # 7️⃣ Kiểm tra port 5000 listen
+            echo "🔍 Checking port 5000 status..."
+            sudo ss -tulwn | grep 5000 || true

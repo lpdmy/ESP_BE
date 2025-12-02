@@ -149,5 +149,6 @@ public partial class User : BaseEntity
     [InverseProperty("President")]
     public virtual ICollection<Club> PresidedClubs { get; set; } = new List<Club>();
     public virtual ICollection<UserRight> UserRights { get; set; } = new List<UserRight>();
+    public virtual ICollection<JuryAssignment> JuryAssignments { get; set; } = new List<JuryAssignment>();
 
 }

@@ -64,6 +64,9 @@ namespace EduShpere.Infrastructure.Repositories
             var activity = await _context.Activities
                 .Include(a => a.Rules.Where(r => !r.IsDeleted))
                 .Include(a => a.ActivityParticipants.Where(p => !p.IsDeleted))
+                    .ThenInclude(p => p.User)
+                .Include(a => a.ActivityParticipants.Where(p => !p.IsDeleted))
+                    .ThenInclude(p => p.ClassGroup)
                 .Include(a => a.ActivityRewards.Where(r => !r.IsDeleted))
                 .Include(a => a.Submissions.Where(s => !s.IsDeleted))
                 .Include(a => a.Speakers.Where(s => !s.IsDeleted))

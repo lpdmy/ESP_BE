@@ -22,6 +22,7 @@ public class ClassGroupRepository : IClassGroupRepository
         return await _dbSet
             .Where(c => !c.IsDeleted)
             .Include(c => c.ClassGroupMembers.Where(m => !m.IsDeleted))
+            .Include(c => c.Schedules.Where(s => !s.IsDeleted))
             .Include(c => c.Teacher)
             .Include(c => c.AcademicYears)
             .ToListAsync();
@@ -29,7 +30,10 @@ public class ClassGroupRepository : IClassGroupRepository
 
     public async Task<ClassGroup?> GetByIdAsync(int id)
     {
-        return await _dbSet.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        return await _dbSet
+            .Where(c => c.Id == id && !c.IsDeleted)
+            .Include(c => c.Schedules.Where(s => !s.IsDeleted))
+            .FirstOrDefaultAsync();
     }
 
     public async Task AddAsync(ClassGroup entity)
@@ -307,6 +311,8 @@ public class ClassGroupRepository : IClassGroupRepository
         {
             return await _context.ClassGroupMembers
                 .Where(cgm => cgm.UserId == userId && cgm.ClassGroup.AcademicYearId == currentAcademicYear.Id && !cgm.IsDeleted)
+                .Include(cgm => cgm.ClassGroup)
+                    .ThenInclude(cg => cg.Schedules.Where(s => !s.IsDeleted))
                 .Select(cgm => cgm.ClassGroup)
                 .FirstOrDefaultAsync();
         }
@@ -316,6 +322,7 @@ public class ClassGroupRepository : IClassGroupRepository
         {
             return await _context.ClassGroups
                 .Where(cg => cg.TeacherId == userId && cg.AcademicYearId == currentAcademicYear.Id)
+                .Include(cg => cg.Schedules.Where(s => !s.IsDeleted))
                 .FirstOrDefaultAsync();
         }
 
@@ -366,6 +373,22 @@ public class ClassGroupRepository : IClassGroupRepository
             .Where(cg => cg.TeacherId == teacherId && 
                         cg.AcademicYearId == academicYearId && 
                         !cg.IsDeleted)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> IsTeacherHomeroomOfClassGroupAsync(int teacherId, int classGroupId)
+    {
+        return await _context.ClassGroups
+            .AnyAsync(cg => cg.Id == classGroupId && 
+                           cg.TeacherId == teacherId && 
+                           !cg.IsDeleted);
+    }
+
+    public async Task<ClassGroup?> GetClassGroupByIdWithAcademicYearAsync(int classGroupId)
+    {
+        return await _context.ClassGroups
+            .Where(cg => cg.Id == classGroupId && !cg.IsDeleted)
+            .Include(cg => cg.AcademicYears)
             .FirstOrDefaultAsync();
     }
 }

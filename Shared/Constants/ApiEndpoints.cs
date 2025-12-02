@@ -59,6 +59,10 @@ namespace EduShpere.Shared.Constants
         {
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
+            public const string GetListItems = "api/activity/list-items";
+            public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
+            public const string ApplyTournamentSchedule = "api/activity/{id}/apply-schedule";
+            public const string TrainScheduleModel = "api/activity/train-schedule-model";
             public const string MyActivities = "api/my-activities";
 
         }
@@ -68,6 +72,25 @@ namespace EduShpere.Shared.Constants
         {
             public const string ActivityParticipantRoute = "api/activityparticipant";
             public const string GetActivityParticipantById = "api/activityparticipant/{id}";
+            public const string GroupRegistration = "api/activityparticipant/group";
+            public const string SportRegistration = "api/activityparticipant/sport";
+            public const string CancelRegistration = "api/activityparticipant/cancel/{activityId}";
+            public const string GetSportRosters = "api/activityparticipant/sport-rosters";
+        }
+
+        public static class ActivityMatch
+        {
+            public const string Matches = "api/activity-match";
+            public const string GetMatchById = "api/activity-match/{id}";
+            public const string GetBracket = "api/activity-match/bracket";
+            public const string GetMatchesByRound = "api/activity-match/round/{round}";
+            public const string GenerateBracket = "api/activity-match/generate-bracket";
+            public const string CreateMatch = "api/activity-match";
+            public const string UpdateMatchResult = "api/activity-match/{id}/result";
+            public const string UpdateMatch = "api/activity-match/{id}";
+            public const string DeleteBracket = "api/activity-match/bracket";
+            public const string DeleteMatch = "api/activity-match/{id}";
+            public const string GetEligibleClassGroups = "api/activity-match/eligible-classes";
         }
         public static class Post
         {
@@ -214,10 +237,26 @@ namespace EduShpere.Shared.Constants
         {
             public const string GetAllByClubId = "api/jury/{id}";
             public const string ApiJury = "api/jury";
+            public const string assignJury = "api/jury/assign";
+            public const string GetJuryActivity = "api/jury/activity";
+            public const string RamdomAssignJury = "api/jury/random-assign";
+            public const string DeleteAssignJury = "api/jury/delete-assign-activity/{id}";
+            public const string GetAllAssignByUser = "api/jury/assign/user/{Id}";
+            public const string GetAllAssignByUserNotGrading = "api/jury/assign-not-grading/user/{Id}";
+            public const string GetAllAssignByUserGrading = "api/jury/assign-grading/user/{Id}";
+
+            public const string GradeSubmission = "api/jury/grade-submission";
         }
         public static class Submission
         {
             public const string GetAllByActivityId = "api/submission/activity/{Id}";
+            public const string GetAllByUserIdByActivityId = "api/submission/activity/user/{Id}";
+            public const string GetRankByActivityId = "api/submission/activity/{id}/rank";
+            public const string GetAllByUser = "api/submission/activity/user";
+            public const string GetSubmissionById = "api/submission/{id}";
+            public const string GetSubmissionStatus = "api/activities/{activityId}/submission-status";
+            public const string CreateSubmission = "api/activities/{activityId}/submissions";
+            public const string GetMySubmission = "api/activities/{activityId}/submissions/my";
             public const string Create = "api/submission";
             public const string GetById = "api/submission/{id}";
             public const string GetMySubmissions = "api/submission/my-submissions";
