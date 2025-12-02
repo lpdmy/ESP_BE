@@ -91,6 +91,7 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(s => s.Activity)
                 .Include(s => s.JuryAssignments)
                 .ThenInclude(ja => ja.User)
+                .Include(s => s.Attachments.Where(a => !a.IsDeleted))
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
     }

@@ -1083,5 +1083,10 @@ namespace EduShpere.Application.Services
                 })
                 .ToList();
         }
+
+        public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null)
+        {
+            return await _repo.GetActivitiesByUserIdAsync(userId, pageNumber, pageSize, search, status);
+        }
     }
 }
