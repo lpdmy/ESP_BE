@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Infrastructure", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Shared", "..\Shared\EduShpere.Shared.csproj", "{A7639FEE-B4FC-4078-9CFB-FC8703D33483}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ESP.AIService", "..\ESP.AIService\ESP.AIService.csproj", "{66F34D0C-4AAA-4566-9738-48F9C1408583}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ESP.AIService", "..\ESP.AIService\ESP.AIService.csproj", "{E0A17136-732F-49C3-9EB1-9036A5B447F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,15 +41,12 @@ Global
 		{A7639FEE-B4FC-4078-9CFB-FC8703D33483}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7639FEE-B4FC-4078-9CFB-FC8703D33483}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7639FEE-B4FC-4078-9CFB-FC8703D33483}.Release|Any CPU.Build.0 = Release|Any CPU
-		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{66F34D0C-4AAA-4566-9738-48F9C1408583}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {1EA96903-3192-4A2B-A154-42F48B3F0EDE}
 	EndGlobalSection
 EndGlobal

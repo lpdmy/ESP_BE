@@ -7,7 +7,7 @@ using EduShpere.Domain.Models;
 
 namespace EduShpere.Infrastructure.Repositories
 {
-    public interface ISubmissionReposiory
+    public interface ISubmissionReposiory : IRepository<Submission>
     {
         public IQueryable<Submission> GetAllSubmissionsByActivityId(int ActivityId);
         IQueryable<Submission> GetAllSubmissionByUserByActivity(int userId, int activityId);

@@ -12,5 +12,7 @@ namespace EduShpere.Infrastructure.Repositories
         Task DeleteAttachmentByPostId(int postId);
         Task<IEnumerable<Attachment>> GetAttachmentsByPostIdAsync(int postId);
         Task DeleteRangeAsync(IEnumerable<Attachment> attachments);
+        Task DeleteAttachmentBySubmissionId(int submissionId);
+        Task<IEnumerable<Attachment>> GetAttachmentsBySubmissionIdAsync(int submissionId);
     }
 }

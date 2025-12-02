@@ -375,4 +375,20 @@ public class ClassGroupRepository : IClassGroupRepository
                         !cg.IsDeleted)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<bool> IsTeacherHomeroomOfClassGroupAsync(int teacherId, int classGroupId)
+    {
+        return await _context.ClassGroups
+            .AnyAsync(cg => cg.Id == classGroupId && 
+                           cg.TeacherId == teacherId && 
+                           !cg.IsDeleted);
+    }
+
+    public async Task<ClassGroup?> GetClassGroupByIdWithAcademicYearAsync(int classGroupId)
+    {
+        return await _context.ClassGroups
+            .Where(cg => cg.Id == classGroupId && !cg.IsDeleted)
+            .Include(cg => cg.AcademicYears)
+            .FirstOrDefaultAsync();
+    }
 }

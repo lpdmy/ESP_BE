@@ -45,4 +45,7 @@ public partial class Submission
     [InverseProperty("Submissions")]
     public virtual User User { get; set; } = null!;
     public ICollection<JuryAssignment> JuryAssignments { get; set; }
+
+    [InverseProperty("Submission")]
+    public virtual ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 }

@@ -67,7 +67,13 @@ namespace EduShpere.Infrastructure
         }
         public async Task<User?> GetUserByEmail(string email)
         {
-            return await _dbSet.FirstOrDefaultAsync(p => p.Email == email);
+            return await _dbSet
+                .Where(u => u.Email == email && !u.IsDeleted)
+                .Include(u => u.StudentProfile)
+                .Include(u => u.TeacherProfile)
+                .Include(u => u.ClassGroupMembers)
+                    .ThenInclude(cgm => cgm.ClassGroup)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<bool> FindUserByUsername(string username)

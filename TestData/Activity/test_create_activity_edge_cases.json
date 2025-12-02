@@ -1,0 +1,95 @@
+{
+  "description": "Test data cho các edge cases",
+  "testCases": [
+    {
+      "name": "SubmissionDeadline = StartDate",
+      "description": "SubmissionDeadline bằng đúng StartDate → hợp lệ",
+      "data": {
+        "title": "Cuộc thi Test - Edge Case 1",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-15T08:00:00Z",
+        "problemText": "Đề bài test - nộp ngay khi mở đề"
+      },
+      "expectedResult": "Tạo activity thành công"
+    },
+    {
+      "name": "SubmissionDeadline = EndDate",
+      "description": "SubmissionDeadline bằng đúng EndDate → hợp lệ",
+      "data": {
+        "title": "Cuộc thi Test - Edge Case 2",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-20T17:00:00Z",
+        "problemText": "Đề bài test - nộp vào phút cuối"
+      },
+      "expectedResult": "Tạo activity thành công"
+    },
+    {
+      "name": "ProblemText rất dài",
+      "description": "Test với ProblemText có nhiều ký tự",
+      "data": {
+        "title": "Cuộc thi Test - Edge Case 3",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-18T17:00:00Z",
+        "problemText": "Đề bài rất dài... " + "Lorem ipsum dolor sit amet. ".repeat(100)
+      },
+      "expectedResult": "Tạo activity thành công, ProblemText được lưu đầy đủ"
+    },
+    {
+      "name": "ProblemFileUrl với các định dạng khác nhau",
+      "description": "Test với các loại file URL khác nhau",
+      "testCases": [
+        {
+          "name": "PDF file",
+          "problemFileUrl": "https://example.com/files/problem.pdf",
+          "expectedResult": "Success"
+        },
+        {
+          "name": "DOCX file",
+          "problemFileUrl": "https://example.com/files/problem.docx",
+          "expectedResult": "Success"
+        },
+        {
+          "name": "Image file",
+          "problemFileUrl": "https://example.com/files/problem.jpg",
+          "expectedResult": "Success (nếu cho phép)"
+        }
+      ]
+    },
+    {
+      "name": "CreativeContest không có ProblemText",
+      "description": "CreativeContest có thể không có ProblemText (optional)",
+      "data": {
+        "title": "Cuộc thi Test - Edge Case 4",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-18T17:00:00Z",
+        "problemText": null,
+        "problemFileUrl": "https://example.com/files/problem.pdf"
+      },
+      "expectedResult": "Tạo activity thành công, chỉ có ProblemFileUrl"
+    },
+    {
+      "name": "CreativeContest không có cả ProblemText và ProblemFileUrl",
+      "description": "CreativeContest có thể không có đề bài (chỉ có SubmissionDeadline)",
+      "data": {
+        "title": "Cuộc thi Test - Edge Case 5",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-18T17:00:00Z",
+        "problemText": null,
+        "problemFileUrl": null
+      },
+      "expectedResult": "Tạo activity thành công, nhưng khi mở đề sẽ hiển thị 'Chưa có đề bài'"
+    }
+  ]
+}
+
+

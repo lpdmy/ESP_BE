@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="Google.OrTools" Version="9.14.6206" />
     <PackageReference Include="Google.OrTools.runtime.linux-x64" Version="9.14.6206" />

@@ -16,6 +16,11 @@ namespace EduShpere.Application.Services.SearchService
         Task<IEnumerable<UserSearchResultDto>> SearchUsersAsync(string query, int pageSize = 10);
 
         /// <summary>
+        /// Search user by exact email
+        /// </summary>
+        Task<UserSearchResultDto?> SearchUserByEmailAsync(string email);
+
+        /// <summary>
         /// Search posts only
         /// </summary>
         Task<IEnumerable<PostSearchResultDto>> SearchPostsAsync(string query, int pageSize = 10);
