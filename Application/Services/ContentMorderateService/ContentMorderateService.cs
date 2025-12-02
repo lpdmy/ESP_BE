@@ -13,7 +13,7 @@ namespace EduShpere.Application.Services
     {
         private readonly PredictionEngine<PredictInput, ModelOutput> _engine;
         // Ngưỡng BLOCK (chặt)
-        private const float BLOCK_THRESHOLD = 0.25f;
+        private const float BLOCK_THRESHOLD = 0.6f;
 
         // Các từ tục / gây hấn (dùng để xác định "lon" tục)
         private static readonly string[] Sexual = { "dit", "dm", "dmm", "dcm", "dcmm", "xoac", "chich", "hiep", "địt", "đụ" };

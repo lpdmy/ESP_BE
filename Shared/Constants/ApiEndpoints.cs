@@ -264,5 +264,13 @@ namespace EduShpere.Shared.Constants
             public const string Update = "api/submission/{id}";
             public const string Delete = "api/submission/{id}";
         }
+        public static class Modertaion
+        {
+            public const string GetAllReports = "api/moderation/report";
+            public const string CreateReport = "api/moderation/report";
+            public const string UserViolations = "api/moderation/user-violations";
+            public const string CreateAlert = "api/moderation/alert";
+            public const string UpdateStatus = "api/moderation/update-status";
+        }
     }
 }

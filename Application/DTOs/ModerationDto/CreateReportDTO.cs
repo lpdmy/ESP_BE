@@ -1,0 +1,15 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EduShpere.Application.DTOs
+{
+    public class CreateReportDTO
+    {
+        public string? ContentText { get; set; }
+        public int? AuthorId { get; set; }
+        public string? Status { get; set; }
+    }
+}

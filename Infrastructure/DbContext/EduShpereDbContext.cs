@@ -104,6 +104,7 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<UserRight> UserRights { get; set; }
     public virtual DbSet<JuryActivity> JuryActivity { get; set; }
     public virtual DbSet<JuryAssignment> JuryAssignment { get; set; }
+    public virtual DbSet<ReportedContent> ReportedContent { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

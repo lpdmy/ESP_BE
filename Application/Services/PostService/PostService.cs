@@ -14,6 +14,7 @@ using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EduShpere.Application.Services
 {
@@ -220,10 +221,8 @@ namespace EduShpere.Application.Services
             //    if (moderationTitle.IsFlagged)
             //        throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
             //}
-
             post.UpdatedAt = DateTime.UtcNow;
-            
-                post.PostHashtags.Clear();
+            post.PostHashtags.Clear();
            await _hashTagRepository.DeleteByPostId(post.Id);
             foreach (var tag in dto.Hashtags.Distinct(StringComparer.OrdinalIgnoreCase))
                 {
@@ -242,25 +241,6 @@ namespace EduShpere.Application.Services
                         Post = post
                     });
                  }
-
-            if (dto.MentionUsernames != null)
-            {
-                post.PostMentions.Clear();
-                foreach (var id in dto.MentionUsernames.Distinct())
-                {
-                    var mentionedUser = await _userRepo.GetByIdAsync(id);
-                    if (mentionedUser != null)
-                    {
-                        post.PostMentions.Add(new PostMention
-                        {
-                            MentionedUserId = mentionedUser.Id,
-                            Post = post
-                        });
-                    }
-                }
-            }
-
-            
                 await _attachmentRepository.DeleteAttachmentByPostId(post.Id);
 
                 foreach (var attachment in dto.AttachmentUrls)
@@ -274,8 +254,20 @@ namespace EduShpere.Application.Services
                             FileType = attachment.FileType,
                             Post = post
                         });
-                    }
+                    }   
                 }
+            if (!dto.Title.IsNullOrEmpty())
+            {
+                post.Title = dto.Title;
+            }
+            if (!dto.Body.IsNullOrEmpty())
+            {
+            post.Body = dto.Body;
+            }
+            if (dto.PrivacyLevel >= 0)
+            {
+            post.PrivacyLevel = dto.PrivacyLevel;
+            }
             await _repo.UpdateAsync(post);
             return _mapper.Map<PostResponseDto>(post);
         }

@@ -66,6 +66,7 @@ namespace EduShpere
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
             builder.Services.AddScoped<IUserRightRepository, UserRightRepository>();
+            builder.Services.AddScoped<IModerationService, ModerationService>();
             // Search repositories
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchHistory.ISearchHistoryRepository, EduShpere.Infrastructure.Repositories.SearchHistory.SearchHistoryRepository>();
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchAnalytics.ISearchAnalyticsRepository, EduShpere.Infrastructure.Repositories.SearchAnalytics.SearchAnalyticsRepository>();
@@ -93,6 +94,8 @@ namespace EduShpere
             builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
             builder.Services.AddScoped<IJuryActivityRepository, JuryActivityRepository>();
             builder.Services.AddScoped<IJuryAssignRepository, JuryAssignRepository>();
+            builder.Services.AddScoped<IModerationRepository, ModerationRepository>();
+
 
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
@@ -170,6 +173,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             builder.Services.AddAutoMapper(typeof(SubmissionProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ModerationProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
