@@ -44,16 +44,16 @@ namespace EduShpere.Application.Services.ChatService
                 var targets = room.ParticipantIds.Where(id => id != message.SenderId).ToList();
                 foreach (var targetId in targets)
                 {
-                    await _notificationService.AddAsync(new Notification
-                    {
-                        Link = $"/chat/{message.RoomId}",
+            await _notificationService.AddAsync(new Notification
+            {
+                Link = $"/chat/{message.RoomId}",
                         Title = $"{user.LastName} đã gửi tin nhắn trong phòng chat",
-                        CreatedAt = DateTime.Now,
-                        Avatar = string.IsNullOrEmpty(user.AvatarUrl) ? null : user.AvatarUrl,
-                        Read = false,
-                        Type = "message",
+                CreatedAt = DateTime.Now,
+                Avatar = string.IsNullOrEmpty(user.AvatarUrl) ? null : user.AvatarUrl,
+                Read = false,
+                Type = "message",
                         UserId = targetId
-                    });
+            });
                 }
             }
             return mes;

@@ -59,6 +59,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(Submission => Submission.Activity)
                 .Include(ja => ja.Submission)
                 .ThenInclude(Submission => Submission.User)
+                .Include(ja => ja.Submission)
+                .ThenInclude(Submission => Submission.Attachments)
                 .Where(ja => ja.Submission.ActivityId == activityId && ja.UserId == userId && ja.ScoreTemp != null);
         }
 
@@ -69,6 +71,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(Submission => Submission.Activity)
                 .Include(ja => ja.Submission)
                 .ThenInclude(Submission => Submission.User)
+                .Include(ja => ja.Submission)
+                .ThenInclude(Submission => Submission.Attachments)
                 .Where(ja => ja.Submission.ActivityId == activityId && ja.UserId == userId && ja.ScoreTemp == null);
         }
         public async Task DeleteAllByActivityIdAsync(int activityId)

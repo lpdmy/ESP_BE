@@ -15,7 +15,7 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public int? ClubId { get; set; }
         public string Organizer { get; set; } = null!;
         public bool IsDeleted { get; set; }
-        public int MaxParticipants { get; set; }
+        public int? MaxParticipants { get; set; }
         public byte[] RowVersion { get; set; } = null!;
         public ActivityType Category { get; set; }
         public string SubType { get; set; } = null!;

@@ -366,7 +366,8 @@ namespace EduShpere.Application.Services
         public async Task<ActivityResponseDto> AddAsync(CreateActivityDto dto)
         {
             // Validation
-            if (dto.StartDate >= dto.EndDate)
+            // Cho phép ngày bắt đầu bằng ngày kết thúc
+            if (dto.StartDate > dto.EndDate)
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
             }
@@ -378,7 +379,8 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
             }
-            if (dto.MaxParticipants <= 0)
+            // Validate MaxParticipants: nếu có giá trị thì phải > 0, null = không giới hạn (áp dụng cho tất cả loại activity)
+            if (dto.MaxParticipants.HasValue && dto.MaxParticipants.Value <= 0)
             {
                 throw new BadRequestException(ErrorMessages.Activity.MaxParticipantGreaterThanZero);
             }
@@ -439,8 +441,8 @@ namespace EduShpere.Application.Services
             await executionStrategy.ExecuteAsync(async () =>
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync();
-                try
-                {
+            try
+            {
                 // Create main Activity entity
             // Ensure all dates are in UTC before saving
             var activity = new Activity
@@ -632,17 +634,17 @@ namespace EduShpere.Application.Services
                 
                 // Reload with all includes BEFORE committing transaction
                 // This ensures the query runs within the transaction scope
-                    var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(activity.Id);
+                var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(activity.Id);
                 
-                    await transaction.CommitAsync();
+                await transaction.CommitAsync();
                 
                     createdActivity = _mapper.Map<ActivityResponseDto>(activityWithIncludes);
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
             });
 
             return createdActivity!;
@@ -661,17 +663,42 @@ namespace EduShpere.Application.Services
             var registerDate = dto.RegisterDate ?? (DateTime?)existingActivity.RegisterDate;
             var endRegisterDate = dto.EndRegisterDate ?? (DateTime?)existingActivity.EndRegisterDate;
 
-            if (startDate.HasValue && endDate.HasValue && startDate >= endDate)
+            var now = DateTime.UtcNow;
+
+            // Helper function: Kiểm tra xem ngày đã qua chưa (chỉ so sánh ngày, bỏ qua giờ)
+            bool IsDatePassed(DateTime? date)
+            {
+                if (!date.HasValue) return false;
+                var dateOnly = date.Value.Date;
+                var nowOnly = now.Date;
+                return dateOnly <= nowOnly;
+            }
+
+            // Chỉ validate nếu ngày chưa qua
+            // Cho phép ngày bắt đầu bằng ngày kết thúc
+            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+            {
+                // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                if (!IsDatePassed(startDate) && !IsDatePassed(endDate))
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
+                }
             }
             if (registerDate.HasValue && endRegisterDate.HasValue && registerDate >= endRegisterDate)
             {
+                // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                if (!IsDatePassed(registerDate) && !IsDatePassed(endRegisterDate))
+            {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDayRegister);
+                }
             }
             if (endRegisterDate.HasValue && startDate.HasValue && endRegisterDate >= startDate)
             {
+                // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                if (!IsDatePassed(endRegisterDate) && !IsDatePassed(startDate))
+            {
                 throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
+                }
             }
 
             // Map StarPointRewards from frontend format if provided
@@ -706,8 +733,8 @@ namespace EduShpere.Application.Services
             await executionStrategy.ExecuteAsync(async () =>
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync();
-                try
-                {
+            try
+            {
                 // Update main Activity entity
                 // Ensure all dates are in UTC before saving
                 if (dto.Title != null) existingActivity.Title = dto.Title;
@@ -729,7 +756,17 @@ namespace EduShpere.Application.Services
                 if (dto.SubType != null) existingActivity.SubType = dto.SubType;
                 if (dto.ThumbnailUrl != null) existingActivity.ThumbnailUrl = dto.ThumbnailUrl;
                 if (dto.Organizer != null) existingActivity.Organizer = dto.Organizer;
-                if (dto.MaxParticipants.HasValue) existingActivity.MaxParticipants = dto.MaxParticipants.Value;
+                // Update MaxParticipants: null = không giới hạn, có giá trị = giới hạn số người
+                // Có thể cập nhật cho tất cả các loại activity
+                if (dto.MaxParticipants.HasValue)
+                {
+                    existingActivity.MaxParticipants = dto.MaxParticipants.Value;
+                }
+                else
+                {
+                    // Nếu MaxParticipants là null, set thành null (không giới hạn)
+                    existingActivity.MaxParticipants = null;
+                }
                 if (dto.RegisterDate.HasValue)
                 {
                     existingActivity.RegisterDate = dto.RegisterDate.Value.Kind == DateTimeKind.Unspecified 
@@ -750,14 +787,23 @@ namespace EduShpere.Application.Services
                     var finalStartDate = dto.StartDate ?? existingActivity.StartDate;
                     var finalEndDate = dto.EndDate ?? existingActivity.EndDate;
                     
+                    // Chỉ validate nếu các ngày chưa qua
                     if (finalStartDate.HasValue && dto.SubmissionDeadline.Value < finalStartDate.Value)
                     {
+                        // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                        if (!IsDatePassed(finalStartDate) && !IsDatePassed(dto.SubmissionDeadline))
+                    {
                         throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineBeforeStartDate);
+                        }
                     }
                     
                     if (finalEndDate.HasValue && dto.SubmissionDeadline.Value > finalEndDate.Value)
                     {
+                        // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                        if (!IsDatePassed(finalEndDate) && !IsDatePassed(dto.SubmissionDeadline))
+                    {
                         throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineAfterEndDate);
+                        }
                     }
                     
                     existingActivity.SubmissionDeadline = dto.SubmissionDeadline.Value.Kind == DateTimeKind.Unspecified
@@ -1054,21 +1100,21 @@ namespace EduShpere.Application.Services
                     }
                 }
 
-                    await _context.SaveChangesAsync();
-                    
-                    // Reload with all includes BEFORE committing transaction
-                    // This ensures the query runs within the transaction scope
-                    var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(existingActivity.Id);
-                    
-                    await transaction.CommitAsync();
-                    
+                await _context.SaveChangesAsync();
+                
+                // Reload with all includes BEFORE committing transaction
+                // This ensures the query runs within the transaction scope
+                var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(existingActivity.Id);
+                
+                await transaction.CommitAsync();
+                
                     updatedActivity = _mapper.Map<ActivityResponseDto>(activityWithIncludes);
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
             });
 
             return updatedActivity!;
@@ -1101,6 +1147,50 @@ namespace EduShpere.Application.Services
         public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null)
         {
             return await _repo.GetActivitiesByUserIdAsync(userId, pageNumber, pageSize, search, status);
+        }
+
+        public async Task<ActivityStatisticsDto> GetStatisticsAsync()
+        {
+            var now = DateTime.UtcNow;
+
+            // Lấy tất cả activities chưa bị xóa
+            var allActivities = await _context.Activities
+                .Where(a => !a.IsDeleted)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.StartDate,
+                    a.EndDate
+                })
+                .ToListAsync();
+
+            // Tính số lượng activities theo trạng thái
+            var ongoingCount = allActivities.Count(a =>
+                a.StartDate.HasValue &&
+                a.EndDate.HasValue &&
+                a.StartDate.Value.ToUniversalTime() <= now &&
+                a.EndDate.Value.ToUniversalTime() >= now);
+
+            var upcomingCount = allActivities.Count(a =>
+                a.StartDate.HasValue &&
+                a.StartDate.Value.ToUniversalTime() > now);
+
+            var completedCount = allActivities.Count(a =>
+                a.EndDate.HasValue &&
+                a.EndDate.Value.ToUniversalTime() < now);
+
+            // Tính tổng số người tham gia từ ActivityParticipants
+            var totalParticipants = await _context.ActivityParticipants
+                .Where(p => !p.IsDeleted)
+                .CountAsync();
+
+            return new ActivityStatisticsDto
+            {
+                OngoingCount = ongoingCount,
+                UpcomingCount = upcomingCount,
+                CompletedCount = completedCount,
+                TotalParticipants = totalParticipants
+            };
         }
     }
 }

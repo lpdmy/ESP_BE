@@ -21,7 +21,6 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public DateTime EndDate { get; set; }
         
         [Required(ErrorMessage = "Địa điểm là bắt buộc")]
-        [StringLength(20, ErrorMessage = "Địa điểm không được vượt quá 20 ký tự")]
         public string Location { get; set; } = null!;
         
         [Required(ErrorMessage = "Loại hoạt động là bắt buộc")]
@@ -42,9 +41,9 @@ namespace EduShpere.Application.DTOs.ActivityDto
         [Required(ErrorMessage = "Ngày đóng đăng ký là bắt buộc")]
         public DateTime EndRegisterDate { get; set; }
         
-        [Required(ErrorMessage = "Số người tham gia tối đa là bắt buộc")]
+        // Hội thao và Hội thảo/Workshop không bắt buộc số người tham gia tối đa
         [Range(1, int.MaxValue, ErrorMessage = "Số người tham gia tối đa phải lớn hơn 0")]
-        public int MaxParticipants { get; set; }
+        public int? MaxParticipants { get; set; }
         
         public int? ClubId { get; set; }
         
