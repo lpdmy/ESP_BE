@@ -26,5 +26,8 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestByUserByClubId(int userid, int clubid,
      PaginationRequestDto paginationRequest,
      string? search = null);
+        Task<ClubJoinRequestDto> GetMentorInviationByClubId(int clubId);
+        Task CancelInvitationMentor(int clubJoinRequest);
+
     }
 }

@@ -20,7 +20,7 @@ namespace EduShpere.Controllers
             _httpContextService = httpContextService;
         }
         [HttpPost(ApiEndpoints.ClubJoinRequest.JoinRequest)]
-        public async Task<IActionResult> CreateJoinRequest(CreateClubJoinRequestDto dto )
+        public async Task<IActionResult> CreateJoinRequest(CreateClubJoinRequestDto dto)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
             var response = await _clubJoinRequestService.CreateJoinRequest(dto, user);
@@ -95,7 +95,8 @@ namespace EduShpere.Controllers
         public async Task<IActionResult> MentorApprove(int id)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
-            try {
+            try
+            {
                 var response = await _clubJoinRequestService.MentorApprove(id, user);
                 return Ok(new ResponseDto<ClubJoinRequestDto>(
                            response,
@@ -142,7 +143,7 @@ namespace EduShpere.Controllers
                    ));
         }
         [HttpGet(ApiEndpoints.ClubJoinRequest.JoinRequestByUser)]
-        public async Task<IActionResult> GetAllClubJoinRequestByUser(int clubid,[FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        public async Task<IActionResult> GetAllClubJoinRequestByUser(int clubid, [FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
         {
             var user = await _httpContextService.GetAppUserAndThrow();
             var response = await _clubJoinRequestService.GetAllClubJoinRequestByUserByClubId(user.Id, clubid, paginationRequest, search);
@@ -152,7 +153,44 @@ namespace EduShpere.Controllers
                        statusCode: 200
                    ));
         }
-
-
+        [HttpGet("api/clubjoinrequest/mentorinvitation/{id}")]
+        public async Task<IActionResult> GetMentorInvitationByClubId(int id)
+        {
+            var response = await _clubJoinRequestService.GetMentorInviationByClubId(id);
+            return Ok(new ResponseDto<ClubJoinRequestDto>(
+                       response,
+                       message: "Lấy lời mời làm cố vấn câu lạc bộ thành công",
+                       statusCode: 200
+                   ));
+        }
+        [HttpDelete("api/clubjoinrequest/cancelmentorinvitation/{id}")]
+        public async Task<IActionResult> CancelInvitationMentor(int id)
+        {
+            try
+            {
+                await _clubJoinRequestService.CancelInvitationMentor(id);
+                return Ok(new ResponseDto<string>(
+                    null,
+                    message: "Hủy lời mời làm cố vấn câu lạc bộ thành công",
+                    statusCode: 200
+                ));
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(new ResponseDto<string>(
+                    null,
+                    message: ex.Message,
+                    statusCode: 400
+                ));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDto<string>(
+                    null,
+                    message: "Đã xảy ra lỗi trong quá trình xử lý",
+                    statusCode: 500
+                ));
+            }
+        }
     }
 }
