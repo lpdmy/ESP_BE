@@ -185,6 +185,44 @@ namespace EduShpere.Controllers
         }
 
         /// <summary>
+        /// Search user by exact email
+        /// </summary>
+        /// <param name="email">Email address</param>
+        /// <returns>User search result</returns>
+        [HttpGet("users/by-email")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> SearchUserByEmail([FromQuery] string email)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    return BadRequest(new ResponseDto<string>(null, "Email không được để trống", 400));
+                }
+
+                // Validate email format
+                var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+                if (!emailRegex.IsMatch(email.Trim()))
+                {
+                    return BadRequest(new ResponseDto<string>(null, "Email không đúng định dạng", 400));
+                }
+
+                var result = await _searchService.SearchUserByEmailAsync(email.Trim());
+                
+                if (result == null)
+                {
+                    return NotFound(new ResponseDto<string>(null, "Không tìm thấy người dùng với email này", 404));
+                }
+
+                return Ok(new ResponseDto<UserSearchResultDto>(result, "Tìm kiếm người dùng thành công"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<string>(null, $"Lỗi tìm kiếm người dùng: {ex.Message}", 400));
+            }
+        }
+
+        /// <summary>
         /// Search posts only
         /// </summary>
         /// <param name="query">Search query</param>

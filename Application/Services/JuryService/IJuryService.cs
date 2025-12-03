@@ -26,5 +26,9 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<JuryAssignmentDto>> GetAllAssignByUserNotGradeAsync(int userid, int activityId,
     PaginationRequestDto paginationRequest,
     string? search = null);
+        Task<PaginationResponseDto<JuryAssignmentDto>> GetAllAssignByUserGradeAsync(int userid, int activityId,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
+        Task<string> GradeSubmission(int assignmentId, Dictionary<string, int> scores, string? comment,int totalScore);
     }
 }

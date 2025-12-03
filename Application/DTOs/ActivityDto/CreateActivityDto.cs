@@ -53,6 +53,7 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // SportsFestival fields
         public List<string> SportsCategories { get; set; } = new List<string>();
+        public List<ActivitySportConfigDto> SportsConfigurations { get; set; } = new List<ActivitySportConfigDto>();
         public string? CompetitionType { get; set; } // Individual, Team, Mixed
         
         // CreativeContest fields
@@ -79,6 +80,12 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // Registration Settings
         public bool OnlyTeacherCanRegister { get; set; } = false;
+        public ActivityRegistrationSettingsDto? RegistrationSettings { get; set; }
+        
+        // Problem/Submission fields - chỉ áp dụng cho Activity có nộp bài (CreativeContest hoặc SubType có submission)
+        public string? ProblemText { get; set; } // Đề bài (text)
+        public string? ProblemFileUrl { get; set; } // URL hoặc path đến file đề bài
+        public DateTime? SubmissionDeadline { get; set; } // Hạn cuối nộp bài - phải >= StartDate và <= EndDate
     }
     
     public class GradingSettingsDto

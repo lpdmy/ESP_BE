@@ -15,4 +15,9 @@ public class CreateClassGroupDto
     public int? Grade { get; set; }
 
     public int? AcademicYearId { get; set; }
+
+    /// <summary>
+    /// Lịch học của lớp (optional - backward compatible)
+    /// </summary>
+    public List<CreateClassGroupScheduleDto>? Schedules { get; set; }
 }

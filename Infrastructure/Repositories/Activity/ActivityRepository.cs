@@ -64,6 +64,9 @@ namespace EduShpere.Infrastructure.Repositories
             var activity = await _context.Activities
                 .Include(a => a.Rules.Where(r => !r.IsDeleted))
                 .Include(a => a.ActivityParticipants.Where(p => !p.IsDeleted))
+                    .ThenInclude(p => p.User)
+                .Include(a => a.ActivityParticipants.Where(p => !p.IsDeleted))
+                    .ThenInclude(p => p.ClassGroup)
                 .Include(a => a.ActivityRewards.Where(r => !r.IsDeleted))
                 .Include(a => a.Submissions.Where(s => !s.IsDeleted))
                 .Include(a => a.Speakers.Where(s => !s.IsDeleted))
@@ -146,6 +149,65 @@ namespace EduShpere.Infrastructure.Repositories
             }
 
 
+        }
+
+        public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null)
+        {
+            var now = DateTime.UtcNow;
+            
+            // Base query - join with ActivityParticipant to filter by userId
+            var query = _context.Activities
+                .Where(a => !a.IsDeleted)
+                .Where(a => a.ActivityParticipants.Any(ap => ap.UserId == userId && !ap.IsDeleted));
+
+            // Apply status filter if provided
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                var statusLower = status.ToLower().Trim();
+                if (statusLower == "ongoing")
+                {
+                    // Ongoing: EndDate is null OR EndDate > now (includes upcoming and currently running)
+                    query = query.Where(a => a.EndDate == null || a.EndDate > now);
+                }
+                else if (statusLower == "finished")
+                {
+                    // Finished: EndDate is not null AND EndDate <= now
+                    query = query.Where(a => a.EndDate != null && a.EndDate <= now);
+                }
+            }
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchLower = search.ToLower().Trim();
+                query = query.Where(a => 
+                    (a.Title != null && a.Title.ToLower().Contains(searchLower)) ||
+                    (a.Description != null && a.Description.ToLower().Contains(searchLower))
+                );
+            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+            
+            try
+            {
+                // Apply pagination and ordering
+                var items = await query
+                    .Include(a => a.Rules.Where(r => !r.IsDeleted))
+                    .Include(a => a.ActivityParticipants.Where(p => p.UserId == userId && !p.IsDeleted))
+                    .Include(a => a.RegistrationReward)
+                    .OrderByDescending(a => a.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+                
+                return (items ?? new List<Activity>(), totalCount);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return (new List<Activity>(), totalCount);
+            }
         }
     }
 }

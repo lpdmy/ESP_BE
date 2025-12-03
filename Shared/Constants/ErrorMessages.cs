@@ -105,6 +105,8 @@
             public const string StartDayAfterEndDayRegister = "Ngày bắt đầu đăng ký phải trước ngày kết thúc đăng ký.";
             public const string EndDayRegisterAfterStarDay = "Ngày kết thúc đăng ký phải trước Ngày bắt đầu sự kiện.";
             public const string MaxParticipantGreaterThanZero = "số lượng người đăng ký phải lớn hơn 0.";
+            public const string SubmissionDeadlineBeforeStartDate = "Hạn cuối nộp bài phải sau hoặc bằng ngày bắt đầu hoạt động.";
+            public const string SubmissionDeadlineAfterEndDate = "Hạn cuối nộp bài phải trước hoặc bằng ngày kết thúc hoạt động.";
         }
         
 
@@ -112,6 +114,37 @@
         {
             public const string AlreadyJoined = "Người dùng đã tham gia hoạt động này.";
             public const string NotFound = "Người dùng chưa tham gia hoạt động này.";
+            public const string NotHomeroomTeacher = "Bạn không phải là giáo viên chủ nhiệm của lớp này.";
+            public const string InvalidClassGroup = "Lớp học không tồn tại hoặc không hợp lệ.";
+            public const string ClassGroupAcademicYearMismatch = "Lớp học không thuộc niên khóa của hoạt động này.";
+            public const string OnlyHomeroomTeacherCanRegister = "Chỉ có giáo viên chủ nhiệm của lớp mới có thể đăng ký cho lớp.";
+            public const string TeacherNotFound = "Không tìm thấy thông tin giáo viên.";
+            public const string ClassGroupIdRequired = "ClassGroupId là bắt buộc khi đăng ký cho lớp.";
+            public const string MembersRequired = "Danh sách thành viên không được để trống.";
+            public const string LeaderRequired = "Vui lòng chọn nhóm trưởng cho nhóm tham gia.";
+            public const string GroupSizeOutOfRange = "Số lượng thành viên phải nằm trong khoảng {0} - {1}.";
+            public const string StudentNotInClass = "Học sinh không thuộc lớp đã chọn.";
+            public const string ActivityNotSupportGroupRegistration = "Hoạt động này không hỗ trợ đăng ký theo nhóm.";
+            public const string ActivityNotSupportSportRegistration = "Hoạt động này không hỗ trợ đăng ký hội thao.";
+            public const string SportNotFound = "Không tìm thấy môn thi đấu trong hoạt động.";
+            public const string SportLimitExceeded = "Số lượng thành viên đăng ký cho môn này đã vượt quá giới hạn.";
+            public const string CannotCancelAfterDeadline = "Không thể hủy đăng ký sau thời hạn đăng ký.";
+
+        }
+
+        public struct ActivityMatch
+        {
+            public const string NotFound = "Không tìm thấy trận đấu này.";
+            public const string BracketNotFound = "Không tìm thấy bracket cho môn thể thao này.";
+            public const string BracketAlreadyExists = "Đã có bracket cho môn thể thao này. Vui lòng xóa bracket cũ trước khi tạo mới.";
+            public const string InsufficientClasses = "Cần ít nhất 2 lớp đã đăng ký để tạo bracket.";
+            public const string MatchAlreadyCompleted = "Trận đấu đã hoàn thành, không thể cập nhật kết quả.";
+            public const string InvalidWinner = "Người thắng phải là một trong hai lớp tham gia trận đấu.";
+            public const string SameClassGroup = "Hai lớp không được trùng nhau.";
+            public const string DifferentGrades = "Hai lớp phải cùng khối.";
+            public const string InvalidMatchDate = "Ngày giờ trận đấu không hợp lệ.";
+            public const string SportNotFound = "Không tìm thấy môn thể thao này trong hoạt động.";
+            public const string ClassGroupNotRegistered = "Lớp này chưa đăng ký hoạt động.";
 
         }
         public struct Post
@@ -245,10 +278,18 @@
         public struct Moderation
         {
             public const string ContentViolation = "Nội dung vi phạm môi trường học đường.";
+            public const string ListNotFound = "Danh sách báo cáo không tồn tại.";
+            public const string NotFound = "Báo cáo không tồn tại.";
         }
         public struct Submission
         {
             public const string ListSubmissionNotFound = "danh sách bài nộp không tồn tại.";
+            public const string SubmissionNotFound = "bài nộp không tồn tại.";
+
         }
+        public struct Assignment { 
+            public const string AssignMentNotFound = "Phân công không tồn tại.";
+        }
+
     }
 }

@@ -12,4 +12,9 @@ public class ClassGroupDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
+    
+    /// <summary>
+    /// Lịch học của lớp (optional - backward compatible)
+    /// </summary>
+    public List<ClassGroupScheduleDto>? Schedules { get; set; }
 }

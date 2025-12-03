@@ -16,6 +16,12 @@ namespace EduShpere.Application.DTOs
 
         public int UserId { get; set; }
 
+        public int? ClassGroupId { get; set; }
+        public int? SportId { get; set; }
+        public Guid? GroupCode { get; set; }
+        public bool IsLeader { get; set; }
+        public string? RegistrationMetadata { get; set; }
+
         public ParticipantStatus? Status { get; set; }
         public DateTime? CreatedAt { get; set; }
 

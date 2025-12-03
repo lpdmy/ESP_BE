@@ -1,0 +1,8 @@
+# Thư mục này chứa ML model files
+# File tournament_schedule_model.zip sẽ được tạo sau khi train model
+# Khi deploy, đảm bảo file model.zip có trong thư mục này hoặc trong output directory
+
+
+
+
+
