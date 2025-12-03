@@ -197,54 +197,61 @@ namespace EduShpere.Application.Services
             }
 
             // 10. Lưu tất cả matches (2 bước: tạo matches trước, sau đó link NextMatchId)
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            BracketResponseDto? resultBracket = null;
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
             {
-                // Bước 1: Tạo tất cả matches (chưa có NextMatchId)
-                await _context.ActivityMatches.AddRangeAsync(allMatches);
-                await _context.SaveChangesAsync(); // Save để có ID
-
-                // Bước 2: Link NextMatchId sau khi đã có ID
-                // Với mỗi khối, tạo mapping từ round này sang round tiếp theo
-                foreach (var gradeGroup in groupsByGrade)
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    var gradeValue = gradeGroup.Key;
-                    var gradeMatches = allMatches.Where(m => m.Grade == gradeValue).ToList();
-                    
-                    // Group by round
-                    var matchesByRound = gradeMatches.GroupBy(m => m.Round).OrderBy(g => g.Key).ToList();
-                    
-                    for (int roundIndex = 0; roundIndex < matchesByRound.Count - 1; roundIndex++)
+                    // Bước 1: Tạo tất cả matches (chưa có NextMatchId)
+                    await _context.ActivityMatches.AddRangeAsync(allMatches);
+                    await _context.SaveChangesAsync(); // Save để có ID
+
+                    // Bước 2: Link NextMatchId sau khi đã có ID
+                    // Với mỗi khối, tạo mapping từ round này sang round tiếp theo
+                    foreach (var gradeGroup in groupsByGrade)
                     {
-                        var currentRound = matchesByRound[roundIndex].OrderBy(m => m.MatchNumber).ToList();
-                        var nextRound = matchesByRound[roundIndex + 1].OrderBy(m => m.MatchNumber).ToList();
+                        var gradeValue = gradeGroup.Key;
+                        var gradeMatches = allMatches.Where(m => m.Grade == gradeValue).ToList();
                         
-                        // Mỗi 2 trận ở round hiện tại sẽ đi vào 1 trận ở round tiếp theo
-                        for (int i = 0; i < currentRound.Count; i += 2)
+                        // Group by round
+                        var matchesByRound = gradeMatches.GroupBy(m => m.Round).OrderBy(g => g.Key).ToList();
+                        
+                        for (int roundIndex = 0; roundIndex < matchesByRound.Count - 1; roundIndex++)
                         {
-                            if (i < currentRound.Count)
+                            var currentRound = matchesByRound[roundIndex].OrderBy(m => m.MatchNumber).ToList();
+                            var nextRound = matchesByRound[roundIndex + 1].OrderBy(m => m.MatchNumber).ToList();
+                            
+                            // Mỗi 2 trận ở round hiện tại sẽ đi vào 1 trận ở round tiếp theo
+                            for (int i = 0; i < currentRound.Count; i += 2)
                             {
-                                currentRound[i].NextMatchId = nextRound[i / 2].Id;
-                            }
-                            if (i + 1 < currentRound.Count)
-                            {
-                                currentRound[i + 1].NextMatchId = nextRound[i / 2].Id;
+                                if (i < currentRound.Count)
+                                {
+                                    currentRound[i].NextMatchId = nextRound[i / 2].Id;
+                                }
+                                if (i + 1 < currentRound.Count)
+                                {
+                                    currentRound[i + 1].NextMatchId = nextRound[i / 2].Id;
+                                }
                             }
                         }
                     }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // 11. Return bracket
+                    resultBracket = await GetBracketByActivityAsync(dto.ActivityId, dto.SportId, dto.Grade);
                 }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                // 11. Return bracket
-                return await GetBracketByActivityAsync(dto.ActivityId, dto.SportId, dto.Grade);
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            return resultBracket!;
         }
 
         private string GetRoundName(int round, int totalRounds)
