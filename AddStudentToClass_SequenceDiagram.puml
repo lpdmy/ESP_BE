@@ -1,0 +1,159 @@
+@startuml Add Members in Class
+actor Admin
+participant ": ClassDetailPage " as ClassDetailPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassDetailPage: 1. Click "Thêm học sinh" button
+activate Admin
+activate ClassDetailPage
+
+Admin->ClassDetailPage: 2. Enter student email in modal
+
+Admin->ClassDetailPage: 3. Click "Thêm" button
+
+ClassDetailPage->Router: 4. Send POST /api/classgroup/{id}/students with email
+activate Router
+deactivate ClassDetailPage
+
+Router->ClassGroupController: 5. Route Request to Controller
+activate ClassGroupController
+deactivate Router
+
+ClassGroupController->ClassGroupService: 6. AddStudentToClassAsync(classGroupId, dto)
+activate ClassGroupService
+deactivate ClassGroupController
+
+ClassGroupService->ClassGroupRepository: 7. GetStudentByEmailAsync(email)
+activate ClassGroupRepository
+ClassGroupRepository->Database: 8. Query User by Email
+    activate Database
+    Database-->ClassGroupRepository: 9. Return User or null
+    deactivate Database
+    ClassGroupRepository-->ClassGroupService: 10. Return Student entity
+    deactivate ClassGroupRepository
+    
+    alt student not found
+        ClassGroupService-->ClassGroupController: 11.1 Return error (Student not found)
+        activate ClassGroupController
+        deactivate ClassGroupService
+        ClassGroupController-->Router: 11.1.1 Send Error Response (400)
+        activate Router
+        deactivate ClassGroupController
+        Router-->ClassDetailPage: 11.1.2 Return error message
+        activate ClassDetailPage
+        deactivate Router
+        ClassDetailPage->ClassDetailPage: 11.1.3 Display error message
+        ClassDetailPage-->Admin: 11.1.4 Show error toast
+        deactivate ClassDetailPage
+        deactivate Admin
+    else student found
+        ClassGroupService->ClassGroupRepository: 11.2.1 IsStudentInClassAsync(classGroupId, studentId)
+        activate ClassGroupRepository
+        ClassGroupRepository->Database: 11.2.2 Check ClassGroupMembers table
+        activate Database
+        Database-->ClassGroupRepository: 11.2.3 Return true/false
+        deactivate Database
+        ClassGroupRepository-->ClassGroupService: 11.2.4 Return isInClass result
+        deactivate ClassGroupRepository
+        
+        alt student already in class
+            ClassGroupService-->ClassGroupController: 11.3.1 Return error (Already in class)
+            activate ClassGroupController
+            deactivate ClassGroupService
+            ClassGroupController-->Router: 11.3.2 Send Error Response (400)
+            activate Router
+            deactivate ClassGroupController
+            Router-->ClassDetailPage: 11.3.3 Return error message
+            activate ClassDetailPage
+            deactivate Router
+            ClassDetailPage->ClassDetailPage: 11.3.4 Display error message
+            ClassDetailPage-->Admin: 11.3.5 Show error toast
+            deactivate ClassDetailPage
+            deactivate Admin
+        else student not in class
+            ClassGroupService->ClassGroupRepository: 11.4.1 GetStudentCurrentClassInSameAcademicYearAsync(studentId, academicYearId)
+            activate ClassGroupRepository
+            ClassGroupRepository->Database: 11.4.2 Query student's class in same academic year
+            activate Database
+            Database-->ClassGroupRepository: 11.4.3 Return ClassGroup or null
+            deactivate Database
+            ClassGroupRepository-->ClassGroupService: 11.4.4 Return current class
+            deactivate ClassGroupRepository
+            
+            alt student has another class in same academic year
+                ClassGroupService-->ClassGroupController: 11.5.1 Return error (Has another class)
+                activate ClassGroupController
+                deactivate ClassGroupService
+                ClassGroupController-->Router: 11.5.2 Send Error Response (400)
+                activate Router
+                deactivate ClassGroupController
+                Router-->ClassDetailPage: 11.5.3 Return error with current class info
+                activate ClassDetailPage
+                deactivate Router
+                ClassDetailPage->ClassDetailPage: 11.5.4 Display error message
+                ClassDetailPage-->Admin: 11.5.5 Show error toast
+                deactivate ClassDetailPage
+                deactivate Admin
+            else student can be added
+                ClassGroupService->ClassGroupRepository: 11.6.1 AddStudentToClassAsync(classGroupId, studentId)
+                activate ClassGroupRepository
+                ClassGroupRepository->Database: 11.6.2 INSERT into ClassGroupMembers
+                activate Database
+                Database-->ClassGroupRepository: 11.6.3 Return success
+                deactivate Database
+                ClassGroupRepository-->ClassGroupService: 11.6.4 Return true
+                deactivate ClassGroupRepository
+                
+                ClassGroupService->ClassGroupService: 11.6.5 Create AddStudentToClassResponseDto
+                ClassGroupService-->ClassGroupController: 11.6.6 Return success response
+                activate ClassGroupController
+                deactivate ClassGroupService
+                ClassGroupController->ClassGroupController: 11.6.7 Wrap in ResponseDto
+                ClassGroupController-->Router: 11.6.8 Send Success Response (200)
+                activate Router
+                deactivate ClassGroupController
+                Router-->ClassDetailPage: 11.6.9 Return success message
+                activate ClassDetailPage
+                deactivate Router
+                ClassDetailPage->ClassDetailPage: 11.6.10 Refresh students list
+                ClassDetailPage->Router: 11.6.11 Call GET /api/classgroup/{id}/students
+                activate Router
+                deactivate ClassDetailPage
+                Router->ClassGroupController: 11.6.12 Route to GetStudents
+                activate ClassGroupController
+                deactivate Router
+                ClassGroupController->ClassGroupService: 11.6.13 GetStudentsInClassAsync(classGroupId)
+                activate ClassGroupService
+                deactivate ClassGroupController
+                ClassGroupService->ClassGroupRepository: 11.6.14 GetStudentsInClassAsync(classGroupId)
+                activate ClassGroupRepository
+                ClassGroupRepository->Database: 11.6.15 Query students in class
+                activate Database
+                Database-->ClassGroupRepository: 11.6.16 Return students list
+                deactivate Database
+                ClassGroupRepository-->ClassGroupService: 11.6.17 Return students
+                deactivate ClassGroupRepository
+                ClassGroupService-->ClassGroupController: 11.6.18 Return students DTOs
+                activate ClassGroupController
+                deactivate ClassGroupService
+                ClassGroupController-->Router: 11.6.19 Send students list
+                activate Router
+                deactivate ClassGroupController
+                Router-->ClassDetailPage: 11.6.20 Return updated students list
+                activate ClassDetailPage
+                deactivate Router
+                ClassDetailPage->ClassDetailPage: 11.6.21 Update students state
+                ClassDetailPage->ClassDetailPage: 11.6.22 Close modal
+                ClassDetailPage->ClassDetailPage: 11.6.23 Show success toast
+                ClassDetailPage-->Admin: 11.6.24 Display updated students list
+                deactivate ClassDetailPage
+                deactivate Admin
+            end
+        end
+    end
+@enduml
+

@@ -1,0 +1,82 @@
+@startuml View Class Post by User
+actor User
+participant ": ClassDetailPage " as ClassDetailPage
+participant ": TeacherPosts " as TeacherPosts
+participant ": Router " as Router
+participant ": PostController " as PostController
+participant ": PostService " as PostService
+participant ": PostRepository " as PostRepository
+database Database
+
+User->ClassDetailPage: 1. Navigate to Class Detail Page
+    activate User
+    activate ClassDetailPage
+
+ClassDetailPage->ClassDetailPage: 2. Render Class Detail Page
+
+ClassDetailPage->TeacherPosts: 3. Render TeacherPosts Component
+    activate TeacherPosts
+    deactivate ClassDetailPage
+
+TeacherPosts->Router: 4. Send GET /api/post/classgroup/{id}
+    deactivate TeacherPosts
+    activate Router
+
+Router->PostController: 5. Route Request to Controller
+    deactivate Router
+    activate PostController
+
+PostController->PostController: 6. GetAppUserAndThrow() - Get current user
+    activate PostController
+
+PostController->PostService: 7. GetPostsByClassGroup(classGroupId, user)
+    deactivate PostController
+    activate PostService
+
+PostService->PostService: 8. Call GetPostsCore with filter
+
+PostService->PostRepository: 9. GetAllPostIncluding()
+    activate PostRepository
+
+PostRepository->Database: 10. Query Posts with User, Attachments, Comments, Likes, Hashtags
+    activate Database
+
+Database-->PostRepository: 11. Return Posts with relations
+    deactivate Database
+
+PostRepository-->PostService: 12. Return Posts query
+    deactivate PostRepository
+
+PostService->PostService: 13. Filter by ClassGroupId and !IsDeleted
+
+PostService->PostService: 14. Sort by CreatedAt (newest first)
+
+PostService->PostService: 15. Map to PostResponseDto with User info, Attachments, LikeCount, IsLikedByCurrentUser
+
+PostService-->PostController: 16. Return PostResponseDto[]
+    activate PostController
+    deactivate PostService
+
+PostController->PostController: 17. Wrap in ResponseDto
+
+PostController-->Router: 18. Send Posts Response
+    activate Router
+    deactivate PostController
+
+Router-->TeacherPosts: 19. Display Posts List
+    activate TeacherPosts
+    deactivate Router
+
+TeacherPosts->TeacherPosts: 20. Update posts state
+
+TeacherPosts->TeacherPosts: 21. Render PostCard components
+
+TeacherPosts-->User: 22. Show Class Posts
+    deactivate TeacherPosts
+    deactivate User
+@enduml
+
+
+
+
+

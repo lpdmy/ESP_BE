@@ -1,0 +1,145 @@
+@startuml Edit Staff Rights by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": StaffController " as StaffController
+participant ": StaffService " as StaffService
+participant ": UserRepository " as UserRepository
+participant ": UserRightRepository " as UserRightRepository
+database Database
+
+Admin->StaffManagementPage: 1. Click on a staff and edit permissions
+    activate Admin
+    activate StaffManagementPage
+
+Admin->StaffManagementPage: 2. Click "Lưu" button
+
+StaffManagementPage->Router: 3. Send PUT /api/staff with UpdateStaffDto
+    deactivate StaffManagementPage
+    activate Router
+
+Router->StaffController: 4. Route Request to Controller
+    deactivate Router
+    activate StaffController
+
+StaffController->StaffService: 5. UpdateStaff(dto)
+    deactivate StaffController
+    activate StaffService
+
+StaffService->UserRepository: 6. GetByStaffIdIncluding(staffId)
+    activate UserRepository
+    UserRepository->Database: 7. Query User by Id with UserRights
+    activate Database
+    Database-->UserRepository: 8. Return User with UserRights
+    deactivate Database
+    UserRepository-->StaffService: 9. Return User entity
+    deactivate UserRepository
+
+alt staff not found
+    StaffService->StaffService: 10.1 Throw BadRequestException
+    StaffService-->StaffController: 10.1.1 Return error
+    activate StaffController
+    deactivate StaffService
+    StaffController-->Router: 10.1.2 Send Error Response (400)
+    activate Router
+    deactivate StaffController
+    Router-->StaffManagementPage: 10.1.3 Return error message
+    activate StaffManagementPage
+    deactivate Router
+    StaffManagementPage-->Admin: 10.1.4 Show error toast
+    deactivate StaffManagementPage
+    deactivate Admin
+else staff found
+    StaffService->StaffService: 10.2 Compare current permissions with new permissions
+
+    alt permissions changed
+        StaffService->UserRightRepository: 10.2.1 DeleteByUserIdAsync(staffId)
+        activate UserRightRepository
+        UserRightRepository->Database: 10.2.2 DELETE UserRights WHERE UserId = {id}
+        activate Database
+        Database-->UserRightRepository: 10.2.3 UserRights deleted
+        deactivate Database
+        UserRightRepository-->StaffService: 10.2.4 Return
+        deactivate UserRightRepository
+
+        StaffService->StaffService: 10.2.5 Create new UserRight entities
+        StaffService->UserRightRepository: 10.2.6 AddRangeAsync(newRights)
+        activate UserRightRepository
+        UserRightRepository->Database: 10.2.7 INSERT into UserRights
+        activate Database
+        Database-->UserRightRepository: 10.2.8 Return created UserRights
+        deactivate Database
+        UserRightRepository-->StaffService: 10.2.9 Return
+        deactivate UserRightRepository
+
+        StaffService->UserRepository: 10.2.10 UpdateAsync(staff)
+        activate UserRepository
+        UserRepository->Database: 10.2.11 UPDATE User SET UpdatedAt = DateTime.UtcNow
+        activate Database
+        Database-->UserRepository: 10.2.12 User Updated
+        deactivate Database
+        UserRepository-->StaffService: 10.2.13 Return
+        deactivate UserRepository
+
+        StaffService->UserRepository: 10.2.14 GetByStaffIdIncluding(staffId)
+        activate UserRepository
+        UserRepository->Database: 10.2.15 Query User with updated UserRights
+        activate Database
+        Database-->UserRepository: 10.2.16 Return User with relations
+        deactivate Database
+        UserRepository-->StaffService: 10.2.17 Return User
+        deactivate UserRepository
+
+        StaffService->StaffService: 10.2.18 Map User to UserResponseDto
+        StaffService-->StaffController: 10.2.19 Return UserResponseDto
+        activate StaffController
+        deactivate StaffService
+
+        StaffController-->Router: 10.2.20 Send Success Response (200)
+        activate Router
+        deactivate StaffController
+
+        Router-->StaffManagementPage: 10.2.21 Staff Rights Updated Successfully
+        activate StaffManagementPage
+        deactivate Router
+
+        StaffManagementPage->StaffManagementPage: 10.2.22 Show Success Message
+        StaffManagementPage->StaffManagementPage: 10.2.23 Refresh staff list
+        StaffManagementPage-->Admin: 10.2.24 Show Updated Staff with New Rights
+        deactivate StaffManagementPage
+        deactivate Admin
+    else permissions not changed
+        StaffService->StaffService: 10.3 Skip permission update
+        StaffService->UserRepository: 10.3.1 UpdateAsync(staff)
+        activate UserRepository
+        UserRepository->Database: 10.3.2 UPDATE User SET UpdatedAt = DateTime.UtcNow
+        activate Database
+        Database-->UserRepository: 10.3.3 User Updated
+        deactivate Database
+        UserRepository-->StaffService: 10.3.4 Return
+        deactivate UserRepository
+        StaffService->UserRepository: 10.3.5 GetByStaffIdIncluding(staffId)
+        activate UserRepository
+        UserRepository->Database: 10.3.6 Query User with UserRights
+        activate Database
+        Database-->UserRepository: 10.3.7 Return User with relations
+        deactivate Database
+        UserRepository-->StaffService: 10.3.8 Return User
+        deactivate UserRepository
+        StaffService->StaffService: 10.3.9 Map User to UserResponseDto
+        StaffService-->StaffController: 10.3.10 Return UserResponseDto
+        activate StaffController
+        deactivate StaffService
+        StaffController-->Router: 10.3.11 Send Success Response
+        activate Router
+        deactivate StaffController
+        Router-->StaffManagementPage: 10.3.12 Return staff data
+        activate StaffManagementPage
+        deactivate Router
+        StaffManagementPage-->Admin: 10.3.13 No changes made
+        deactivate StaffManagementPage
+        deactivate Admin
+    end
+end
+@enduml
+

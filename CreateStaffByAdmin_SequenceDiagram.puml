@@ -1,0 +1,116 @@
+@startuml Create Staff by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": AuthController " as AuthController
+participant ": AuthService " as AuthService
+participant ": UserRepository " as UserRepository
+participant ": UserRightRepository " as UserRightRepository
+database Database
+
+Admin->StaffManagementPage: 1. Click "Tạo nhân viên" button
+    activate Admin
+    activate StaffManagementPage
+
+Admin->StaffManagementPage: 2. Fill form (email, firstName, lastName, phoneNumber, password, permissions)
+
+Admin->StaffManagementPage: 3. Click "Tạo" button
+
+StaffManagementPage->StaffManagementPage: 4. Validate required fields (email, firstName, password, permissions)
+
+alt validation passed
+    StaffManagementPage->Router: 5.1.1 Send POST /api/auth/create-staff with CreateStaffDto
+    activate Router
+    deactivate StaffManagementPage
+
+    Router->AuthController: 5.1.2 Route Request to Controller
+    activate AuthController
+    deactivate Router
+
+    AuthController->AuthService: 5.1.3 CreateStaff(dto)
+    activate AuthService
+    deactivate AuthController
+
+    AuthService->UserRepository: 5.1.4 FindUserByEmail(email)
+    activate UserRepository
+    UserRepository->Database: 5.1.5 Query User WHERE Email = {email}
+    activate Database
+    Database-->UserRepository: 5.1.6 Return User or null
+    deactivate Database
+    UserRepository-->AuthService: 5.1.7 Return user exists result
+    deactivate UserRepository
+
+    alt email already exists
+        AuthService->AuthService: 5.2.1 Throw BadRequestException
+        AuthService-->AuthController: 5.2.1.1 Return error (Email already exists)
+        activate AuthController
+        deactivate AuthService
+        AuthController-->Router: 5.2.1.2 Send Error Response (400)
+        activate Router
+        deactivate AuthController
+        Router-->StaffManagementPage: 5.2.1.3 Return error message
+        activate StaffManagementPage
+        deactivate Router
+        StaffManagementPage->StaffManagementPage: 5.2.1.4 Display error message
+        StaffManagementPage-->Admin: 5.2.1.5 Show error toast
+        deactivate StaffManagementPage
+        deactivate Admin
+    else email available
+        AuthService->AuthService: 5.2.2 Create User entity (Role = Staff)
+        AuthService->AuthService: 5.2.2.1 Hash password using PasswordHelper
+        AuthService->UserRepository: 5.2.2.2 AddAsync(staff)
+        activate UserRepository
+        UserRepository->Database: 5.2.2.3 INSERT into Users
+        activate Database
+        Database-->UserRepository: 5.2.2.4 Return created User with Id
+        deactivate Database
+        UserRepository-->AuthService: 5.2.2.5 Return User entity
+        deactivate UserRepository
+
+        AuthService->AuthService: 5.2.2.6 Create UserRight entities for each permission
+        AuthService->UserRightRepository: 5.2.2.7 AddRangeAsync(userRights)
+        activate UserRightRepository
+        UserRightRepository->Database: 5.2.2.8 INSERT into UserRights
+        activate Database
+        Database-->UserRightRepository: 5.2.2.9 Return created UserRights
+        deactivate Database
+        UserRightRepository-->AuthService: 5.2.2.10 Return UserRights
+        deactivate UserRightRepository
+
+        AuthService->UserRepository: 5.2.2.11 GetByIdIncludeAsync(staffId)
+        activate UserRepository
+        UserRepository->Database: 5.2.2.12 Query User with UserRights
+        activate Database
+        Database-->UserRepository: 5.2.2.13 Return User with relations
+        deactivate Database
+        UserRepository-->AuthService: 5.2.2.14 Return User with UserRights
+        deactivate UserRepository
+
+        AuthService->AuthService: 5.2.2.15 Map User to UserResponseDto
+        AuthService-->AuthController: 5.2.2.16 Return UserResponseDto
+        activate AuthController
+        deactivate AuthService
+
+        AuthController->AuthController: 5.2.2.17 Wrap in ResponseDto
+        AuthController-->Router: 5.2.2.18 Send Created Response (200)
+        activate Router
+        deactivate AuthController
+        Router-->StaffManagementPage: 5.2.2.19 Return created staff data
+        activate StaffManagementPage
+        deactivate Router
+        StaffManagementPage->StaffManagementPage: 5.2.2.20 Reset form
+        StaffManagementPage->StaffManagementPage: 5.2.2.21 Close modal
+        StaffManagementPage->StaffManagementPage: 5.2.2.22 Show success toast
+        StaffManagementPage->StaffManagementPage: 5.2.2.23 Refresh staff list
+        StaffManagementPage-->Admin: 5.2.2.24 Display updated staff list
+        deactivate StaffManagementPage
+        deactivate Admin
+    end
+else validation failed
+    StaffManagementPage->StaffManagementPage: 5.4.1 Show error toast
+    StaffManagementPage-->Admin: 5.4.1.1 Display "Vui lòng điền đầy đủ thông tin"
+    deactivate StaffManagementPage
+    deactivate Admin
+end
+@enduml
+

@@ -1,0 +1,96 @@
+@startuml Add New Class by Admin
+actor Admin
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassManagementPage: 1. Click "Thêm lớp học mới" button
+activate Admin
+activate ClassManagementPage
+
+Admin->ClassManagementPage: 2. Fill form (name, grade, academicYearId, description)
+
+Admin->ClassManagementPage: 3. Click "Thêm" button
+
+ClassManagementPage->ClassManagementPage: 4. Validate required fields (name, grade, academicYearId)
+
+alt validation passed
+    ClassManagementPage->Router: 5.1.1 Send POST /api/classgroup with CreateClassGroupDto
+    activate Router
+    deactivate ClassManagementPage
+
+    Router->ClassGroupController: 5.1.2 Route Request to Controller
+    activate ClassGroupController
+    deactivate Router
+
+    ClassGroupController->ClassGroupService: 5.1.3 CreateAsync(dto)
+    activate ClassGroupService
+    deactivate ClassGroupController
+
+    ClassGroupService->ClassGroupRepository: 5.1.4 IsExistsAsync(name, grade, academicYearId)
+    activate ClassGroupRepository
+    ClassGroupRepository->Database: 5.1.5 Query ClassGroup WHERE Name = {name} AND Grade = {grade} AND AcademicYearId = {id}
+    activate Database
+    Database-->ClassGroupRepository: 5.1.6 Return true/false
+    deactivate Database
+    ClassGroupRepository-->ClassGroupService: 5.1.7 Return exists result
+    deactivate ClassGroupRepository
+
+    alt class name already exists
+        ClassGroupService->ClassGroupService: 5.2.1 Throw BadRequestException
+        ClassGroupService-->ClassGroupController: 5.2.1.1 Return error (Name already exists)
+        activate ClassGroupController
+        deactivate ClassGroupService
+        ClassGroupController-->Router: 5.2.1.2 Send Error Response (400)
+        activate Router
+        deactivate ClassGroupController
+        Router-->ClassManagementPage: 5.2.1.3 Return error message
+        activate ClassManagementPage
+        deactivate Router
+        ClassManagementPage->ClassManagementPage: 5.2.1.4 Display error message
+        ClassManagementPage-->Admin: 5.2.1.5 Show error toast
+        deactivate ClassManagementPage
+        deactivate Admin
+    else class name available
+        ClassGroupService->ClassGroupService: 5.2.2 Map CreateClassGroupDto to ClassGroup entity
+        ClassGroupService->ClassGroupService: 5.2.2.1 SetAuditFieldsForCreate (CreatedAt, CreatedBy)
+        ClassGroupService->ClassGroupRepository: 5.2.2.2 AddAsync(classGroup)
+        activate ClassGroupRepository
+        ClassGroupRepository->Database: 5.2.2.3 INSERT into ClassGroups
+        activate Database
+        Database-->ClassGroupRepository: 5.2.2.4 Return created ClassGroup with Id
+        deactivate Database
+        ClassGroupRepository-->ClassGroupService: 5.2.2.5 Return ClassGroup entity
+        deactivate ClassGroupRepository
+
+        ClassGroupService->ClassGroupService: 5.2.2.6 Map ClassGroup to ClassGroupDto
+        ClassGroupService-->ClassGroupController: 5.2.2.7 Return ClassGroupDto
+        activate ClassGroupController
+        deactivate ClassGroupService
+
+        ClassGroupController->ClassGroupController: 5.2.2.8 Wrap in ResponseDto
+        ClassGroupController-->Router: 5.2.2.9 Send Created Response (201)
+        activate Router
+        deactivate ClassGroupController
+        Router-->ClassManagementPage: 5.2.2.10 Return created class data
+        activate ClassManagementPage
+        deactivate Router
+        ClassManagementPage->ClassManagementPage: 5.2.2.11 Add class to classes list
+        ClassManagementPage->ClassManagementPage: 5.2.2.12 Reset form
+        ClassManagementPage->ClassManagementPage: 5.2.2.13 Close modal
+        ClassManagementPage->ClassManagementPage: 5.2.2.14 Show success toast
+        ClassManagementPage-->Admin: 5.2.2.15 Display updated class list
+        deactivate ClassManagementPage
+        deactivate Admin
+    end
+else validation failed
+    ClassManagementPage->ClassManagementPage: 5.4.1 Show error toast
+    ClassManagementPage-->Admin: 5.4.1.1 Display "Vui lòng điền đầy đủ thông tin"
+    deactivate ClassManagementPage
+    deactivate Admin
+end
+@enduml
+

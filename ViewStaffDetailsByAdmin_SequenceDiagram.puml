@@ -1,0 +1,63 @@
+@startuml View Staff Details by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": StaffController " as StaffController
+participant ": StaffService " as StaffService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->StaffManagementPage: 1. Click on a staff to view details
+    activate Admin
+    activate StaffManagementPage
+
+StaffManagementPage->StaffManagementPage: 2. Open Staff Detail Modal
+
+StaffManagementPage->Router: 3. Send GET /api/staff/{id}
+    deactivate StaffManagementPage
+    activate Router
+
+Router->StaffController: 4. Route Request to Controller
+    deactivate Router
+    activate StaffController
+
+StaffController->StaffService: 5. GetByIdAsync(id)
+    deactivate StaffController
+    activate StaffService
+
+StaffService->UserRepository: 6. GetByStaffIdIncluding(id)
+    activate UserRepository
+
+UserRepository->Database: 7. Query User by Id WHERE Role = Staff with UserRights
+    activate Database
+
+Database-->UserRepository: 8. Return User with relations
+    deactivate Database
+
+UserRepository-->StaffService: 9. Return User entity
+    deactivate UserRepository
+
+StaffService->StaffService: 10. Map User to UserResponseDto
+
+StaffService-->StaffController: 11. Return UserResponseDto
+    activate StaffController
+    deactivate StaffService
+
+StaffController-->Router: 12. Send Staff Details Response
+    activate Router
+    deactivate StaffController
+
+Router-->StaffManagementPage: 13. Display Staff Details
+    activate StaffManagementPage
+    deactivate Router
+
+StaffManagementPage->StaffManagementPage: 14. Render Staff Information
+
+StaffManagementPage-->Admin: 15. Show Complete Staff Details
+    deactivate StaffManagementPage
+    deactivate Admin
+@enduml
+
+
+
+

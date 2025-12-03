@@ -1,0 +1,95 @@
+@startuml Edit Class Information by Admin
+actor Admin
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassManagementPage: 1. Admin clicks to Edit Class
+    activate Admin
+    activate ClassManagementPage
+
+ClassManagementPage->ClassManagementPage: 2. Render Edit Class Form with existing data
+
+Admin->ClassManagementPage: 3. Update Class Information
+
+Admin->ClassManagementPage: 4. Click "Cập nhật" button
+
+ClassManagementPage->ClassManagementPage: 5. Validate required fields
+
+alt valid input
+    ClassManagementPage->Router: 5.1.1 Send PUT /api/classgroup/{id} with UpdateClassGroupDto
+    deactivate ClassManagementPage
+    activate Router
+
+    Router->ClassGroupController: 5.1.2 Route Request to Controller
+    deactivate Router
+    activate ClassGroupController
+
+    ClassGroupController->ClassGroupService: 5.1.3 UpdateAsync(dto)
+    deactivate ClassGroupController
+    activate ClassGroupService
+
+    ClassGroupService->ClassGroupRepository: 5.1.4 GetByIdAsync(classGroupId)
+    activate ClassGroupRepository
+    ClassGroupRepository->Database: 5.1.5 Query ClassGroup by Id
+    activate Database
+    Database-->ClassGroupRepository: 5.1.6 Return ClassGroup
+    deactivate Database
+    ClassGroupRepository-->ClassGroupService: 5.1.7 Return ClassGroup entity
+    deactivate ClassGroupRepository
+
+    ClassGroupService->ClassGroupService: 5.1.8 Validate Class exists
+
+    ClassGroupService->ClassGroupRepository: 5.1.9 IsExistsAsync(name, grade, academicYearId, excludeId)
+    activate ClassGroupRepository
+    ClassGroupRepository->Database: 5.1.10 Query ClassGroup WHERE Name = {name} AND Grade = {grade} AND AcademicYearId = {id} AND Id != {excludeId}
+    activate Database
+    Database-->ClassGroupRepository: 5.1.11 Return true/false
+    deactivate Database
+    ClassGroupRepository-->ClassGroupService: 5.1.12 Return exists result
+    deactivate ClassGroupRepository
+
+    ClassGroupService->ClassGroupService: 5.1.13 Update ClassGroup fields
+
+    ClassGroupService->ClassGroupRepository: 5.1.14 UpdateAsync(classGroup)
+    activate ClassGroupRepository
+
+    ClassGroupRepository->Database: 5.1.15 UPDATE ClassGroup Record
+    activate Database
+
+    Database-->ClassGroupRepository: 5.1.16 ClassGroup Updated Successfully
+    deactivate Database
+
+    ClassGroupRepository-->ClassGroupService: 5.1.17 ClassGroup Updated
+    deactivate ClassGroupRepository
+
+    ClassGroupService->ClassGroupService: 5.1.18 Map to ClassGroupDto
+
+    ClassGroupService-->ClassGroupController: 5.1.19 Return ClassGroupDto
+    deactivate ClassGroupService
+    activate ClassGroupController
+
+    ClassGroupController-->Router: 5.1.20 Send Success Response
+    activate Router
+    deactivate ClassGroupController
+
+    Router-->ClassManagementPage: 5.1.21 Class Information Updated Successfully
+    activate ClassManagementPage
+    deactivate Router
+
+    ClassManagementPage->ClassManagementPage: 5.1.22 Show Success Message and Close Modal
+
+    ClassManagementPage-->Admin: 5.1.23 Show Updated Class Information
+    deactivate ClassManagementPage
+    deactivate Admin
+else invalid input
+    ClassManagementPage->ClassManagementPage: 5.2.1 Show error toast
+    ClassManagementPage-->Admin: 5.2.1.1 Display "Vui lòng điền đầy đủ thông tin"
+    deactivate ClassManagementPage
+    deactivate Admin
+end
+@enduml
+

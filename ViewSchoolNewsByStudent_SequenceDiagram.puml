@@ -1,0 +1,75 @@
+@startuml View School News (Student View) by Student
+actor Student
+participant ": SystemAnnouncementsPage " as SystemAnnouncementsPage
+participant ": Router " as Router
+participant ": SystemAnnouncementController " as SystemAnnouncementController
+participant ": SystemAnnouncementService " as SystemAnnouncementService
+participant ": PostRepository " as PostRepository
+database Database
+
+Student->SystemAnnouncementsPage: 1. Navigate to School News page
+    activate Student
+    activate SystemAnnouncementsPage
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 2. Render School News Page
+
+SystemAnnouncementsPage->Router: 3. Send GET /api/systemannouncement/public
+    deactivate SystemAnnouncementsPage
+    activate Router
+
+Router->SystemAnnouncementController: 4. Route Request to Controller
+    deactivate Router
+    activate SystemAnnouncementController
+
+SystemAnnouncementController->SystemAnnouncementService: 5. GetPublicAnnouncementsAsync()
+    deactivate SystemAnnouncementController
+    activate SystemAnnouncementService
+
+SystemAnnouncementService->PostRepository: 6. GetQueryable()
+    activate PostRepository
+
+PostRepository->Database: 7. Query Posts with Attachments
+    activate Database
+
+Database-->PostRepository: 8. Return Posts query with relations
+    deactivate Database
+
+PostRepository-->SystemAnnouncementService: 9. Return IQueryable<Post>
+    deactivate PostRepository
+
+SystemAnnouncementService->SystemAnnouncementService: 10. Filter: IsSystemAnnouncement = true, !IsDeleted, Status = Published, (ExpiryDate is null or ExpiryDate > Now)
+
+SystemAnnouncementService->SystemAnnouncementService: 11. Order by IsUrgent DESC, CreatedAt DESC
+
+SystemAnnouncementService->Database: 12. Execute query and get results
+    activate Database
+
+Database-->SystemAnnouncementService: 13. Return List<Post> with Attachments
+    deactivate Database
+
+SystemAnnouncementService->SystemAnnouncementService: 14. Map to SystemAnnouncementDto[]
+
+SystemAnnouncementService-->SystemAnnouncementController: 15. Return List<SystemAnnouncementDto>
+    activate SystemAnnouncementController
+    deactivate SystemAnnouncementService
+
+SystemAnnouncementController-->Router: 16. Send School News Response
+    activate Router
+    deactivate SystemAnnouncementController
+
+Router-->SystemAnnouncementsPage: 17. Display School News List
+    activate SystemAnnouncementsPage
+    deactivate Router
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 18. Render Announcement Cards (Title, Content, Type, IsUrgent, CreatedAt, Attachments)
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 19. Show urgent announcements first
+
+SystemAnnouncementsPage-->Student: 20. Show Complete School News List
+    deactivate SystemAnnouncementsPage
+    deactivate Student
+@enduml
+
+
+
+

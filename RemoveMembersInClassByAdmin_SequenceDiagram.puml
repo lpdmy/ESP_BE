@@ -1,0 +1,75 @@
+@startuml Remove Members in Class by Admin
+actor Admin
+participant ": ClassDetailPage " as ClassDetailPage
+participant ": DeleteConfirmModal " as DeleteConfirmModal
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassDetailPage: 1. Admin clicks to Remove Student
+    activate Admin
+    activate ClassDetailPage
+
+ClassDetailPage->DeleteConfirmModal: 2. Open Delete Confirmation Modal
+    activate DeleteConfirmModal
+    deactivate ClassDetailPage
+
+Admin->DeleteConfirmModal: 3. Confirm Delete
+
+DeleteConfirmModal->Router: 4. Send DELETE /api/classgroup/{id}/students/{studentId}
+    deactivate DeleteConfirmModal
+    activate Router
+
+Router->ClassGroupController: 5. Route Request to Controller
+    deactivate Router
+    activate ClassGroupController
+
+ClassGroupController->ClassGroupService: 6. RemoveStudentFromClassAsync(classGroupId, studentId)
+    deactivate ClassGroupController
+    activate ClassGroupService
+
+ClassGroupService->ClassGroupRepository: 7. RemoveStudentFromClassAsync(classGroupId, studentId)
+    activate ClassGroupRepository
+
+ClassGroupRepository->Database: 8. Query ClassGroupMember by ClassGroupId and UserId
+    activate Database
+
+Database-->ClassGroupRepository: 9. Return ClassGroupMember or null
+    deactivate Database
+
+ClassGroupRepository->ClassGroupRepository: 10. Validate Member exists
+
+ClassGroupRepository->Database: 11. UPDATE ClassGroupMember SET IsDeleted = true
+    activate Database
+
+Database-->ClassGroupRepository: 12. Student Removed Successfully
+    deactivate Database
+
+ClassGroupRepository-->ClassGroupService: 13. Return true
+    deactivate ClassGroupRepository
+
+ClassGroupService-->ClassGroupController: 14. Return Success
+    deactivate ClassGroupService
+    activate ClassGroupController
+
+ClassGroupController-->Router: 15. Send Success Response
+    activate Router
+    deactivate ClassGroupController
+
+Router-->ClassDetailPage: 16. Student Removed Successfully
+    activate ClassDetailPage
+    deactivate Router
+
+ClassDetailPage->ClassDetailPage: 17. Show Success Message
+
+ClassDetailPage-->Admin: 18. Show Updated Students List
+    deactivate ClassDetailPage
+    deactivate Admin
+@enduml
+
+
+
+
+

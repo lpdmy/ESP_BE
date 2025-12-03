@@ -1,0 +1,65 @@
+@startuml Create Class Post by Teacher
+actor Teacher
+participant ": CreatePostModal " as CreatePostModal
+participant ": Router " as Router
+participant ": PostController " as PostController
+participant ": PostService " as PostService
+participant ": PostRepository " as PostRepository
+database Database
+
+Teacher->CreatePostModal: 1. Teacher clicks to Create Post
+    activate Teacher
+    activate CreatePostModal
+
+CreatePostModal->CreatePostModal: 2. Render Create Post Form
+
+Teacher->CreatePostModal: 3. Fill Post Content
+
+CreatePostModal->Router: 4. Send POST /api/post/create
+    deactivate CreatePostModal
+    activate Router
+
+Router->PostController: 5. Route Request to Controller
+    deactivate Router
+    activate PostController
+
+PostController->PostService: 6. Create Post Request
+    deactivate PostController
+    activate PostService
+
+PostService->PostService: 7. Validate Post Content
+
+PostService->PostRepository: 8. Create New Post
+    activate PostRepository
+
+PostRepository->Database: 9. Insert Post Record
+    activate Database
+
+Database-->PostRepository: 10. Post Created Successfully
+    deactivate Database
+
+PostRepository-->PostService: 11. Post Created
+    deactivate PostRepository
+
+PostService->PostService: 12. Process Post Data
+
+PostService-->PostController: 13. Return Post Data
+    deactivate PostService
+    activate PostController
+
+PostController-->Router: 14. Send Success Response
+    activate Router
+    deactivate PostController
+
+Router-->CreatePostModal: 15. Post Created Successfully
+    activate CreatePostModal
+    deactivate Router
+
+CreatePostModal->CreatePostModal: 16. Show Success Message
+
+CreatePostModal->CreatePostModal: 17. Close Modal and Refresh Posts
+
+CreatePostModal-->Teacher: 18. Show Updated Posts List
+    deactivate CreatePostModal
+    deactivate Teacher
+@enduml

@@ -1,0 +1,60 @@
+@startuml View Class Schedule by User
+actor User
+participant ": ClassDetailPage " as ClassDetailPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+User->ClassDetailPage: 1. Navigate to Class Detail Page
+    activate User
+    activate ClassDetailPage
+
+ClassDetailPage->ClassDetailPage: 2. Render Class Detail Page
+
+ClassDetailPage->Router: 3. Send GET /api/classgroup/current-class
+    deactivate ClassDetailPage
+    activate Router
+
+Router->ClassGroupController: 4. Route Request to Controller
+    deactivate Router
+    activate ClassGroupController
+
+ClassGroupController->ClassGroupService: 5. GetCurrentClassByUserIdAsync(userId)
+    deactivate ClassGroupController
+    activate ClassGroupService
+
+ClassGroupService->ClassGroupRepository: 6. GetCurrentClassByUserIdAsync(userId)
+    activate ClassGroupRepository
+
+ClassGroupRepository->Database: 7. Query ClassGroup with Schedules by UserId
+    activate Database
+
+Database-->ClassGroupRepository: 8. Return ClassGroup with Schedules
+    deactivate Database
+
+ClassGroupRepository-->ClassGroupService: 9. Return ClassGroup entity
+    deactivate ClassGroupRepository
+
+ClassGroupService->ClassGroupService: 10. Map to ClassGroupDto with Schedules
+
+ClassGroupService-->ClassGroupController: 11. Return ClassGroupDto
+    deactivate ClassGroupService
+    activate ClassGroupController
+
+ClassGroupController-->Router: 12. Send Class Data Response
+    activate Router
+    deactivate ClassGroupController
+
+Router-->ClassDetailPage: 13. Display Class Data with Schedules
+    activate ClassDetailPage
+    deactivate Router
+
+ClassDetailPage->ClassDetailPage: 14. Process and Render Schedule
+
+ClassDetailPage-->User: 15. Show Class Schedule
+    deactivate ClassDetailPage
+    deactivate User
+@enduml
+

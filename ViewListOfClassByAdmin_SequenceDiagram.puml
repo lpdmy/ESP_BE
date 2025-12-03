@@ -1,0 +1,62 @@
+@startuml View List of Class by Admin
+actor Admin
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassManagementPage: 1. Navigate to Class Management page
+activate Admin
+activate ClassManagementPage
+
+ClassManagementPage->Router: 2. Send GET /api/classgroup/dashboard?academicYearId={id}
+activate Router
+deactivate ClassManagementPage
+
+Router->ClassGroupController: 3. Route Request to Controller
+activate ClassGroupController
+deactivate Router
+
+ClassGroupController->ClassGroupService: 4. GetDashboardDataAsync(academicYearId)
+activate ClassGroupService
+deactivate ClassGroupController
+
+ClassGroupService->ClassGroupRepository: 5. GetAllAsync() - Get all classes
+activate ClassGroupRepository
+ClassGroupRepository->Database: 6. Query ClassGroups with AcademicYear and Members
+activate Database
+Database-->ClassGroupRepository: 7. Return ClassGroups with relations
+deactivate Database
+ClassGroupRepository-->ClassGroupService: 8. Return classes list
+deactivate ClassGroupRepository
+
+ClassGroupService->ClassGroupService: 9. Filter by AcademicYearId (if provided)
+ClassGroupService->ClassGroupService: 10. Calculate Statistics (TotalClasses, TotalStudents, TotalTeachers)
+ClassGroupService->ClassGroupService: 11. Group Classes by Grade
+ClassGroupService->ClassGroupService: 12. Map Entities to DTOs
+ClassGroupService-->ClassGroupController: 13. Return ClassGroupDashboardDto
+deactivate ClassGroupService
+activate ClassGroupController
+
+ClassGroupController->ClassGroupController: 14. Wrap in ResponseDto
+ClassGroupController-->Router: 15. Send Success Response
+activate Router
+deactivate ClassGroupController
+
+Router-->ClassManagementPage: 16. Return Dashboard Data
+activate ClassManagementPage
+deactivate Router
+
+ClassManagementPage->ClassManagementPage: 17. Extract classes from dashboard data
+ClassManagementPage->ClassManagementPage: 18. Update classes state
+ClassManagementPage->ClassManagementPage: 19. Update dashboardStats state
+ClassManagementPage->ClassManagementPage: 20. Group classes by grade
+ClassManagementPage->ClassManagementPage: 21. Load homeroom teachers
+ClassManagementPage->ClassManagementPage: 22. Render component
+ClassManagementPage-->Admin: 23. Display List of Classes
+deactivate ClassManagementPage
+deactivate Admin
+@enduml
+

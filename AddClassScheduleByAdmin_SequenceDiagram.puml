@@ -1,0 +1,88 @@
+@startuml Add Class Schedule by Admin
+actor Admin
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": ClassScheduleEditor " as ClassScheduleEditor
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassManagementPage: 1. Admin clicks to Edit Class
+    activate Admin
+    activate ClassManagementPage
+
+ClassManagementPage->ClassScheduleEditor: 2. Open Edit Modal with ClassScheduleEditor
+    activate ClassScheduleEditor
+    deactivate ClassManagementPage
+
+Admin->ClassScheduleEditor: 3. Add Schedule (select days, time, period)
+
+ClassScheduleEditor->ClassScheduleEditor: 4. Validate Schedule Data
+
+ClassScheduleEditor->ClassManagementPage: 5. Update schedules in form state
+    activate ClassManagementPage
+    deactivate ClassScheduleEditor
+
+Admin->ClassManagementPage: 6. Click "Cập nhật" button
+
+ClassManagementPage->Router: 7. Send PUT /api/classgroup/{id} with schedules
+    deactivate ClassManagementPage
+    activate Router
+
+Router->ClassGroupController: 8. Route Request to Controller
+    deactivate Router
+    activate ClassGroupController
+
+ClassGroupController->ClassGroupService: 9. UpdateAsync(dto)
+    deactivate ClassGroupController
+    activate ClassGroupService
+
+ClassGroupService->ClassGroupRepository: 10. GetByIdAsync(classGroupId)
+    activate ClassGroupRepository
+    ClassGroupRepository->Database: 11. Query ClassGroup by Id
+    activate Database
+    Database-->ClassGroupRepository: 12. Return ClassGroup
+    deactivate Database
+    ClassGroupRepository-->ClassGroupService: 13. Return ClassGroup entity
+    deactivate ClassGroupRepository
+
+ClassGroupService->ClassGroupService: 14. Update ClassGroup fields and schedules
+
+ClassGroupService->ClassGroupRepository: 15. UpdateAsync(classGroup)
+    activate ClassGroupRepository
+
+ClassGroupRepository->Database: 16. UPDATE ClassGroup and Schedules
+    activate Database
+
+Database-->ClassGroupRepository: 17. ClassGroup Updated Successfully
+    deactivate Database
+
+ClassGroupRepository-->ClassGroupService: 18. ClassGroup Updated
+    deactivate ClassGroupRepository
+
+ClassGroupService->ClassGroupService: 19. Map to ClassGroupDto
+
+ClassGroupService-->ClassGroupController: 20. Return ClassGroupDto
+    deactivate ClassGroupService
+    activate ClassGroupController
+
+ClassGroupController-->Router: 21. Send Success Response
+    activate Router
+    deactivate ClassGroupController
+
+Router-->ClassManagementPage: 22. Class Schedule Added Successfully
+    activate ClassManagementPage
+    deactivate Router
+
+ClassManagementPage->ClassManagementPage: 23. Show Success Message and Close Modal
+
+ClassManagementPage-->Admin: 24. Show Updated Class with Schedule
+    deactivate ClassManagementPage
+    deactivate Admin
+@enduml
+
+
+
+
+

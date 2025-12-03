@@ -1,0 +1,56 @@
+@startuml Mark Read News by Student
+actor Student
+participant ": SystemAnnouncementsPage " as SystemAnnouncementsPage
+participant ": Router " as Router
+participant ": SystemAnnouncementController " as SystemAnnouncementController
+participant ": SystemAnnouncementService " as SystemAnnouncementService
+database Database
+
+Student->SystemAnnouncementsPage: 1. Click on an announcement or view announcement detail
+    activate Student
+    activate SystemAnnouncementsPage
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 2. Get current userId
+
+SystemAnnouncementsPage->Router: 3. Send POST /api/systemannouncement/{id}/mark-viewed
+    deactivate SystemAnnouncementsPage
+    activate Router
+
+Router->SystemAnnouncementController: 4. Route Request to Controller
+    deactivate Router
+    activate SystemAnnouncementController
+
+SystemAnnouncementController->SystemAnnouncementController: 5. GetCurrentUserId() from JWT token
+
+SystemAnnouncementController->SystemAnnouncementService: 6. MarkAsViewedAsync(announcementId, userId)
+    deactivate SystemAnnouncementController
+    activate SystemAnnouncementService
+
+SystemAnnouncementService->SystemAnnouncementService: 7. Mark announcement as viewed (TODO: implement tracking)
+
+SystemAnnouncementService-->SystemAnnouncementController: 8. Return true
+    activate SystemAnnouncementController
+    deactivate SystemAnnouncementService
+
+SystemAnnouncementController-->Router: 9. Send Success Response (200)
+    activate Router
+    deactivate SystemAnnouncementController
+
+Router-->SystemAnnouncementsPage: 10. Mark as Viewed Successfully
+    activate SystemAnnouncementsPage
+    deactivate Router
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 11. Save to localStorage (viewedAnnouncements[userId][announcementId] = true)
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 12. Update UI (mark announcement as viewed)
+
+SystemAnnouncementsPage->SystemAnnouncementsPage: 13. Update viewedAnnouncements state
+
+SystemAnnouncementsPage-->Student: 14. Show announcement as viewed
+    deactivate SystemAnnouncementsPage
+    deactivate Student
+@enduml
+
+
+
+

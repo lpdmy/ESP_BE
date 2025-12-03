@@ -1,0 +1,122 @@
+@startuml Import from Excel by Admin
+actor Admin
+participant ": UserManagementPage " as UserManagementPage
+participant ": Router " as Router
+participant ": AuthController " as AuthController
+participant ": AuthService " as AuthService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->UserManagementPage: 1. Click "Nhập từ Excel" button
+    activate Admin
+    activate UserManagementPage
+
+Admin->UserManagementPage: 2. Select Excel file (.xlsx, .xls, .csv)
+
+UserManagementPage->UserManagementPage: 3. Validate file format
+
+alt valid file
+    UserManagementPage->Router: 4. Send POST /api/auth/ImportFile with file
+    deactivate UserManagementPage
+    activate Router
+
+    Router->AuthController: 5. Route Request to Controller
+    deactivate Router
+    activate AuthController
+
+    AuthController->AuthController: 6. Validate file (not null, not empty)
+
+    alt file invalid
+        AuthController->AuthController: 7. Return BadRequest (Invalid file)
+        AuthController-->Router: 8. Send Error Response (400)
+        activate Router
+        deactivate AuthController
+        Router-->UserManagementPage: 9. Return error message
+        activate UserManagementPage
+        deactivate Router
+        UserManagementPage-->Admin: 10. Show error toast
+        deactivate UserManagementPage
+        deactivate Admin
+    else file valid
+        AuthController->AuthService: 11. ImportUsers(file)
+        deactivate AuthController
+        activate AuthService
+
+        AuthService->AuthService: 12. Read Excel file into MemoryStream
+        AuthService->AuthService: 13. Open workbook and get first worksheet
+        AuthService->AuthService: 14. Parse rows (skip header row)
+
+        loop for each row
+            AuthService->AuthService: 15. Extract fullName and dateOfBirth
+            AuthService->AuthService: 16. Generate username from fullName and dob
+            AuthService->UserRepository: 17. FindUserByEmail(username)
+            activate UserRepository
+            UserRepository->Database: 18. Query User by Email
+            activate Database
+            Database-->UserRepository: 19. Return exists or not
+            deactivate Database
+            UserRepository-->AuthService: 20. Return result
+            deactivate UserRepository
+
+            alt user not exists
+                AuthService->AuthService: 21. Create User entity
+            else user exists
+                AuthService->AuthService: 22. Skip this row
+            end
+        end
+
+        alt users to create
+            AuthService->UserRepository: 23. AddRangeAsync(users)
+            activate UserRepository
+            UserRepository->Database: 24. INSERT Users into database
+            activate Database
+            Database-->UserRepository: 25. Users created successfully
+            deactivate Database
+            UserRepository-->AuthService: 26. Return
+            deactivate UserRepository
+
+            AuthService->AuthService: 27. Create result object (CreatedCount, Message)
+            AuthService-->AuthController: 28. Return result
+            activate AuthController
+            deactivate AuthService
+
+            AuthController-->Router: 29. Send Success Response (200)
+            activate Router
+            deactivate AuthController
+
+            Router-->UserManagementPage: 30. Import Success Response
+            activate UserManagementPage
+            deactivate Router
+
+            UserManagementPage->UserManagementPage: 31. Refresh users list
+            UserManagementPage->UserManagementPage: 32. Show Success Message
+            UserManagementPage-->Admin: 33. Show Success Toast with CreatedCount
+            deactivate UserManagementPage
+            deactivate Admin
+        else no users to create
+            AuthService->AuthService: 23. Create result object (CreatedCount = 0)
+            AuthService-->AuthController: 24. Return result
+            activate AuthController
+            deactivate AuthService
+
+            AuthController-->Router: 25. Send Success Response (200)
+            activate Router
+            deactivate AuthController
+
+            Router-->UserManagementPage: 26. Import Response (0 users created)
+            activate UserManagementPage
+            deactivate Router
+
+            UserManagementPage-->Admin: 27. Show message (No users created)
+            deactivate UserManagementPage
+            deactivate Admin
+        end
+    end
+else invalid file
+    UserManagementPage->UserManagementPage: 4. Show error (Invalid file format)
+    UserManagementPage-->Admin: 5. Show error toast
+    deactivate UserManagementPage
+    deactivate Admin
+end
+@enduml
+

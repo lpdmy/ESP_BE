@@ -1,0 +1,88 @@
+@startuml Filter Class by Academic Year
+actor User
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": ApiService " as ApiService
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+User->ClassManagementPage: 1. User selects Academic Year from dropdown
+    activate User
+activate ClassManagementPage
+ClassManagementPage->ClassManagementPage: 2. Update selectedAcademicYearId state
+ClassManagementPage->ClassManagementPage: 3. Trigger useEffect on academicYearId change
+ClassManagementPage->ApiService: 4. Call dashboard(academicYearId, token)
+deactivate ClassManagementPage
+activate ApiService
+ApiService->Router: 5. Send GET /api/classgroup/dashboard?academicYearId={id}
+deactivate ApiService
+activate Router
+Router->ClassGroupController: 6. Route Request to Controller
+deactivate Router
+activate ClassGroupController
+ClassGroupController->ClassGroupService: 7. Call GetDashboardDataAsync(academicYearId)
+deactivate ClassGroupController
+activate ClassGroupService
+ClassGroupService->ClassGroupRepository: 8. Get Queryable Classes
+activate ClassGroupRepository
+ClassGroupRepository->Database: 9. Query ClassGroup with AcademicYearId filter
+activate Database
+Database-->ClassGroupRepository: 10. Return Filtered Class Records
+deactivate Database
+ClassGroupRepository->Database: 11. Query ClassGroupMembers for student count
+activate Database
+Database-->ClassGroupRepository: 12. Return Student Count Data
+deactivate Database
+ClassGroupRepository->Database: 13. Query AcademicYear for year name
+activate Database
+Database-->ClassGroupRepository: 14. Return AcademicYear Data
+deactivate Database
+ClassGroupRepository-->ClassGroupService: 15. Return ClassGroup Entities with Relations
+deactivate ClassGroupRepository
+ClassGroupService->ClassGroupService: 16. Calculate Statistics (TotalClasses, TotalStudents, TotalTeachers)
+ClassGroupService->ClassGroupService: 17. Group Classes by Grade
+ClassGroupService->ClassGroupService: 18. Map Entities to DTOs
+ClassGroupService-->ClassGroupController: 19. Return ClassGroupDashboardDto
+deactivate ClassGroupService
+activate ClassGroupController
+ClassGroupController->ClassGroupController: 20. Wrap in ResponseDto
+ClassGroupController-->Router: 21. Send Success Response with Dashboard Data
+activate Router
+deactivate ClassGroupController
+Router-->ApiService: 22. Return Response Data
+activate ApiService
+deactivate Router
+ApiService->ApiService: 23. Extract data from response
+ApiService-->ClassManagementPage: 24. Return Dashboard Data
+activate ClassManagementPage
+deactivate ApiService
+ClassManagementPage->ClassManagementPage: 25. Update classes state with filtered data
+ClassManagementPage->ClassManagementPage: 26. Update dashboardStats state
+ClassManagementPage->ClassManagementPage: 27. Group classes by grade for display
+ClassManagementPage->ClassManagementPage: 28. Re-render component with filtered classes
+ClassManagementPage-->User: 29. Display Filtered Classes by Academic Year
+deactivate ClassManagementPage
+deactivate User
+
+alt Error occurs
+    ClassGroupService-->ClassGroupController: Error Response
+    activate ClassGroupController
+    deactivate ClassGroupService
+    ClassGroupController-->Router: Send Error Response
+    activate Router
+    deactivate ClassGroupController
+    Router-->ApiService: Return Error
+    activate ApiService
+    deactivate Router
+    ApiService-->ClassManagementPage: Error Data
+    activate ClassManagementPage
+    deactivate ApiService
+    ClassManagementPage->ClassManagementPage: Show Error Toast
+    ClassManagementPage-->User: Display Error Message
+    deactivate ClassManagementPage
+    deactivate User
+end
+@enduml
+

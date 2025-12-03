@@ -1,0 +1,122 @@
+@startuml Revoke Staff Rights by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": StaffController " as StaffController
+participant ": StaffService " as StaffService
+participant ": UserRepository " as UserRepository
+participant ": UserRightRepository " as UserRightRepository
+database Database
+
+Admin->StaffManagementPage: 1. Click on a staff to view details
+    activate Admin
+    activate StaffManagementPage
+
+StaffManagementPage->StaffManagementPage: 2. Open Staff Detail Modal with existing permissions
+
+Admin->StaffManagementPage: 3. Click "Chỉnh sửa" button
+
+Admin->StaffManagementPage: 4. Uncheck permissions to revoke
+
+Admin->StaffManagementPage: 5. Click "Lưu" button
+
+StaffManagementPage->Router: 6. Send PUT /api/staff with UpdateStaffDto (reduced permissions)
+    deactivate StaffManagementPage
+    activate Router
+
+Router->StaffController: 7. Route Request to Controller
+    deactivate Router
+    activate StaffController
+
+StaffController->StaffService: 8. UpdateStaff(dto)
+    deactivate StaffController
+    activate StaffService
+
+StaffService->UserRepository: 9. GetByStaffIdIncluding(staffId)
+    activate UserRepository
+    UserRepository->Database: 10. Query User by Id with UserRights
+    activate Database
+    Database-->UserRepository: 11. Return User with current UserRights
+    deactivate Database
+    UserRepository-->StaffService: 12. Return User entity
+    deactivate UserRepository
+
+StaffService->StaffService: 13. Compare current permissions with new permissions
+
+alt permissions changed
+    StaffService->UserRightRepository: 14.1 DeleteByUserIdAsync(staffId)
+    activate UserRightRepository
+    UserRightRepository->Database: 14.1.1 DELETE UserRights WHERE UserId = {id}
+    activate Database
+    Database-->UserRightRepository: 14.1.2 UserRights deleted
+    deactivate Database
+    UserRightRepository-->StaffService: 14.1.3 Return
+    deactivate UserRightRepository
+
+    StaffService->StaffService: 14.1.4 Create new UserRight entities (only selected permissions)
+    StaffService->UserRightRepository: 14.1.5 AddRangeAsync(newRights)
+    activate UserRightRepository
+    UserRightRepository->Database: 14.1.6 INSERT into UserRights
+    activate Database
+    Database-->UserRightRepository: 14.1.7 Return created UserRights
+    deactivate Database
+    UserRightRepository-->StaffService: 14.1.8 Return UserRights
+    deactivate UserRightRepository
+
+    StaffService->UserRepository: 14.1.9 UpdateAsync(staff)
+    activate UserRepository
+    UserRepository->Database: 14.1.10 UPDATE User Record (UpdatedAt)
+    activate Database
+    Database-->UserRepository: 14.1.11 User Updated Successfully
+    deactivate Database
+    UserRepository-->StaffService: 14.1.12 User Updated
+    deactivate UserRepository
+
+    StaffService->UserRepository: 14.1.13 GetByStaffIdIncluding(staffId)
+    activate UserRepository
+    UserRepository->Database: 14.1.14 Query User with updated UserRights
+    activate Database
+    Database-->UserRepository: 14.1.15 Return User with relations
+    deactivate Database
+    UserRepository-->StaffService: 14.1.16 Return User with UserRights
+    deactivate UserRepository
+
+    StaffService->StaffService: 14.1.17 Map User to UserResponseDto
+    StaffService-->StaffController: 14.1.18 Return UserResponseDto
+    activate StaffController
+    deactivate StaffService
+
+    StaffController-->Router: 14.1.19 Send Success Response (200)
+    activate Router
+    deactivate StaffController
+
+    Router-->StaffManagementPage: 14.1.20 Staff Rights Updated Successfully
+    activate StaffManagementPage
+    deactivate Router
+
+    StaffManagementPage->StaffManagementPage: 14.1.21 Show Success Message
+    StaffManagementPage->StaffManagementPage: 14.1.22 Refresh staff list
+    StaffManagementPage-->Admin: 14.1.23 Show Updated Staff with Revoked Rights
+    deactivate StaffManagementPage
+    deactivate Admin
+else permissions not changed
+    StaffService->StaffService: 14.2 Skip permission update
+    StaffService-->StaffController: 14.2.1 Return UserResponseDto
+    activate StaffController
+    deactivate StaffService
+    StaffController-->Router: 14.2.2 Send Success Response
+    activate Router
+    deactivate StaffController
+    Router-->StaffManagementPage: 14.2.3 Return staff data
+    activate StaffManagementPage
+    deactivate Router
+    StaffManagementPage-->Admin: 14.2.4 No changes made
+    deactivate StaffManagementPage
+    deactivate Admin
+end
+@enduml
+
+
+
+
+
