@@ -90,5 +90,17 @@ namespace EduShpere.Infrastructure.Repositories.Chat
                 .SortByDescending(m => m.Timestamp)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task UpdateRoomAsync(ChatRoom room)
+        {
+            var update = Builders<ChatRoom>.Update
+                .Set(r => r.ParticipantIds, room.ParticipantIds)
+                .Set(r => r.Name, room.Name)
+                .Set(r => r.RoomType, room.RoomType)
+                .Set(r => r.ClassGroupId, room.ClassGroupId)
+                .Set(r => r.ClubId, room.ClubId);
+
+            await _context.ChatRooms.UpdateOneAsync(r => r.Id == room.Id, update);
+        }
     }
 }

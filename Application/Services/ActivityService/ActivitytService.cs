@@ -434,9 +434,13 @@ namespace EduShpere.Application.Services
                 }
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            ActivityResponseDto? createdActivity = null;
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
             {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
                 // Create main Activity entity
             // Ensure all dates are in UTC before saving
             var activity = new Activity
@@ -628,17 +632,20 @@ namespace EduShpere.Application.Services
                 
                 // Reload with all includes BEFORE committing transaction
                 // This ensures the query runs within the transaction scope
-                var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(activity.Id);
+                    var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(activity.Id);
                 
-                await transaction.CommitAsync();
+                    await transaction.CommitAsync();
                 
-                return _mapper.Map<ActivityResponseDto>(activityWithIncludes);
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                    createdActivity = _mapper.Map<ActivityResponseDto>(activityWithIncludes);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+
+            return createdActivity!;
         }
         public async Task<ActivityResponseDto> UpdateAsync(UpdateActivityDto dto)
         {
@@ -694,9 +701,13 @@ namespace EduShpere.Application.Services
                 }
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            ActivityResponseDto? updatedActivity = null;
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
             {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
                 // Update main Activity entity
                 // Ensure all dates are in UTC before saving
                 if (dto.Title != null) existingActivity.Title = dto.Title;
@@ -1043,21 +1054,24 @@ namespace EduShpere.Application.Services
                     }
                 }
 
-                await _context.SaveChangesAsync();
-                
-                // Reload with all includes BEFORE committing transaction
-                // This ensures the query runs within the transaction scope
-                var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(existingActivity.Id);
-                
-                await transaction.CommitAsync();
-                
-                return _mapper.Map<ActivityResponseDto>(activityWithIncludes);
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                    await _context.SaveChangesAsync();
+                    
+                    // Reload with all includes BEFORE committing transaction
+                    // This ensures the query runs within the transaction scope
+                    var activityWithIncludes = await _repo.GetByIdWithIncludesAsync(existingActivity.Id);
+                    
+                    await transaction.CommitAsync();
+                    
+                    updatedActivity = _mapper.Map<ActivityResponseDto>(activityWithIncludes);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+
+            return updatedActivity!;
         }
 
         private static string? SerializeRegistrationSettings(ActivityRegistrationSettingsDto? settings)
