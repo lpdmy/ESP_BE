@@ -15,7 +15,7 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public DateTime? EndDate { get; set; }
         public string? Location { get; set; }
         public string Organizer { get; set; } = null!;
-        public int MaxParticipants { get; set; }
+        public int? MaxParticipants { get; set; }
         public ActivityType Category { get; set; }
         public string SubType { get; set; } = null!;
         public string ThumbnailUrl { get; set; } = null!;

@@ -14,5 +14,6 @@ namespace EduShpere.Application.Services
         Task<ActivityResponseDto> AddAsync(CreateActivityDto dto);
         Task<ActivityResponseDto> UpdateAsync(UpdateActivityDto dto);
         Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null);
+        Task<ActivityStatisticsDto> GetStatisticsAsync();
     }
 }

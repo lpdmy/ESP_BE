@@ -64,6 +64,7 @@ namespace EduShpere.Shared.Constants
             public const string ApplyTournamentSchedule = "api/activity/{id}/apply-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
             public const string MyActivities = "api/my-activities";
+            public const string Statistics = "api/activity/statistics";
 
         }
 

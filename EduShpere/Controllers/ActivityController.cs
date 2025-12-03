@@ -304,5 +304,17 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
+
+        [HttpGet(ApiEndpoints.Activity.Statistics)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var statistics = await _Service.GetStatisticsAsync();
+            return Ok(new ResponseDto<ActivityStatisticsDto>(
+                statistics,
+                "Lấy thống kê hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
     }
 }

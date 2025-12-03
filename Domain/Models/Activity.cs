@@ -22,13 +22,12 @@ public partial class Activity : BaseEntity
     public DateTime? EndDate { get; set; }
 
 
-    [StringLength(20)]
     public string? Location { get; set; }
 
     public int? ClubId { get; set; }
 
     public string Organizer { get; set; } = null!;
-    public int MaxParticipants { get; set; }
+    public int? MaxParticipants { get; set; }
     public DateTime RegisterDate { get; set; }
     public DateTime EndRegisterDate { get; set; }
     public byte[] RowVersion { get; set; } = null!;

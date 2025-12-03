@@ -19,7 +19,6 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         public DateTime? EndDate { get; set; }
         
-        [StringLength(20, ErrorMessage = "Địa điểm không được vượt quá 20 ký tự")]
         public string? Location { get; set; }
         
         public int? ClubId { get; set; }
