@@ -47,8 +47,16 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // Registration Settings
         public bool OnlyTeacherCanRegister { get; set; }
-        public int numberOfSubmission { get; set; }
-        public int numberOfPendingSubmission { get; set; }
-        public int numberOfCompletedSubmission { get; set; }
+        public ActivityRegistrationSettingsDto? RegistrationSettings { get; set; }
+        public int numberOfSubmission { get; set; } = 0;
+        public int numberOfPendingSubmission { get; set; } = 0;
+        public int numberOfCompletedSubmission { get; set; } = 0;
+        
+        // Problem/Submission fields - chỉ áp dụng cho Activity có nộp bài
+        // Lưu ý: Backend sẽ kiểm tra thời gian và chỉ trả về nếu now >= StartDate
+        public string? ProblemText { get; set; } // Đề bài (text) - null nếu chưa đến thời gian mở đề
+        public string? ProblemFileUrl { get; set; } // URL hoặc path đến file đề bài - null nếu chưa đến thời gian mở đề
+        public DateTime? SubmissionDeadline { get; set; } // Hạn cuối nộp bài
+        public bool IsProblemVisible { get; set; } // Flag để frontend biết có hiển thị đề bài không (now >= StartDate)
     }
 }

@@ -17,5 +17,6 @@ namespace EduShpere.Application.DTOs
         public string UserFullName => $"{LastName} {FirstName}";
         public ActivityResponseDto? Activity { get; set; }
         public int Assigned { get; set; }
+        public string? Avatar { get; set; }
     }
 }

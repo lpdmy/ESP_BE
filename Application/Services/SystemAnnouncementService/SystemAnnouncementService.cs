@@ -12,6 +12,8 @@ using EduShpere.Shared;
 using EduShpere.Application.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using EduShpere.Hubs;
 
 namespace EduShpere.Application.Services.SystemAnnouncementService;
 
@@ -23,6 +25,7 @@ public class SystemAnnouncementService : ISystemAnnouncementService
     private readonly IPaginationService _paginationService;
     private readonly IMapper _mapper;
     private readonly ICloudinaryService _cloudinaryService;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
     public SystemAnnouncementService(
         IPostRepository postRepository,
@@ -30,7 +33,8 @@ public class SystemAnnouncementService : ISystemAnnouncementService
         IAuditService auditService,
         IPaginationService paginationService,
         IMapper mapper,
-        ICloudinaryService cloudinaryService)
+        ICloudinaryService cloudinaryService,
+        IHubContext<NotificationHub> hubContext)
     {
         _postRepository = postRepository;
         _attachmentRepository = attachmentRepository;
@@ -38,6 +42,7 @@ public class SystemAnnouncementService : ISystemAnnouncementService
         _paginationService = paginationService;
         _mapper = mapper;
         _cloudinaryService = cloudinaryService;
+        _hubContext = hubContext;
     }
 
     public async Task<PaginationResponseDto<SystemAnnouncementListItemDto>> GetAllAsync(PaginationRequestDto paginationRequest)
@@ -45,7 +50,9 @@ public class SystemAnnouncementService : ISystemAnnouncementService
         try
         {
             var query = _postRepository.GetQueryable()
-                .Where(p => p.IsSystemAnnouncement && !p.IsDeleted);
+                .Where(p => p.IsSystemAnnouncement && !p.IsDeleted)
+                .Include(p => p.User)
+                .Include(p => p.Attachments);
 
             var pagedResult = await _paginationService.GetPagedResultAsync(query, paginationRequest);
 
@@ -59,9 +66,20 @@ public class SystemAnnouncementService : ISystemAnnouncementService
                 PageSize = pagedResult.PageSize
             };
         }
+        catch (BadRequestException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            throw new BadRequestException(ErrorMessages.SystemAnnouncement.GetFailed);
+            // Log the actual exception for debugging
+            Console.WriteLine($"Error in GetAllAsync: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            }
+            throw new BadRequestException($"{ErrorMessages.SystemAnnouncement.GetFailed}: {ex.Message}");
         }
     }
 
@@ -69,7 +87,10 @@ public class SystemAnnouncementService : ISystemAnnouncementService
     {
         try
         {
-            var post = await _postRepository.GetByIdAsync(id);
+            var post = await _postRepository.GetQueryable()
+                .Include(p => p.User)
+                .Include(p => p.Attachments)
+                .FirstOrDefaultAsync(p => p.Id == id);
             
             if (post == null || !post.IsSystemAnnouncement || post.IsDeleted)
                 return null;
@@ -147,6 +168,11 @@ public class SystemAnnouncementService : ISystemAnnouncementService
             if (dto.ExpiryDate.HasValue && dto.ExpiryDate.Value < DateTime.UtcNow)
                 throw new BadRequestException(ErrorMessages.SystemAnnouncement.ExpiryDateInPast);
 
+            // Check if announcement is being changed to urgent
+            bool wasUrgent = post.IsUrgent;
+            bool isNowUrgent = dto.IsUrgent;
+            bool becameUrgent = !wasUrgent && isNowUrgent;
+
             post.Title = dto.Title;
             post.Body = dto.Content;
             post.IsUrgent = dto.IsUrgent;
@@ -163,7 +189,32 @@ public class SystemAnnouncementService : ISystemAnnouncementService
                 await UploadAttachmentsAsync(post.Id, dto.Files);
             }
 
-            return _mapper.Map<SystemAnnouncementDetailDto>(post);
+            var result = _mapper.Map<SystemAnnouncementDetailDto>(post);
+
+            // Send real-time notification if announcement became urgent and is visible
+            if (becameUrgent && dto.IsVisible)
+            {
+                try
+                {
+                    await _hubContext.Clients.All.SendAsync("UrgentAnnouncement", new
+                    {
+                        Id = result.Id,
+                        Title = result.Title,
+                        Content = result.Content,
+                        IsUrgent = result.IsUrgent,
+                        AnnouncementType = result.AnnouncementType,
+                        CreatedAt = result.CreatedAt,
+                        ExpiryDate = result.ExpiryDate
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Log error but don't fail the update
+                    Console.WriteLine($"Error sending urgent announcement notification: {ex.Message}");
+                }
+            }
+
+            return result;
         }
         catch (NotFoundException)
         {
@@ -188,10 +239,31 @@ public class SystemAnnouncementService : ISystemAnnouncementService
             if (post == null || !post.IsSystemAnnouncement || post.IsDeleted)
                 return false;
 
-            _auditService.SetAuditFieldsForDelete(post);
-            await _postRepository.UpdateAsync(post);
+            // Hard delete: Xóa cứng thông báo khỏi database
+            await _postRepository.DeleteAsync(id);
             
             return true;
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            // Handle concurrency conflict (RowVersion mismatch)
+            throw new BadRequestException("Thông báo đã bị thay đổi bởi người dùng khác. Vui lòng làm mới và thử lại.");
+        }
+        catch (DbUpdateException ex)
+        {
+            // Handle database update errors (including transient failures)
+            var innerException = ex.InnerException;
+            if (innerException != null)
+            {
+                // Check for SQL Server specific error numbers
+                var errorMessage = innerException.Message;
+                if (errorMessage.Contains("timeout", StringComparison.OrdinalIgnoreCase) || 
+                    errorMessage.Contains("deadlock", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BadRequestException("Thao tác xóa bị timeout hoặc deadlock. Vui lòng thử lại sau.");
+                }
+            }
+            throw new BadRequestException(ErrorMessages.SystemAnnouncement.DeleteFailed);
         }
         catch (Exception ex)
         {
@@ -228,6 +300,7 @@ public class SystemAnnouncementService : ISystemAnnouncementService
         try
         {
             var publicAnnouncements = await _postRepository.GetQueryable()
+                .Include(p => p.User)
                 .Include(p => p.Attachments)
                 .Where(p => p.IsSystemAnnouncement && 
                         !p.IsDeleted && 

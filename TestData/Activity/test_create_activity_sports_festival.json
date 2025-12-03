@@ -1,0 +1,59 @@
+{
+  "description": "Test data cho SportsFestival (không có đề bài)",
+  "testCase": "SportsFestival - không có ProblemText/ProblemFileUrl/SubmissionDeadline",
+  "data": {
+    "title": "Hội thao chào mừng ngày 30/4 - 1/5",
+    "description": "Hội thao toàn trường với nhiều môn thi đấu hấp dẫn, tạo sân chơi lành mạnh cho học sinh.",
+    "category": 1,
+    "subType": "SportsFestival",
+    "location": "Sân vận động trường",
+    "organizer": "Ban Giám hiệu",
+    "thumbnailUrl": "https://example.com/thumbnails/sports-festival.jpg",
+    "startDate": "2024-04-25T06:00:00Z",
+    "endDate": "2024-05-01T18:00:00Z",
+    "registerDate": "2024-04-01T00:00:00Z",
+    "endRegisterDate": "2024-04-15T23:59:59Z",
+    "maxParticipants": 500,
+    "clubId": null,
+    "rules": [
+      "Mỗi lớp có thể đăng ký nhiều môn thi đấu",
+      "Mỗi môn có giới hạn số lượng thành viên",
+      "Học sinh phải có sức khỏe tốt để tham gia",
+      "Tuân thủ luật thi đấu và tinh thần fair-play"
+    ],
+    "sportsCategories": [
+      "Chạy 100m",
+      "Chạy 400m",
+      "Nhảy cao",
+      "Nhảy xa",
+      "Bóng đá",
+      "Bóng chuyền",
+      "Bóng rổ"
+    ],
+    "sportsConfigurations": [
+      { "sportName": "Chạy 100m", "maxMembers": 3 },
+      { "sportName": "Chạy 400m", "maxMembers": 3 },
+      { "sportName": "Nhảy cao", "maxMembers": 2 },
+      { "sportName": "Nhảy xa", "maxMembers": 2 },
+      { "sportName": "Bóng đá", "maxMembers": 11 },
+      { "sportName": "Bóng chuyền", "maxMembers": 6 },
+      { "sportName": "Bóng rổ", "maxMembers": 5 }
+    ],
+    "competitionType": "Team",
+    "onlyTeacherCanRegister": true,
+    "starPointRewards": {
+      "registration": "20",
+      "awards": [
+        { "name": "Huy chương Vàng", "points": "200" },
+        { "name": "Huy chương Bạc", "points": "150" },
+        { "name": "Huy chương Đồng", "points": "100" }
+      ]
+    }
+  },
+  "expectedBehavior": {
+    "note": "SportsFestival không có ProblemText/ProblemFileUrl/SubmissionDeadline",
+    "validation": "SubmissionDeadline phải là null hoặc không được gửi"
+  }
+}
+
+

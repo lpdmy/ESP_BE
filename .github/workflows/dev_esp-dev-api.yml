@@ -1,4 +1,4 @@
-name: Build and Deploy esp-dev-api to Azure
+name: Build and Deploy esp-dev-api to Azure (Optimized Linux ZIP Deploy)
 
 on:
   push:
@@ -12,23 +12,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+      # 3️⃣ Clean previous build folders
+      - name: Clean previous build
+        run: rm -rf ./EduShpere/bin ./EduShpere/obj ./publish
+
+      # 4️⃣ Restore dependencies
       - name: Restore dependencies
         run: dotnet restore ./EduShpere/EduShpere.csproj
 
+      # 5️⃣ Build project
       - name: Build
         run: dotnet build ./EduShpere/EduShpere.csproj --configuration Release --no-restore
 
-      - name: Publish
-        run: dotnet publish ./EduShpere/EduShpere.csproj -c Release -o ./publish
+      # 6️⃣ Publish Linux self-contained, single-file, trimmed, ready-to-run
+      - name: Publish for Linux (optimized)
+        run: |
+          dotnet publish ./EduShpere/EduShpere.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained true \
+            /p:PublishSingleFile=true \
+            /p:PublishTrimmed=true \
+            /p:PublishReadyToRun=true \
+            -o ./publish
 
+      # 7️⃣ Check publish folder size (debug, optional)
+      - name: Check publish folder size
+        run: du -sh ./publish
+
+      # 8️⃣ Deploy to Azure WebApp
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
         with:
@@ -36,3 +58,4 @@ jobs:
           slot-name: production
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish
+          enable-oryx-build: true

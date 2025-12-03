@@ -34,7 +34,14 @@ namespace EduShpere
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
             {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnectionString"),
+                    sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null
+                    )
+                );
                 options.EnableSensitiveDataLogging(false);
                 options.EnableServiceProviderCaching(false);
             });
@@ -43,17 +50,19 @@ namespace EduShpere
                 var modelPath = Path.Combine(AppContext.BaseDirectory, "models", "model.zip");
                 return new ContentModerationService(modelPath);
             });
-
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
             builder.Services.AddSingleton<AppMongoDbContext>();
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+            builder.Services.AddHostedService<SubmissionScoreUpdateService>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.TeacherProfile.ITeacherProfileRepository, EduShpere.Infrastructure.Repositories.TeacherProfile.TeacherProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+            builder.Services.AddScoped<IActivityMatchRepository, ActivityMatchRepository>();
             builder.Services.AddScoped<IActivityRuleRepository, ActivityRuleRepository>();
             builder.Services.AddScoped<IActivitySpeakerRepository, ActivitySpeakerRepository>();
             builder.Services.AddScoped<IActivityProgramRepository, ActivityProgramRepository>();
@@ -64,6 +73,7 @@ namespace EduShpere
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IHashTagRepository, HashTagRepository>();
             builder.Services.AddScoped<IUserRightRepository, UserRightRepository>();
+            builder.Services.AddScoped<IModerationService, ModerationService>();
             // Search repositories
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchHistory.ISearchHistoryRepository, EduShpere.Infrastructure.Repositories.SearchHistory.SearchHistoryRepository>();
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.SearchAnalytics.ISearchAnalyticsRepository, EduShpere.Infrastructure.Repositories.SearchAnalytics.SearchAnalyticsRepository>();
@@ -91,6 +101,8 @@ namespace EduShpere
             builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
             builder.Services.AddScoped<IJuryActivityRepository, JuryActivityRepository>();
             builder.Services.AddScoped<IJuryAssignRepository, JuryAssignRepository>();
+            builder.Services.AddScoped<IModerationRepository, ModerationRepository>();
+
 
             // Add Configs
             builder.Services.Configure<GoogleAuthConfig>(builder.Configuration.GetSection("GoogleOAuth"));
@@ -103,6 +115,12 @@ namespace EduShpere
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
                 options.ModelValidatorProviders.Clear();
+            })
+            .AddJsonOptions(options =>
+            {
+                // Handle circular references by ignoring cycles
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.WriteIndented = false;
             });
 
             // Register KidNet services
@@ -112,6 +130,7 @@ namespace EduShpere
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<ITournamentScheduleService, TournamentScheduleService>();
             builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<EduShpere.Application.Services.SearchService.ISearchService, EduShpere.Application.Services.SearchService.SearchService>();
@@ -135,6 +154,7 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(EduShpere.Application.Mappings.SearchProfile).Assembly);
             builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+            builder.Services.AddScoped<IActivityMatchService, ActivityMatchService>();
             builder.Services.AddScoped<IStudentImportService, StudentImportService>();
             builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
             builder.Services.AddScoped<IJuryService, JuryService>();
@@ -148,6 +168,7 @@ namespace EduShpere
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityParticipantProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityMatchProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(Attachment).Assembly);
             builder.Services.AddAutoMapper(typeof(ClassGroupProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(SystemAnnouncementProfile).Assembly);
@@ -157,8 +178,9 @@ namespace EduShpere
             builder.Services.AddAutoMapper(typeof(ClubJoinRequestProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(CommentProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(StudentImportProfile).Assembly);
-            builder.Services.AddAutoMapper(typeof(JuryProfileMapping).Assembly);
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             builder.Services.AddAutoMapper(typeof(SubmissionProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ModerationProfile).Assembly);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -202,6 +224,16 @@ namespace EduShpere
     });
             });
             var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
+            // Fallback nếu không có cấu hình CORS
+            if (allowedOrigins == null || allowedOrigins.Length == 0)
+            {
+                allowedOrigins = new[]
+                {
+                    "http://localhost:3000",
+                    "https://edusphere-dev.netlify.app"
+                };
+            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>

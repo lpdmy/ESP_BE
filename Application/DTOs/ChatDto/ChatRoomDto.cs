@@ -11,6 +11,12 @@ namespace EduShpere.Application.DTOs.ChatDto
         public string? LastMessage { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int UnreadCount { get; set; } = 0;
+
+        // Metadata
+        public string? Name { get; set; }
+        public string? RoomType { get; set; } // "direct", "class", "club"
+        public int? ClassGroupId { get; set; }
+        public int? ClubId { get; set; }
     }
 
     public class ChatRoomDetailDto : ChatRoomDto

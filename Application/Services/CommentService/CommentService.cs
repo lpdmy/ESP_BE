@@ -19,11 +19,13 @@ namespace EduShpere.Application.Services
         private readonly ICommentRepository _commentRepository;
         private readonly IMapper _mapper;
         private readonly ContentModerationService _contentModerationService;
-        public CommentService(ICommentRepository commentRepository, IMapper mapper, ContentModerationService contentModerationService)
+        private readonly IModerationService _moderationService;
+        public CommentService(ICommentRepository commentRepository, IMapper mapper, ContentModerationService contentModerationService, IModerationService moderationService)
         {
             _commentRepository = commentRepository;
             _mapper = mapper;
             _contentModerationService = contentModerationService;
+            _moderationService = moderationService;
         }
 
         public async Task<CommentResponseDto> CreateComment(CreateCommentDto dto,int userId)
@@ -40,6 +42,13 @@ namespace EduShpere.Application.Services
             var moderationResult = _contentModerationService.Check(comment.Content);
             if (moderationResult.Decision == "block")
             {
+                await _moderationService.CreateReport(new DTOs.ModerationDto.AddModerationDto
+                {
+                    ContentText = comment.Content,
+                    AuthorId = comment.UserId,
+                    ReporterId = 0,
+                    Status = "Approved"
+                });
                 throw new BadRequestException(ErrorMessages.Moderation.ContentViolation);
             }
             await _commentRepository.AddAsync(comment);
@@ -121,7 +130,7 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Comment.CommentNotFound);
             }
-            await _commentRepository.DeleteSoft(id);
+            await _commentRepository.DeleteAsync(id);
         }
     }
 }

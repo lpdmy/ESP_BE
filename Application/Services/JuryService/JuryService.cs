@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Office.CustomUI;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.Services.NotificationService;
@@ -49,6 +52,7 @@ namespace EduShpere.Application.Services
             var result = await query
                 .Select(x => new JuryActivityResponseDto
                 {
+                    Id = x.Id,
                     UserId = x.UserId,
                     ActivityId = x.ActivityId,
                     FirstName = x.User.FirstName,
@@ -152,8 +156,7 @@ namespace EduShpere.Application.Services
                 .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
                 .Take(paginationRequest.PageSize)
                 .ToListAsync();
-            var list = query.ToList();
-            if (!list.Any())
+            if (!data.Any())
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
@@ -238,6 +241,11 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
             var mapped = _mapper.Map<IEnumerable<JuryAssignmentDto>>(data);
+            foreach (var item in mapped)
+            {
+                item.ScoreDetail = JsonSerializer.Deserialize<Dictionary<string, float>>(item.ScoreTemp ?? "{}");
+                item.Criteria = JsonSerializer.Deserialize<List<string>>(item.GradeSetting ?? "[]");
+            }
             var sql = query.ToQueryString();
             return new PaginationResponseDto<JuryAssignmentDto>
             {
@@ -268,6 +276,11 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
             var mapped = _mapper.Map<IEnumerable<JuryAssignmentDto>>(data);
+            foreach (var item in mapped)
+            {
+                item.ScoreDetail = JsonSerializer.Deserialize<Dictionary<string, float>>(item.ScoreTemp ?? "{}");
+                item.Criteria = JsonSerializer.Deserialize<List<string>>(item.GradeSetting ?? "[]");
+            }
             var sql = query.ToQueryString();
             return new PaginationResponseDto<JuryAssignmentDto>
             {
@@ -277,5 +290,75 @@ namespace EduShpere.Application.Services
                 PageSize = paginationRequest.PageSize
             };
         }
+        public async Task<PaginationResponseDto<JuryAssignmentDto>> GetAllAssignByUserGradeAsync(int userid, int activityId,
+    PaginationRequestDto paginationRequest,
+    string? search = null)
+        {
+            var query = _juryAssignRepo.GetAllByActivityIdUserIdGrading(activityId, userid);
+            var totalCount = await query.CountAsync();
+            if (!string.IsNullOrEmpty(paginationRequest.Search))
+            {
+                query = query.Where(c =>
+                    c.Submission.Title.Contains(paginationRequest.Search));
+            }
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+            var list = query.ToList();
+            if (!list.Any())
+            {
+                throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
+            }
+            var mapped = _mapper.Map<IEnumerable<JuryAssignmentDto>>(data);
+            foreach (var item in mapped)
+            {
+                item.ScoreDetail = JsonSerializer.Deserialize<Dictionary<string, float>>(item.ScoreTemp ?? "{}");
+                item.Criteria = JsonSerializer.Deserialize<List<string>>(item.GradeSetting ?? "[]");
+            }
+            var sql = query.ToQueryString();
+            return new PaginationResponseDto<JuryAssignmentDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
+        }
+
+        public async Task<string> GradeSubmission(int assignmentId, Dictionary<string, int> scores,string? comment,int totalScore)
+        {
+            var assignment = await _juryAssignRepo.GetDetailById(assignmentId);
+            if (assignment == null)
+            {
+                throw new BadRequestException(ErrorMessages.Assignment.AssignMentNotFound);
+            }
+            var gradingCriteria = JsonSerializer.Deserialize<List<string>>(assignment.Submission.Activity.GradingSettings ?? "[]");
+            foreach (var key in scores.Keys)
+            {
+                if (!gradingCriteria.Contains(key))
+                    throw new BadRequestException($"Tiêu chí không hợp lệ: {key}");
+            }
+            var scoreJson = JsonSerializer.Serialize(scores);
+            var reuslt =  _juryAssignRepo.GradeSubmission(scoreJson, assignmentId, comment, totalScore);
+            return scoreJson;
+        }
+        private static Dictionary<string, float>? DeserializeScore(string? rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+                return null;
+
+            try
+            {
+                var unescaped = Regex.Unescape(rawJson);
+
+                return JsonSerializer.Deserialize<Dictionary<string, float>>(unescaped);
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
+
 }

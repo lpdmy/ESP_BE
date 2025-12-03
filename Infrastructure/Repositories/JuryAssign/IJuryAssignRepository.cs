@@ -23,5 +23,11 @@ namespace EduShpere.Infrastructure.Repositories
         Task DeleteAllByActivityIdAsync(int activityId);
         IQueryable<JuryAssignment> GetAllByActivityIdUserId(int activityId, int userId);
         IQueryable<JuryAssignment> GetAllByActivityIdUserIdNotGrading(int activityId, int userId);
+        IQueryable<JuryAssignment> GetAllByActivityIdUserIdGrading(int activityId, int userId);
+        Task GradeSubmission(string json, int assignmentId,string comment,int totalScore);
+        Task<JuryAssignment> GetDetailById(int id);
+        Task<int> NumberJuryRequired(int submissionId);
+        Task<int> NumberJuryGrade(int submissionId);
+        Task<Dictionary<int, int>> NumberJuryRequiredByActivity(int activityId);
     }
 }

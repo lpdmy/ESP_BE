@@ -1,0 +1,60 @@
+{
+  "description": "Test data cho các trường hợp validation error",
+  "testCases": [
+    {
+      "name": "SubmissionDeadline trước StartDate",
+      "description": "SubmissionDeadline < StartDate → phải báo lỗi",
+      "data": {
+        "title": "Cuộc thi Test - Validation Error 1",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-14T17:00:00Z",
+        "problemText": "Đề bài test"
+      },
+      "expectedError": "Hạn cuối nộp bài phải sau hoặc bằng ngày bắt đầu hoạt động."
+    },
+    {
+      "name": "SubmissionDeadline sau EndDate",
+      "description": "SubmissionDeadline > EndDate → phải báo lỗi",
+      "data": {
+        "title": "Cuộc thi Test - Validation Error 2",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-21T17:00:00Z",
+        "problemText": "Đề bài test"
+      },
+      "expectedError": "Hạn cuối nộp bài phải trước hoặc bằng ngày kết thúc hoạt động."
+    },
+    {
+      "name": "SubmissionDeadline hợp lệ",
+      "description": "SubmissionDeadline nằm giữa StartDate và EndDate → hợp lệ",
+      "data": {
+        "title": "Cuộc thi Test - Validation Success",
+        "subType": "CreativeContest",
+        "startDate": "2024-03-15T08:00:00Z",
+        "endDate": "2024-03-20T17:00:00Z",
+        "submissionDeadline": "2024-03-18T17:00:00Z",
+        "problemText": "Đề bài test"
+      },
+      "expectedResult": "Tạo activity thành công"
+    },
+    {
+      "name": "SportsFestival với SubmissionDeadline",
+      "description": "SportsFestival không nên có SubmissionDeadline (có thể null hoặc bỏ qua)",
+      "data": {
+        "title": "Hội thao Test",
+        "subType": "SportsFestival",
+        "startDate": "2024-04-25T06:00:00Z",
+        "endDate": "2024-05-01T18:00:00Z",
+        "submissionDeadline": null,
+        "problemText": null,
+        "problemFileUrl": null
+      },
+      "expectedResult": "Tạo activity thành công, SubmissionDeadline = null"
+    }
+  ]
+}
+
+

@@ -30,5 +30,10 @@ namespace EduSphere.Domain.Models
         public Dictionary<string, int> UnreadCounts { get; set; } = new();
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Room metadata for system-managed group chats
+        public string? RoomType { get; set; } // "direct", "class", "club"
+        public int? ClassGroupId { get; set; }
+        public int? ClubId { get; set; }
     }
 }
