@@ -20,5 +20,7 @@ namespace EduShpere.Infrastructure.Repositories
         Task<ClubJoinRequest?> GetByUserIdAndClubId(int clubid, User user);
         IQueryable<ClubJoinRequest> GetAllWithIncludesByUser(int userid);
         Task<bool> IsAlreadyInvite(int userId, int clubId);
+        Task<ClubJoinRequest> GetMentorInviationByClubId(int clubId);
+        Task CancelMentorInvitaion(int clubJoinRequestId);
     }
 }
