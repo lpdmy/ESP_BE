@@ -1,0 +1,70 @@
+{
+  "description": "Test data cho CreativeContest có đề bài và hạn nộp bài",
+  "testCase": "CreativeContest với ProblemText, ProblemFileUrl, SubmissionDeadline",
+  "data": {
+    "title": "Cuộc thi Vẽ tranh chủ đề 'Mùa xuân quê hương'",
+    "description": "Cuộc thi vẽ tranh dành cho học sinh toàn trường, thể hiện tình yêu quê hương đất nước qua chủ đề mùa xuân.",
+    "category": 1,
+    "subType": "CreativeContest",
+    "location": "Phòng Mỹ thuật",
+    "organizer": "Ban Giám hiệu",
+    "thumbnailUrl": "https://example.com/thumbnails/drawing-contest.jpg",
+    "startDate": "2024-03-15T08:00:00Z",
+    "endDate": "2024-03-20T17:00:00Z",
+    "registerDate": "2024-03-01T00:00:00Z",
+    "endRegisterDate": "2024-03-10T23:59:59Z",
+    "maxParticipants": 100,
+    "clubId": null,
+    "rules": [
+      "Tranh vẽ phải phù hợp với chủ đề 'Mùa xuân quê hương'",
+      "Kích thước giấy: A3 (297mm x 420mm)",
+      "Chất liệu: Màu nước, chì màu, hoặc màu sáp",
+      "Thời gian làm bài: 90 phút",
+      "Mỗi học sinh chỉ được nộp 1 tác phẩm"
+    ],
+    "theme": "Mùa xuân quê hương",
+    "genre": "Vẽ tranh",
+    "paperSize": "A3 (297mm x 420mm)",
+    "drawingMedium": "Màu nước, chì màu, màu sáp",
+    "timeLimit": "90 phút",
+    "submissionFormat": "Bản giấy gốc",
+    "problemText": "ĐỀ BÀI:\n\nHãy vẽ một bức tranh thể hiện cảnh mùa xuân ở quê hương em. Tranh cần thể hiện:\n\n1. Cảnh vật đặc trưng của mùa xuân (hoa đào, hoa mai, cây cối đâm chồi nảy lộc...)\n2. Hoạt động của con người trong mùa xuân (đi chợ Tết, thăm hỏi, vui chơi...)\n3. Không gian quê hương (làng quê, phố phường, đồng ruộng...)\n\nYÊU CẦU:\n- Tranh phải có bố cục hợp lý, màu sắc hài hòa\n- Thể hiện được không khí tươi vui, ấm áp của mùa xuân\n- Kích thước: A3\n- Chất liệu: Màu nước, chì màu hoặc màu sáp\n\nTHỜI GIAN: 90 phút",
+    "problemFileUrl": "https://example.com/files/drawing-contest-problem.pdf",
+    "submissionDeadline": "2024-03-18T17:00:00Z",
+    "onlyTeacherCanRegister": false,
+    "registrationSettings": {
+      "groupRegistration": {
+        "minMembers": 1,
+        "maxMembers": 5,
+        "requireLeader": true
+      }
+    },
+    "starPointRewards": {
+      "registration": "10",
+      "awards": [
+        { "name": "Giải Nhất", "points": "100" },
+        { "name": "Giải Nhì", "points": "80" },
+        { "name": "Giải Ba", "points": "60" },
+        { "name": "Giải Khuyến khích", "points": "40" }
+      ]
+    },
+    "gradingSettings": {
+      "criteria": [
+        "Bố cục (25 điểm)",
+        "Màu sắc (25 điểm)",
+        "Sáng tạo (25 điểm)",
+        "Phù hợp chủ đề (25 điểm)"
+      ]
+    }
+  },
+  "expectedBehavior": {
+    "beforeStartDate": "ProblemText và ProblemFileUrl sẽ bị ẩn, hiển thị thông báo 'Chưa tới thời gian mở đề'",
+    "afterStartDate": "Hiển thị đầy đủ ProblemText, ProblemFileUrl, và SubmissionDeadline",
+    "validation": [
+      "SubmissionDeadline >= StartDate (2024-03-15T08:00:00Z)",
+      "SubmissionDeadline <= EndDate (2024-03-20T17:00:00Z)"
+    ]
+  }
+}
+
+

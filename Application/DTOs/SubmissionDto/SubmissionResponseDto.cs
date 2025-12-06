@@ -28,5 +28,6 @@ namespace EduShpere.Application.DTOs.SubmissionDto
         public string Status { get; set; }
         public List<JuryAssignmentDto> JuryAssignments { get; set; }
 
+        public List<SubmissionAttachmentDto> Attachments { get; set; } = new List<SubmissionAttachmentDto>();
     }
 }

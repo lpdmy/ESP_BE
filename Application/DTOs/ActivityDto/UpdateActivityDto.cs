@@ -19,7 +19,6 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         public DateTime? EndDate { get; set; }
         
-        [StringLength(20, ErrorMessage = "Địa điểm không được vượt quá 20 ký tự")]
         public string? Location { get; set; }
         
         public int? ClubId { get; set; }
@@ -44,6 +43,7 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // SportsFestival fields
         public List<string>? SportsCategories { get; set; }
+        public List<ActivitySportConfigDto>? SportsConfigurations { get; set; }
         public string? CompetitionType { get; set; }
         
         // CreativeContest fields
@@ -70,5 +70,14 @@ namespace EduShpere.Application.DTOs.ActivityDto
         
         // Registration Settings
         public bool? OnlyTeacherCanRegister { get; set; }
+        public ActivityRegistrationSettingsDto? RegistrationSettings { get; set; }
+        
+        // Problem/Submission fields - chỉ áp dụng cho Activity có nộp bài (CreativeContest hoặc SubType có submission)
+        public string? ProblemText { get; set; } // Đề bài (text)
+        public string? ProblemFileUrl { get; set; } // URL hoặc path đến file đề bài
+        public DateTime? SubmissionDeadline { get; set; } // Hạn cuối nộp bài - phải >= StartDate và <= EndDate
+        
+        // Soft delete flag
+        public bool? IsDeleted { get; set; }
     }
 }

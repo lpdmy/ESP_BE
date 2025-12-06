@@ -19,5 +19,13 @@ public interface ITournamentScheduleService
     /// Train ML model từ dữ liệu matches đã có
     /// </summary>
     Task TrainModelAsync(EduShpereDbContext dbContext);
+
+    /// <summary>
+    /// Apply lịch thi đấu sau khi người dùng chỉnh sửa
+    /// </summary>
+    Task<ApplyTournamentScheduleResponseDto> ApplyScheduleAsync(
+        int activityId,
+        ApplyTournamentScheduleRequestDto request,
+        EduShpereDbContext dbContext);
 }
 

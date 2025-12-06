@@ -12,5 +12,8 @@ public class ActivitySportDto
     public string SportName { get; set; } = null!;
     
     public bool IsCustom { get; set; } = false;
+
+    [Range(1, 200, ErrorMessage = "Giới hạn thành viên phải trong khoảng 1-200")]
+    public int? MaxMembers { get; set; }
 }
 

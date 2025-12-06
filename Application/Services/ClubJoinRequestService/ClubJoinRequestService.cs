@@ -271,5 +271,24 @@ namespace EduShpere.Application.Services
                 PageSize = paginationRequest.PageSize
             };
         }
+        public async Task<ClubJoinRequestDto> GetMentorInviationByClubId(int clubId)
+        {
+            var request = await _repo.GetMentorInviationByClubId(clubId);
+            if (request == null)
+            {
+                throw new BadRequestException(ErrorMessages.ClubJoinRequest.RequestNotFound);
+            }
+            var mapped = _mapper.Map<ClubJoinRequestDto>(request);
+            return mapped;
+        }
+        public async Task CancelInvitationMentor(int id)
+        {
+            var invitation = await _repo.GetByIdAsync(id);
+            if (invitation == null)
+            {
+                throw new BadRequestException(ErrorMessages.ClubJoinRequest.RequestNotFound);
+            }
+            await _repo.CancelMentorInvitaion(id);
+        }
     }
 }

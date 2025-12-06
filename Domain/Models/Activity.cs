@@ -22,13 +22,12 @@ public partial class Activity : BaseEntity
     public DateTime? EndDate { get; set; }
 
 
-    [StringLength(20)]
     public string? Location { get; set; }
 
     public int? ClubId { get; set; }
 
     public string Organizer { get; set; } = null!;
-    public int MaxParticipants { get; set; }
+    public int? MaxParticipants { get; set; }
     public DateTime RegisterDate { get; set; }
     public DateTime EndRegisterDate { get; set; }
     public byte[] RowVersion { get; set; } = null!;
@@ -37,7 +36,13 @@ public partial class Activity : BaseEntity
     public string ThumbnailUrl { get; set; } = null!;
     public bool? IsGrade { get; set; } = false; // Enable grading for this activity (nullable to handle NULL in database)
     public string? GradingSettings { get; set; } // JSON string for grading criteria (only criteria, not enabled flag)
+    public string? RegistrationSettings { get; set; } // JSON string for registration-specific settings (group sizes, etc.)
     public bool? OnlyTeacherCanRegister { get; set; } = false; // Only teachers can register for this activity (nullable to handle NULL in database)
+    
+    // Problem/Submission fields - chỉ áp dụng cho Activity có nộp bài (CreativeContest hoặc SubType có submission)
+    public string? ProblemText { get; set; } // Đề bài (text) - chỉ hiển thị sau StartDate
+    public string? ProblemFileUrl { get; set; } // URL hoặc path đến file đề bài (PDF, DOCX, etc.) - chỉ hiển thị sau StartDate
+    public DateTime? SubmissionDeadline { get; set; } // Hạn cuối nộp bài - phải >= StartDate và <= EndDate
 
     [InverseProperty("Activity")]
     public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
@@ -73,4 +78,7 @@ public partial class Activity : BaseEntity
     
     [InverseProperty("Activity")]
     public virtual ActivityRegistrationReward? RegistrationReward { get; set; }
+
+    [InverseProperty("Activity")]
+    public virtual ICollection<ActivityMatch> ActivityMatches { get; set; } = new List<ActivityMatch>();
 }

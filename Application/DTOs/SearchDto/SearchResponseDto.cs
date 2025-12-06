@@ -67,7 +67,7 @@ namespace EduShpere.Application.DTOs.SearchDto
         public DateTime? EndDate { get; set; }
         public string? Location { get; set; }
         public string? Organizer { get; set; }
-        public int MaxParticipants { get; set; }
+        public int? MaxParticipants { get; set; }
         public int ParticipantsCount { get; set; }
         public string? ThumbnailUrl { get; set; }
         public int? Category { get; set; }

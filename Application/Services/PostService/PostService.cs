@@ -14,6 +14,7 @@ using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EduShpere.Application.Services
 {
@@ -220,10 +221,8 @@ namespace EduShpere.Application.Services
             //    if (moderationTitle.IsFlagged)
             //        throw new BadRequestException(ErrorMessages.Post.PostIsFlaged);
             //}
-
             post.UpdatedAt = DateTime.UtcNow;
-            
-                post.PostHashtags.Clear();
+            post.PostHashtags.Clear();
            await _hashTagRepository.DeleteByPostId(post.Id);
             foreach (var tag in dto.Hashtags.Distinct(StringComparer.OrdinalIgnoreCase))
                 {
