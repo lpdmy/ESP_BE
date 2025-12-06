@@ -1,0 +1,90 @@
+@startuml Recovery Staff by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": StaffController " as StaffController
+participant ": StaffService " as StaffService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->StaffManagementPage: 1. Click "Phục hồi" button on a deleted staff
+    activate Admin
+    activate StaffManagementPage
+
+StaffManagementPage->Router: 2. Send PUT /api/staff/{id}
+    deactivate StaffManagementPage
+    activate Router
+
+Router->StaffController: 3. Route Request to Controller
+    deactivate Router
+    activate StaffController
+
+StaffController->StaffService: 4. RecoveryStaff(id)
+    deactivate StaffController
+    activate StaffService
+
+StaffService->UserRepository: 5. GetByStaffIdIncluding(id)
+    activate UserRepository
+
+UserRepository->Database: 6. Query User by Id with UserRights
+    activate Database
+
+Database-->UserRepository: 7. Return User or null
+    deactivate Database
+
+UserRepository-->StaffService: 8. Return User entity
+    deactivate UserRepository
+
+alt staff not found
+    StaffService->StaffService: 9.1 Throw BadRequestException
+    StaffService-->StaffController: 9.1.1 Return error (Staff not found)
+    activate StaffController
+    deactivate StaffService
+    StaffController-->Router: 9.1.2 Send Error Response (400)
+    activate Router
+    deactivate StaffController
+    Router-->StaffManagementPage: 9.1.3 Return error message
+    activate StaffManagementPage
+    deactivate Router
+    StaffManagementPage->StaffManagementPage: 9.1.4 Display error message
+    StaffManagementPage-->Admin: 9.1.5 Show error toast
+    deactivate StaffManagementPage
+    deactivate Admin
+else staff found
+    StaffService->StaffService: 9.2 Set IsDeleted = false
+    StaffService->UserRepository: 9.2.1 UpdateAsync(staff)
+    activate UserRepository
+
+    UserRepository->Database: 9.2.2 UPDATE User SET IsDeleted = false WHERE Id = {id}
+    activate Database
+
+    Database-->UserRepository: 9.2.3 Staff Recovered Successfully
+    deactivate Database
+
+    UserRepository-->StaffService: 9.2.4 Staff Updated
+    deactivate UserRepository
+
+    StaffService-->StaffController: 9.2.5 Return Success
+    deactivate StaffService
+    activate StaffController
+
+    StaffController-->Router: 9.2.6 Send Success Response (200)
+    activate Router
+    deactivate StaffController
+
+    Router-->StaffManagementPage: 9.2.7 Staff Recovered Successfully
+    activate StaffManagementPage
+    deactivate Router
+
+    StaffManagementPage->StaffManagementPage: 9.2.8 Show Success Message
+    StaffManagementPage->StaffManagementPage: 9.2.9 Refresh staff list
+    StaffManagementPage-->Admin: 9.2.10 Show Updated Staff List
+    deactivate StaffManagementPage
+    deactivate Admin
+end
+@enduml
+
+
+
+
+

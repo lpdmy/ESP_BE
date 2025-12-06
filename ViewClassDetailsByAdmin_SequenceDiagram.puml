@@ -1,0 +1,76 @@
+@startuml View Class Details by Admin
+actor Admin
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": ClassDetailPage " as ClassDetailPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassManagementPage: 1. Click on a class to view details
+    activate Admin
+    activate ClassManagementPage
+
+ClassManagementPage->ClassDetailPage: 2. Navigate to /admin/classes/{id}
+    deactivate ClassManagementPage
+    activate ClassDetailPage
+
+ClassDetailPage->ClassDetailPage: 3. Render Class Detail Page
+
+ClassDetailPage->Router: 4. Send GET /api/classgroup/{id}/detail
+    deactivate ClassDetailPage
+    activate Router
+
+Router->ClassGroupController: 5. Route Request to Controller
+    deactivate Router
+    activate ClassGroupController
+
+ClassGroupController->ClassGroupService: 6. GetDetailByIdAsync(id)
+    deactivate ClassGroupController
+    activate ClassGroupService
+
+ClassGroupService->ClassGroupRepository: 7. GetByIdAsync(id)
+    activate ClassGroupRepository
+
+ClassGroupRepository->Database: 8. Query ClassGroup by Id with relations
+    activate Database
+
+Database-->ClassGroupRepository: 9. Return ClassGroup Data
+    deactivate Database
+
+ClassGroupRepository-->ClassGroupService: 10. Return ClassGroup Details
+    deactivate ClassGroupRepository
+
+ClassGroupService->ClassGroupRepository: 11. GetHomeroomTeacherAsync(id)
+    activate ClassGroupRepository
+
+ClassGroupRepository->Database: 12. Query HomeroomTeacher by ClassGroupId
+    activate Database
+
+Database-->ClassGroupRepository: 13. Return Teacher or null
+    deactivate Database
+
+ClassGroupRepository-->ClassGroupService: 14. Return HomeroomTeacher
+    deactivate ClassGroupRepository
+
+ClassGroupService->ClassGroupService: 15. Create ClassGroupDetailDto
+
+ClassGroupService-->ClassGroupController: 16. Return ClassGroupDetailDto
+    activate ClassGroupController
+    deactivate ClassGroupService
+
+ClassGroupController-->Router: 17. Send Class Details Response
+    activate Router
+    deactivate ClassGroupController
+
+Router-->ClassDetailPage: 18. Display Class Details
+    activate ClassDetailPage
+    deactivate Router
+
+ClassDetailPage->ClassDetailPage: 19. Render Class Information
+
+ClassDetailPage-->Admin: 20. Show Complete Class Details
+    deactivate ClassDetailPage
+    deactivate Admin
+@enduml

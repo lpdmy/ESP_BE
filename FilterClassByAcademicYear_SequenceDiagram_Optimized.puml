@@ -1,0 +1,89 @@
+@startuml Filter Class by Academic Year
+actor User
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": ClassGroupService " as ClassGroupService
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as BackendService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+User->ClassManagementPage: 1. User selects Academic Year from dropdown
+    activate User
+activate ClassManagementPage
+ClassManagementPage->ClassManagementPage: 2. Update selectedAcademicYearId state
+ClassManagementPage->ClassManagementPage: 3. Trigger useEffect on academicYearId change
+ClassManagementPage->ClassGroupService: 4. Call getByAcademicYear(academicYearId, token)
+deactivate ClassManagementPage
+activate ClassGroupService
+ClassGroupService->Router: 5. Send GET /api/classgroup/by-academic-year/{academicYearId}
+deactivate ClassGroupService
+activate Router
+Router->ClassGroupController: 6. Route Request to Controller
+deactivate Router
+activate ClassGroupController
+ClassGroupController->ClassGroupController: 7. Create ClassGroupFilterDto with AcademicYearId
+ClassGroupController->BackendService: 8. Call GetClassesByFilterAsync(filter)
+deactivate ClassGroupController
+activate BackendService
+BackendService->ClassGroupRepository: 9. Get Classes by Filter
+activate ClassGroupRepository
+ClassGroupRepository->Database: 10. Query ClassGroup WHERE AcademicYearId = {id}
+activate Database
+Database-->ClassGroupRepository: 11. Return Filtered Class Records
+deactivate Database
+ClassGroupRepository->Database: 12. Query ClassGroupMembers (JOIN) for student count
+activate Database
+Database-->ClassGroupRepository: 13. Return Student Count per Class
+deactivate Database
+ClassGroupRepository->Database: 14. Query AcademicYear (JOIN) for year name
+activate Database
+Database-->ClassGroupRepository: 15. Return AcademicYear Name
+deactivate Database
+ClassGroupRepository-->BackendService: 16. Return ClassGroup Entities with Relations
+deactivate ClassGroupRepository
+BackendService->BackendService: 17. Map Entities to ClassGroupDto
+BackendService->BackendService: 18. Calculate CurrentStudentCount for each class
+BackendService-->ClassGroupController: 19. Return IEnumerable<ClassGroupDto>
+deactivate BackendService
+activate ClassGroupController
+ClassGroupController->ClassGroupController: 20. Wrap in ResponseDto<IEnumerable<ClassGroupDto>>
+ClassGroupController-->Router: 21. Send Success Response with Filtered Classes
+activate Router
+deactivate ClassGroupController
+Router-->ClassGroupService: 22. Return Response Data
+activate ClassGroupService
+deactivate Router
+ClassGroupService->ClassGroupService: 23. Extract data from response
+ClassGroupService-->ClassManagementPage: 24. Return Filtered Classes List
+activate ClassManagementPage
+deactivate ClassGroupService
+ClassManagementPage->ClassManagementPage: 25. Update classes state with filtered data
+ClassManagementPage->ClassManagementPage: 26. Group classes by grade for display
+ClassManagementPage->ClassManagementPage: 27. Re-render component with filtered classes
+ClassManagementPage-->User: 28. Display Filtered Classes by Academic Year
+deactivate ClassManagementPage
+deactivate User
+
+alt Error occurs
+    BackendService-->ClassGroupController: Error Response
+    activate ClassGroupController
+    deactivate BackendService
+    ClassGroupController->ClassGroupController: Wrap Error in ResponseDto
+    ClassGroupController-->Router: Send Error Response (400/500)
+    activate Router
+    deactivate ClassGroupController
+    Router-->ClassGroupService: Return Error Response
+    activate ClassGroupService
+    deactivate Router
+    ClassGroupService-->ClassManagementPage: Error Data
+    activate ClassManagementPage
+    deactivate ClassGroupService
+    ClassManagementPage->ClassManagementPage: Show Error Toast
+    ClassManagementPage-->User: Display Error Message
+    deactivate ClassManagementPage
+    deactivate User
+end
+@enduml
+
+

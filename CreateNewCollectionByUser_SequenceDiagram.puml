@@ -1,0 +1,70 @@
+@startuml Create new collection by user
+actor User
+participant ": CollectionPage " as CollectionPage
+participant ": Router " as Router
+participant ": CollectionController " as CollectionController
+participant ": CollectionService " as CollectionService
+participant ": CollectionRepository " as CollectionRepository
+database Database
+
+User->CollectionPage: 1. Enter collection name and click "Tạo mới"
+    activate User
+    activate CollectionPage
+
+CollectionPage->CollectionPage: 2. Validate collection name
+
+alt valid name
+    CollectionPage->Router: 10.1 Send POST /api/collection with CreateCollectionDto
+    deactivate CollectionPage
+    activate Router
+
+    Router->CollectionController: 10.1.1 Route Request to Controller
+    deactivate Router
+    activate CollectionController
+
+    CollectionController->CollectionController: 10.1.2 Get current user from token
+
+    CollectionController->CollectionService: 10.1.3 CreateCollectionResponse(user, dto)
+    deactivate CollectionController
+    activate CollectionService
+
+    CollectionService->CollectionService: 10.1.4 Create FavoriteCollection entity
+
+    CollectionService->CollectionRepository: 10.1.5 AddAsync(collection)
+    activate CollectionRepository
+
+    CollectionRepository->Database: 10.1.6 INSERT FavoriteCollection into database
+    activate Database
+
+    Database-->CollectionRepository: 10.1.7 Collection Created Successfully
+    deactivate Database
+
+    CollectionRepository-->CollectionService: 10.1.8 Return
+    deactivate CollectionRepository
+
+    CollectionService->CollectionService: 10.1.9 Map to CollectionResponseDto
+
+    CollectionService-->CollectionController: 10.1.10 Return CollectionResponseDto
+    activate CollectionController
+    deactivate CollectionService
+
+    CollectionController-->Router: 10.1.11 Send Success Response (200)
+    activate Router
+    deactivate CollectionController
+
+    Router-->CollectionPage: 10.1.12 Collection Created Successfully
+    activate CollectionPage
+    deactivate Router
+
+    CollectionPage->CollectionPage: 10.1.13 Refresh collections list
+    CollectionPage-->User: 10.1.14 Show Success Toast
+    deactivate CollectionPage
+    deactivate User
+else invalid name
+    CollectionPage->CollectionPage: 10.2 Show error (Name cannot be empty)
+    CollectionPage-->User: 10.2.1 Show error toast
+    deactivate CollectionPage
+    deactivate User
+end
+@enduml
+

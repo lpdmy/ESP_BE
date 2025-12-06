@@ -1,0 +1,63 @@
+@startuml View User Details by Admin
+actor Admin
+participant ": UserManagementPage " as UserManagementPage
+participant ": Router " as Router
+participant ": AuthController " as AuthController
+participant ": UserService " as UserService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->UserManagementPage: 1. Click on a user to view details
+    activate Admin
+    activate UserManagementPage
+
+UserManagementPage->UserManagementPage: 2. Open User Detail Modal
+
+UserManagementPage->Router: 3. Send GET /api/users/{id}
+    deactivate UserManagementPage
+    activate Router
+
+Router->AuthController: 4. Route Request to Controller
+    deactivate Router
+    activate AuthController
+
+AuthController->UserService: 5. GetUserByIdAsync(id)
+    deactivate AuthController
+    activate UserService
+
+UserService->UserRepository: 6. GetByIdAsync(id)
+    activate UserRepository
+
+UserRepository->Database: 7. Query User by Id with StudentProfile and TeacherProfile
+    activate Database
+
+Database-->UserRepository: 8. Return User with relations
+    deactivate Database
+
+UserRepository-->UserService: 9. Return User entity
+    deactivate UserRepository
+
+UserService->UserService: 10. Map User to UserDto
+
+UserService-->AuthController: 11. Return UserDto
+    activate AuthController
+    deactivate UserService
+
+AuthController-->Router: 12. Send User Details Response
+    activate Router
+    deactivate AuthController
+
+Router-->UserManagementPage: 13. Display User Details
+    activate UserManagementPage
+    deactivate Router
+
+UserManagementPage->UserManagementPage: 14. Render User Information
+
+UserManagementPage-->Admin: 15. Show Complete User Details
+    deactivate UserManagementPage
+    deactivate Admin
+@enduml
+
+
+
+

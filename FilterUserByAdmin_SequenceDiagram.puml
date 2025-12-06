@@ -1,0 +1,80 @@
+@startuml Filter User by Admin
+actor Admin
+participant ": UserManagementPage " as UserManagementPage
+participant ": Router " as Router
+participant ": AuthController " as AuthController
+participant ": AuthService " as AuthService
+participant ": UserRepository " as UserRepository
+participant ": PaginationService " as PaginationService
+database Database
+
+Admin->UserManagementPage: 1. Select filter (Status or Role)
+    activate Admin
+    activate UserManagementPage
+
+UserManagementPage->UserManagementPage: 2. Update filter state
+
+UserManagementPage->Router: 3. Send GET /api/users?pageNumber={pageNumber}&pageSize={pageSize}&status={status}&role={role}
+    deactivate UserManagementPage
+    activate Router
+
+Router->AuthController: 4. Route Request to Controller
+    deactivate Router
+    activate AuthController
+
+AuthController->AuthService: 5. GetAllUsersAsync(paginationRequest)
+    deactivate AuthController
+    activate AuthService
+
+AuthService->UserRepository: 6. GetQueryable()
+    activate UserRepository
+
+UserRepository->Database: 7. Query Users with StudentProfile and TeacherProfile
+    activate Database
+
+Database-->UserRepository: 8. Return Users query with relations
+    deactivate Database
+
+UserRepository-->AuthService: 9. Return IQueryable<User>
+    deactivate UserRepository
+
+AuthService->AuthService: 10. Apply status filter (if provided)
+AuthService->AuthService: 11. Apply role filter (if provided)
+AuthService->AuthService: 12. Apply search and sort
+
+AuthService->PaginationService: 13. GetPagedResultAsync(query, paginationRequest)
+    activate PaginationService
+
+PaginationService->Database: 14. Count total and Apply pagination with filters
+    activate Database
+
+Database-->PaginationService: 15. Return filtered and paginated Users with totalCount
+    deactivate Database
+
+PaginationService-->AuthService: 16. Return PagedResult<User>
+    deactivate PaginationService
+
+AuthService->AuthService: 17. Map to UserDto[]
+
+AuthService-->AuthController: 18. Return PaginationResponseDto<UserDto>
+    activate AuthController
+    deactivate AuthService
+
+AuthController-->Router: 19. Send Filtered User List Response
+    activate Router
+    deactivate AuthController
+
+Router-->UserManagementPage: 20. Display Filtered User List
+    activate UserManagementPage
+    deactivate Router
+
+UserManagementPage->UserManagementPage: 21. Render Filtered User Information
+
+UserManagementPage-->Admin: 22. Show Filtered User List
+    deactivate UserManagementPage
+    deactivate Admin
+@enduml
+
+
+
+

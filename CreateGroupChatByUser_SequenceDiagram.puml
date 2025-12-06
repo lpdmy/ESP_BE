@@ -1,0 +1,90 @@
+@startuml Create Group Chat by User
+actor User
+participant ": ChatInboxPage " as ChatInboxPage
+participant ": Router " as Router
+participant ": ChatController " as ChatController
+participant ": ChatService " as ChatService
+participant ": ChatRepository " as ChatRepository
+participant ": UserService " as UserService
+database Database
+
+User->ChatInboxPage: 1. Select multiple participants (>=3 users) and click "Create Group Chat"
+    activate User
+    activate ChatInboxPage
+
+ChatInboxPage->ChatInboxPage: 2. Validate participants (at least 3 users)
+
+alt valid participants (>=3)
+    ChatInboxPage->Router: 10.1 Send POST /api/chat/rooms with ChatRoom (Name, ParticipantIds)
+    deactivate ChatInboxPage
+    activate Router
+
+    Router->ChatController: 10.1.1 Route Request to Controller
+    deactivate Router
+    activate ChatController
+
+    ChatController->ChatService: 10.1.2 CreateRoom(room)
+    deactivate ChatController
+    activate ChatService
+
+    ChatService->ChatService: 10.1.3 Check if room.ParticipantIds.Count > 2
+
+    ChatService->ChatService: 10.1.4 Create new ChatRoom (group chat always creates new)
+
+    ChatService->ChatRepository: 10.1.5 CreateRoom(room)
+    activate ChatRepository
+
+    ChatRepository->Database: 10.1.6 INSERT ChatRoom into MongoDB (Id, Name, ParticipantIds, UnreadCounts, CreatedAt)
+    activate Database
+
+    Database-->ChatRepository: 10.1.7 Room Created Successfully
+    deactivate Database
+
+    ChatRepository-->ChatService: 10.1.8 Return ChatRoom
+    deactivate ChatRepository
+
+    ChatService->ChatService: 10.1.9 MapToRoomDto(room)
+
+    loop for each participant ID
+        ChatService->UserService: 10.1.10 GetUserByIdAsync(participantId)
+            activate UserService
+        UserService->Database: 10.1.11 Query User by Id
+            activate Database
+        Database-->UserService: 10.1.12 Return User data
+            deactivate Database
+        UserService-->ChatService: 10.1.13 Return User (FullName, AvatarUrl)
+            deactivate UserService
+    end
+
+    ChatService->ChatService: 10.1.14 Create ChatRoomDto (Id, ParticipantIds, ParticipantNames, ParticipantAvatars, LastMessage, UpdatedAt, UnreadCount)
+
+    ChatService-->ChatController: 10.1.15 Return ChatRoomDto
+    activate ChatController
+    deactivate ChatService
+
+    ChatController-->Router: 10.1.16 Send Success Response (200)
+    activate Router
+    deactivate ChatController
+
+    Router-->ChatInboxPage: 10.1.17 Group Chat Created Successfully
+    activate ChatInboxPage
+    deactivate Router
+
+    ChatInboxPage->ChatInboxPage: 10.1.18 Extract roomId from response
+
+    ChatInboxPage->ChatInboxPage: 10.1.19 Navigate to /chat/{roomId}
+
+    ChatInboxPage-->User: 10.1.20 Show Group Chat Room
+    deactivate ChatInboxPage
+    deactivate User
+else invalid participants (<3)
+    ChatInboxPage->ChatInboxPage: 10.2 Show error (Need at least 3 participants for group chat)
+    ChatInboxPage-->User: 10.2.1 Show error toast
+    deactivate ChatInboxPage
+    deactivate User
+end
+@enduml
+
+
+
+

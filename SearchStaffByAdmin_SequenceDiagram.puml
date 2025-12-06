@@ -1,0 +1,76 @@
+@startuml Search Staff by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": StaffController " as StaffController
+participant ": StaffService " as StaffService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->StaffManagementPage: 1. Enter search term in search input
+    activate Admin
+    activate StaffManagementPage
+
+Admin->StaffManagementPage: 2. Search term changes (triggers useEffect)
+
+StaffManagementPage->Router: 3. Send GET /api/staff?PageNumber={pageNumber}&PageSize={pageSize}&search={searchTerm}
+    activate Router
+    deactivate StaffManagementPage
+
+Router->StaffController: 4. Route Request to Controller
+    activate StaffController
+    deactivate Router
+
+StaffController->StaffService: 5. GetAllAsync(paginationRequest)
+    activate StaffService
+    deactivate StaffController
+
+StaffService->UserRepository: 6. GetAllByStaffIncluding()
+    activate UserRepository
+
+UserRepository->Database: 7. Query Users WHERE Role = Staff with UserRights
+    activate Database
+    Database-->UserRepository: 8. Return Users with relations
+    deactivate Database
+
+UserRepository-->StaffService: 9. Return Users query
+    deactivate UserRepository
+
+StaffService->StaffService: 10. Filter by FirstName or LastName contains search
+
+StaffService->Database: 11. Count total records and Apply Pagination
+    activate Database
+    Database-->StaffService: 12. Return paginated Users with totalCount
+    deactivate Database
+
+StaffService->StaffService: 13. Map to UserResponseDto[]
+
+StaffService-->StaffController: 14. Return PaginationResponseDto<UserResponseDto>
+    activate StaffController
+    deactivate StaffService
+
+StaffController-->Router: 15. Send Success Response
+    activate Router
+    deactivate StaffController
+
+Router-->StaffManagementPage: 16. Return filtered staff list
+    activate StaffManagementPage
+    deactivate Router
+
+alt staff found
+    StaffManagementPage->StaffManagementPage: 17.1 Render search results
+    StaffManagementPage-->Admin: 17.1.1 Display filtered staff
+    deactivate StaffManagementPage
+else no staff found
+    StaffManagementPage->StaffManagementPage: 17.2 Render "No staff found"
+    StaffManagementPage-->Admin: 17.2.1 Display message
+    deactivate StaffManagementPage
+end
+
+deactivate Admin
+@enduml
+
+
+
+
+

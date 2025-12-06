@@ -1,0 +1,87 @@
+@startuml Activate/Deactivate User by Admin
+actor Admin
+participant ": UserManagementPage " as UserManagementPage
+participant ": Router " as Router
+participant ": AuthController " as AuthController
+participant ": AuthService " as AuthService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->UserManagementPage: 1. Click on a user to activate/deactivate
+    activate Admin
+    activate UserManagementPage
+
+UserManagementPage->UserManagementPage: 2. Open Confirmation Modal
+
+Admin->UserManagementPage: 3. Click "Kích hoạt" or "Vô hiệu hóa" button
+
+UserManagementPage->Router: 4. Send PUT /api/users with UpdateUserDto (new status)
+    deactivate UserManagementPage
+    activate Router
+
+Router->AuthController: 5. Route Request to Controller
+    deactivate Router
+    activate AuthController
+
+AuthController->AuthService: 6. UpdateUserAsync(dto)
+    deactivate AuthController
+    activate AuthService
+
+AuthService->UserRepository: 7. GetByIdAsync(id)
+    activate UserRepository
+
+UserRepository->Database: 8. Query User by Id
+    activate Database
+
+Database-->UserRepository: 9. Return User or null
+    deactivate Database
+
+UserRepository-->AuthService: 10. Return User entity
+    deactivate UserRepository
+
+alt user not found
+    AuthService->AuthService: 11. Throw NotFoundException
+    AuthService-->AuthController: 12. Return error (User not found)
+    activate AuthController
+    deactivate AuthService
+    AuthController-->Router: 13. Send Error Response (404)
+    activate Router
+    deactivate AuthController
+    Router-->UserManagementPage: 14. Return error message
+    activate UserManagementPage
+    deactivate Router
+    UserManagementPage-->Admin: 15. Show error toast
+    deactivate UserManagementPage
+    deactivate Admin
+else user found
+    AuthService->AuthService: 11. Update User Status (0 or 1)
+    AuthService->AuthService: 12. Set Audit Fields for Update
+    AuthService->UserRepository: 13. UpdateAsync(user)
+    activate UserRepository
+    UserRepository->Database: 14. UPDATE User SET Status = {newStatus}, UpdatedAt = DateTime.UtcNow
+    activate Database
+    Database-->UserRepository: 15. User Updated Successfully
+    deactivate Database
+    UserRepository-->AuthService: 16. Return
+    deactivate UserRepository
+
+    AuthService-->AuthController: 17. Return true
+    activate AuthController
+    deactivate AuthService
+
+    AuthController-->Router: 18. Send Success Response (200)
+    activate Router
+    deactivate AuthController
+
+    Router-->UserManagementPage: 19. User Status Updated Successfully
+    activate UserManagementPage
+    deactivate Router
+
+    UserManagementPage->UserManagementPage: 20. Refresh users list
+    UserManagementPage->UserManagementPage: 21. Show Success Message
+    UserManagementPage-->Admin: 22. Show Success Toast
+    deactivate UserManagementPage
+    deactivate Admin
+end
+@enduml
+

@@ -1,0 +1,72 @@
+@startuml Delete Class Post by Teacher
+actor Teacher
+participant ": DeleteConfirmModal " as DeleteConfirmModal
+participant ": Router " as Router
+participant ": PostController " as PostController
+participant ": PostService " as PostService
+participant ": PostRepository " as PostRepository
+database Database
+
+Teacher->DeleteConfirmModal: 1. Teacher clicks to Delete Post
+    activate Teacher
+    activate DeleteConfirmModal
+
+DeleteConfirmModal->DeleteConfirmModal: 2. Render Delete Confirmation Modal
+
+Teacher->DeleteConfirmModal: 3. Confirm Delete
+
+DeleteConfirmModal->Router: 4. Send DELETE /api/post?id={id}
+    deactivate DeleteConfirmModal
+    activate Router
+
+Router->PostController: 5. Route Request to Controller
+    deactivate Router
+    activate PostController
+
+PostController->PostService: 6. Delete Post Request
+    deactivate PostController
+    activate PostService
+
+PostService->PostRepository: 7. GetByIdAsync(postId)
+    activate PostRepository
+    PostRepository->Database: 8. Query Post by Id
+    activate Database
+    Database-->PostRepository: 9. Return Post
+    deactivate Database
+    PostRepository-->PostService: 10. Return Post entity
+    deactivate PostRepository
+
+PostService->PostService: 11. Validate Post exists
+
+PostService->PostRepository: 12. DeleteSoft(postId)
+    activate PostRepository
+    PostRepository->Database: 13. UPDATE Post SET IsDeleted = true
+    activate Database
+    Database-->PostRepository: 14. Post Deleted Successfully
+    deactivate Database
+    PostRepository-->PostService: 15. Post Deleted
+    deactivate PostRepository
+
+PostService-->PostController: 16. Return Success
+    deactivate PostService
+    activate PostController
+
+PostController-->Router: 17. Send Success Response
+    activate Router
+    deactivate PostController
+
+Router-->DeleteConfirmModal: 18. Post Deleted Successfully
+    activate DeleteConfirmModal
+    deactivate Router
+
+DeleteConfirmModal->DeleteConfirmModal: 19. Show Success Message and Close Modal
+
+DeleteConfirmModal-->Teacher: 20. Show Updated Posts List
+    deactivate DeleteConfirmModal
+    deactivate Teacher
+@enduml
+
+
+
+
+

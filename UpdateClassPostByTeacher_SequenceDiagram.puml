@@ -1,0 +1,68 @@
+@startuml Update Class Post by Teacher
+actor Teacher
+participant ": EditPostModal " as EditPostModal
+participant ": Router " as Router
+participant ": PostController " as PostController
+participant ": PostService " as PostService
+participant ": PostRepository " as PostRepository
+database Database
+
+Teacher->EditPostModal: 1. Teacher clicks to Edit Post
+    activate Teacher
+    activate EditPostModal
+
+EditPostModal->EditPostModal: 2. Render Edit Post Form with existing data
+
+Teacher->EditPostModal: 3. Update Post Content
+
+EditPostModal->Router: 4. Send PUT /api/post with UpdatePostDto
+    deactivate EditPostModal
+    activate Router
+
+Router->PostController: 5. Route Request to Controller
+    deactivate Router
+    activate PostController
+
+PostController->PostService: 6. Update Post Request
+    deactivate PostController
+    activate PostService
+
+PostService->PostRepository: 7. GetByIdAsync(postId)
+    activate PostRepository
+    PostRepository->Database: 8. Query Post by Id
+    activate Database
+    Database-->PostRepository: 9. Return Post
+    deactivate Database
+    PostRepository-->PostService: 10. Return Post entity
+    deactivate PostRepository
+
+PostService->PostService: 11. Update Post fields
+
+PostService->PostRepository: 12. UpdateAsync(post)
+    activate PostRepository
+    PostRepository->Database: 13. UPDATE Post Record
+    activate Database
+    Database-->PostRepository: 14. Post Updated Successfully
+    deactivate Database
+    PostRepository-->PostService: 15. Post Updated
+    deactivate PostRepository
+
+PostService-->PostController: 16. Return Post Data
+    deactivate PostService
+    activate PostController
+
+PostController-->Router: 17. Send Success Response
+    activate Router
+    deactivate PostController
+
+Router-->EditPostModal: 18. Post Updated Successfully
+    activate EditPostModal
+    deactivate Router
+
+EditPostModal->EditPostModal: 19. Show Success Message and Close Modal
+
+EditPostModal-->Teacher: 20. Show Updated Post
+    deactivate EditPostModal
+    deactivate Teacher
+@enduml
+

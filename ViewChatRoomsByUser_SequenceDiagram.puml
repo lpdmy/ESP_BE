@@ -1,0 +1,102 @@
+@startuml View Chat Rooms by User
+actor User
+participant ": ChatInboxPage " as ChatInboxPage
+participant ": Router " as Router
+participant ": ChatController " as ChatController
+participant ": HttpContextService " as HttpContextService
+participant ": ChatService " as ChatService
+participant ": ChatRepository " as ChatRepository
+participant ": UserService " as UserService
+database Database
+
+User->ChatInboxPage: 1. Navigate to Chat page
+    activate User
+    activate ChatInboxPage
+
+ChatInboxPage->ChatInboxPage: 2. Render Chat Inbox Page
+
+ChatInboxPage->Router: 3. Send GET /api/chat/rooms
+    deactivate ChatInboxPage
+    activate Router
+
+Router->ChatController: 4. Route Request to Controller
+    deactivate Router
+    activate ChatController
+
+ChatController->HttpContextService: 5. GetCurrentUserId()
+    activate HttpContextService
+    deactivate ChatController
+
+HttpContextService->HttpContextService: 6. Extract userId from JWT token
+HttpContextService-->ChatController: 7. Return userId
+    activate ChatController
+    deactivate HttpContextService
+
+ChatController->ChatService: 8. GetUserRoomsWithNames(userId)
+    deactivate ChatController
+    activate ChatService
+
+ChatService->ChatRepository: 9. GetRoomsByUserId(userId)
+    activate ChatRepository
+
+ChatRepository->Database: 10. Query ChatRooms WHERE ParticipantIds contains userId
+    activate Database
+
+Database-->ChatRepository: 11. Return ChatRooms list
+    deactivate Database
+
+ChatRepository-->ChatService: 12. Return ChatRooms
+    deactivate ChatRepository
+
+ChatService->ChatService: 13. Extract all participant IDs from rooms
+
+loop for each participant ID
+    ChatService->UserService: 14. GetUserByIdAsync(participantId)
+        activate UserService
+    UserService->Database: 15. Query User by Id
+        activate Database
+    Database-->UserService: 16. Return User data
+        deactivate Database
+    UserService-->ChatService: 17. Return User (FullName, AvatarUrl)
+        deactivate UserService
+end
+
+loop for each room
+    ChatService->ChatRepository: 18. GetLastMessageByRoomId(roomId)
+        activate ChatRepository
+    ChatRepository->Database: 19. Query ChatMessage WHERE RoomId = roomId ORDER BY Timestamp DESC LIMIT 1
+        activate Database
+    Database-->ChatRepository: 20. Return LastMessage or null
+        deactivate Database
+    ChatRepository-->ChatService: 21. Return LastMessage
+        deactivate ChatRepository
+end
+
+ChatService->ChatService: 22. Map to ChatRoomDto (ParticipantNames, ParticipantAvatars, LastMessage, UnreadCount)
+
+ChatService->ChatService: 23. Order by UpdatedAt DESC
+
+ChatService-->ChatController: 24. Return List<ChatRoomDto>
+    activate ChatController
+    deactivate ChatService
+
+ChatController-->Router: 25. Send Chat Rooms Response
+    activate Router
+    deactivate ChatController
+
+Router-->ChatInboxPage: 26. Display Chat Rooms
+    activate ChatInboxPage
+    deactivate Router
+
+ChatInboxPage->ChatInboxPage: 27. Map rooms (displayName, avatar, lastMessage, timestamp, unreadCount)
+
+ChatInboxPage->ChatInboxPage: 28. Render Chat Rooms List
+
+ChatInboxPage-->User: 29. Show Chat Rooms
+    deactivate ChatInboxPage
+    deactivate User
+@enduml
+
+
+
+

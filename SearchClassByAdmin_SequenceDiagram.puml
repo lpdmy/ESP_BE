@@ -1,0 +1,70 @@
+@startuml Search Class by Admin
+actor Admin
+participant ": ClassManagementPage " as ClassManagementPage
+participant ": Router " as Router
+participant ": ClassGroupController " as ClassGroupController
+participant ": ClassGroupService " as ClassGroupService
+participant ": ClassGroupRepository " as ClassGroupRepository
+database Database
+
+Admin->ClassManagementPage: 1. Enter search term in search input
+activate Admin
+activate ClassManagementPage
+
+Admin->ClassManagementPage: 2. Search term changes (with debounce 300ms)
+
+ClassManagementPage->Router: 3. Send POST /api/classgroup/filter with {name, academicYearId}
+activate Router
+deactivate ClassManagementPage
+
+Router->ClassGroupController: 4. Route Request to Controller
+activate ClassGroupController
+deactivate Router
+
+ClassGroupController->ClassGroupService: 5. GetClassesByFilterAsync(filter)
+activate ClassGroupService
+deactivate ClassGroupController
+
+ClassGroupService->ClassGroupRepository: 6. GetByFilterAsync(name, academicYearId)
+activate ClassGroupRepository
+ClassGroupRepository->Database: 7. Filter classes WHERE Name LIKE {name} AND AcademicYearId = {id}
+activate Database
+Database-->ClassGroupRepository: 8. Return filtered classes
+deactivate Database
+ClassGroupRepository-->ClassGroupService: 9. Return classes list
+deactivate ClassGroupRepository
+
+alt classes found
+    ClassGroupService->ClassGroupService: 10.1 Map to ClassGroupDto[]
+    ClassGroupService-->ClassGroupController: 10.1.1 Return class list
+    activate ClassGroupController
+    
+
+    ClassGroupController-->Router: 10.1.2 Success response
+    activate Router
+    deactivate ClassGroupController
+    Router-->ClassManagementPage: 10.1.3 Return filtered classes
+    activate ClassManagementPage
+    deactivate Router
+    ClassManagementPage->ClassManagementPage: 10.1.4 Render search results
+    ClassManagementPage-->Admin: 10.1.5 Display filtered classes
+    deactivate ClassManagementPage
+
+else no classes found
+    ClassGroupService-->ClassGroupController: 10.2 Return empty list
+    activate ClassGroupController
+    deactivate ClassGroupService
+    ClassGroupController-->Router: 10.2.1 Success response (empty)
+    activate Router
+    deactivate ClassGroupController
+    Router-->ClassManagementPage: 10.2.2 Return empty
+    activate ClassManagementPage
+    deactivate Router
+    ClassManagementPage->ClassManagementPage: 10.2.3 Render "No classes found"
+    ClassManagementPage-->Admin: 10.2.4 Display message
+    deactivate ClassManagementPage
+end
+
+deactivate Admin
+@enduml
+

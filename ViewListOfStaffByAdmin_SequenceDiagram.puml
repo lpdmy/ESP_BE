@@ -1,0 +1,60 @@
+@startuml View List of Staff by Admin
+actor Admin
+participant ": StaffManagementPage " as StaffManagementPage
+participant ": Router " as Router
+participant ": StaffController " as StaffController
+participant ": StaffService " as StaffService
+participant ": UserRepository " as UserRepository
+database Database
+
+Admin->StaffManagementPage: 1. Navigate to Staff Management page
+    activate Admin
+    activate StaffManagementPage
+
+StaffManagementPage->StaffManagementPage: 2. Render Staff Management Page
+
+StaffManagementPage->Router: 3. Send GET /api/staff?PageNumber={pageNumber}&PageSize={pageSize}
+    deactivate StaffManagementPage
+    activate Router
+
+Router->StaffController: 4. Route Request to Controller
+    deactivate Router
+    activate StaffController
+
+StaffController->StaffService: 5. GetAllAsync(paginationRequest)
+    deactivate StaffController
+    activate StaffService
+
+StaffService->UserRepository: 6. GetAllByStaffIncluding()
+    activate UserRepository
+
+UserRepository->Database: 7. Query Users WHERE Role = Staff with UserRights
+    activate Database
+
+Database-->UserRepository: 8. Return Users with relations
+    deactivate Database
+
+UserRepository-->StaffService: 9. Return Users query
+    deactivate UserRepository
+
+StaffService->StaffService: 10. Filter, Count, Apply Pagination and Map to UserResponseDto[]
+
+StaffService-->StaffController: 11. Return PaginationResponseDto<UserResponseDto>
+    activate StaffController
+    deactivate StaffService
+
+StaffController-->Router: 12. Send Staff List Response
+    activate Router
+    deactivate StaffController
+
+Router-->StaffManagementPage: 13. Display Staff List
+    activate StaffManagementPage
+    deactivate Router
+
+StaffManagementPage->StaffManagementPage: 14. Render Staff Information
+
+StaffManagementPage-->Admin: 15. Show Complete Staff List
+    deactivate StaffManagementPage
+    deactivate Admin
+@enduml
+

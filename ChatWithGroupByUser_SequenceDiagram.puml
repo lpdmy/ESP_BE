@@ -1,0 +1,148 @@
+@startuml Chat with Group by User
+actor User
+participant ": ChatDetailPage " as ChatDetailPage
+participant ": ChatHub (SignalR) " as ChatHub
+participant ": Router " as Router
+participant ": ChatController " as ChatController
+participant ": HttpContextService " as HttpContextService
+participant ": ChatService " as ChatService
+participant ": ChatRepository " as ChatRepository
+participant ": UserService " as UserService
+participant ": NotificationService " as NotificationService
+database Database
+
+User->ChatDetailPage: 1. Type message and click Send
+    activate User
+    activate ChatDetailPage
+
+ChatDetailPage->ChatDetailPage: 2. Validate message (not empty)
+
+ChatDetailPage->ChatHub: 3. SendMessage(roomId, userId, content, "text")
+    activate ChatHub
+    deactivate ChatDetailPage
+
+ChatHub->ChatHub: 4. Create ChatMessage object
+
+ChatHub->ChatHub: 5. Broadcast to room group (all participants)
+ChatHub-->ChatDetailPage: 6. ReceiveMessage (realtime)
+    activate ChatDetailPage
+    deactivate ChatHub
+
+ChatDetailPage->ChatDetailPage: 7. Add message to UI (optimistic update)
+
+ChatDetailPage->Router: 8. Send POST /api/chat/messages/{roomId} with messageData
+    deactivate ChatDetailPage
+    activate Router
+
+Router->ChatController: 9. Route Request to Controller
+    deactivate Router
+    activate ChatController
+
+ChatController->HttpContextService: 10. GetCurrentUserId()
+    activate HttpContextService
+    deactivate ChatController
+
+HttpContextService->HttpContextService: 11. Extract userId from JWT token
+HttpContextService-->ChatController: 12. Return userId
+    activate ChatController
+    deactivate HttpContextService
+
+ChatController->ChatController: 13. Set message.SenderId, message.Timestamp, message.RoomId
+
+ChatController->ChatService: 14. SendMessage(message)
+    deactivate ChatController
+    activate ChatService
+
+ChatService->ChatRepository: 15. AddMessage(message)
+    activate ChatRepository
+
+ChatRepository->Database: 16. INSERT ChatMessage into MongoDB
+    activate Database
+
+Database-->ChatRepository: 17. Message saved
+    deactivate Database
+
+ChatRepository->ChatRepository: 18. Get ChatRoom by RoomId
+
+ChatRepository->Database: 19. Query ChatRoom WHERE Id = roomId
+    activate Database
+
+Database-->ChatRepository: 20. Return ChatRoom (with all ParticipantIds)
+    deactivate Database
+
+ChatRepository->ChatRepository: 21. Loop through all ParticipantIds (except sender)
+
+loop for each participant (except sender)
+    ChatRepository->ChatRepository: 22. Increment UnreadCounts[participantId]
+end
+
+ChatRepository->Database: 23. UPDATE ChatRoom SET UnreadCounts for all recipients
+    activate Database
+
+Database-->ChatRepository: 24. Room updated
+    deactivate Database
+
+ChatRepository-->ChatService: 25. Return saved ChatMessage
+    deactivate ChatRepository
+
+ChatService->UserService: 26. GetUserByIdAsync(senderId)
+    activate UserService
+
+UserService->Database: 27. Query User by Id
+    activate Database
+
+Database-->UserService: 28. Return User data
+    deactivate Database
+
+UserService-->ChatService: 29. Return User (FullName, AvatarUrl)
+    deactivate UserService
+
+ChatService->ChatRepository: 30. GetRoomById(roomId)
+    activate ChatRepository
+
+ChatRepository->Database: 31. Query ChatRoom by Id
+    activate Database
+
+Database-->ChatRepository: 32. Return ChatRoom
+    deactivate Database
+
+ChatRepository-->ChatService: 33. Return ChatRoom
+    deactivate ChatRepository
+
+ChatService->NotificationService: 34. AddAsync(Notification) for recipients
+    activate NotificationService
+
+loop for each recipient
+    NotificationService->Database: 35. INSERT Notification for recipient
+        activate Database
+    Database-->NotificationService: 36. Notification created
+        deactivate Database
+end
+
+NotificationService-->ChatService: 37. Return
+    deactivate NotificationService
+
+ChatService-->ChatController: 38. Return saved ChatMessage
+    activate ChatController
+    deactivate ChatService
+
+ChatController-->Router: 39. Send Success Response
+    activate Router
+    deactivate ChatController
+
+Router-->ChatDetailPage: 40. Message saved successfully
+    activate ChatDetailPage
+    deactivate Router
+
+ChatDetailPage->ChatDetailPage: 41. Clear input field
+
+ChatDetailPage->ChatDetailPage: 42. Scroll to bottom
+
+ChatDetailPage-->User: 43. Show message in group chat
+    deactivate ChatDetailPage
+    deactivate User
+@enduml
+
+
+
+

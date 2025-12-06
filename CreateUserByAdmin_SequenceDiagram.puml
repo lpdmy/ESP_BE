@@ -1,0 +1,113 @@
+@startuml Create User Flow - EduSphere (Admin)
+actor Admin
+participant UserManagementPage
+participant Router
+participant AuthController
+participant AuthService
+participant UserRepository
+participant OneTimeLoginRepository
+participant EmailService
+database Database
+
+Admin->UserManagementPage: 1. Admin clicks on Create New User button
+    activate Admin
+    activate UserManagementPage
+
+UserManagementPage->UserManagementPage: 2. Render Create User Form
+
+UserManagementPage->Router: 3. Send POST /api/auth/create-user (userData, token)
+    deactivate UserManagementPage
+    activate Router
+
+Router->AuthController: 4. Route Request to Controller
+    deactivate Router
+    activate AuthController
+
+AuthController->AuthService: 5. Create User Request
+    deactivate AuthController
+    activate AuthService
+
+AuthService->UserRepository: 6. Check Email Exists
+    activate UserRepository
+
+UserRepository->Database: 7. Query User by Email
+    activate Database
+
+Database-->UserRepository: 8. Return User Data
+    deactivate Database
+
+UserRepository-->AuthService: 9. Return User Exists/Not Exists
+    deactivate UserRepository
+
+alt user data valid
+    AuthService->UserRepository: 10. Create New User
+    activate UserRepository
+
+    UserRepository->Database: 11. Insert User Record
+    activate Database
+
+    Database-->UserRepository: 12. User Created Successfully
+    deactivate Database
+
+    UserRepository-->AuthService: 13. User Created
+    deactivate UserRepository
+
+    AuthService->OneTimeLoginRepository: 14. Create OTL Token
+    activate OneTimeLoginRepository
+
+    OneTimeLoginRepository->Database: 15. Insert OTL Token Record
+    activate Database
+
+    Database-->OneTimeLoginRepository: 16. Token Created Successfully
+    deactivate Database
+
+    OneTimeLoginRepository-->AuthService: 17. Token Created
+    deactivate OneTimeLoginRepository
+
+    AuthService->EmailService: 18. Send OTL Email
+    activate EmailService
+
+    EmailService->EmailService: 19. Generate Login Link
+    EmailService->EmailService: 20. Send Email with Login Link
+    EmailService-->AuthService: 21. Email Sent Successfully
+    deactivate EmailService
+
+    AuthService-->AuthController: 22. Return Success
+    activate AuthController
+    deactivate AuthService
+
+    AuthController-->Router: 23. Send Success Response
+    activate Router
+    deactivate AuthController
+
+    Router-->UserManagementPage: 24. User Created Successfully
+    activate UserManagementPage
+    deactivate Router
+
+    UserManagementPage->UserManagementPage: 25. Show Success Message
+    UserManagementPage->UserManagementPage: 26. Refresh User List
+    UserManagementPage-->Admin: 27. Show Updated User List
+    deactivate UserManagementPage
+    deactivate Admin
+else user data invalid
+    AuthService-->AuthController: 10. Send Error Response
+    deactivate AuthService
+    activate AuthController
+
+    AuthController-->Router: 11. User Data Invalid
+    activate Router
+    deactivate AuthController
+
+    Router-->UserManagementPage: 12. Display Error Message
+    deactivate Router
+    activate UserManagementPage
+
+    UserManagementPage-->Admin: 13. Show Error Toast
+    deactivate UserManagementPage
+    deactivate Admin
+end
+@enduml
+
+
+
+
