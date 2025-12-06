@@ -242,25 +242,6 @@ namespace EduShpere.Application.Services
                         Post = post
                     });
                  }
-
-            if (dto.MentionUsernames != null)
-            {
-                post.PostMentions.Clear();
-                foreach (var id in dto.MentionUsernames.Distinct())
-                {
-                    var mentionedUser = await _userRepo.GetByIdAsync(id);
-                    if (mentionedUser != null)
-                    {
-                        post.PostMentions.Add(new PostMention
-                        {
-                            MentionedUserId = mentionedUser.Id,
-                            Post = post
-                        });
-                    }
-                }
-            }
-
-            
                 await _attachmentRepository.DeleteAttachmentByPostId(post.Id);
 
                 foreach (var attachment in dto.AttachmentUrls)
@@ -276,6 +257,10 @@ namespace EduShpere.Application.Services
                         });
                     }
                 }
+            post.PrivacyLevel = dto.PrivacyLevel;
+            post.Body = dto.Body;
+            post.Title = dto.Title;
+
             await _repo.UpdateAsync(post);
             return _mapper.Map<PostResponseDto>(post);
         }
