@@ -281,6 +281,7 @@ namespace EduShpere.Controllers
             }
         }
         [HttpPost(ApiEndpoints.Auth.CreateStaff)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateStaff(CreateStaffDto dto)
         {
             try {  

@@ -19,6 +19,7 @@ namespace EduShpere.Infrastructure.Repositories
         IQueryable<JuryActivity> GetAllJuryActivityIncluding();
         Task<bool> IsExisting(int userId, int activityId);
         IQueryable<JuryActivity> GetAllJuryActivityByUser(int id);
+        IQueryable<JuryActivity> GetQueryable();
 
     }
 }

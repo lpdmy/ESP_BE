@@ -15,6 +15,7 @@ namespace EduShpere.Infrastructure.Repositories
         Task AddRangeAsync(IEnumerable<Club> entities);
         Task UpdateAsync(Club entity);
         Task DeleteAsync(int id);
+        Task<IEnumerable<Club>> SearchAsync(string query, int pageSize);
         IQueryable<Club> GetAllWithIncludes();
         Task<Club?> GetByIdWithIncludesAsync(int id);
         Task<bool> DeleteSoft(int id);

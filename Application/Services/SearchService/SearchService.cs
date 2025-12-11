@@ -2,7 +2,9 @@ using AutoMapper;
 using EduShpere.Application.DTOs.SearchDto;
 using EduShpere.Application.DTOs.PostDto;
 using EduShpere.Application.Services.RankingService;
+using EduShpere.Domain;
 using EduShpere.Infrastructure;
+using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.SearchAnalytics;
 using EduShpere.Infrastructure.Repositories.SearchHistory;
 using EduShpere.Domain.Enum;
@@ -16,6 +18,7 @@ namespace EduShpere.Application.Services.SearchService
         private readonly IUserRepository _userRepository;
         private readonly IPostRepository _postRepository;
         private readonly EduShpere.Infrastructure.Repositories.IActivityRepository _activityRepository;
+        private readonly IClubRepository _clubRepository;
         private readonly ISearchHistoryRepository _searchHistoryRepository;
         private readonly ISearchAnalyticsRepository _searchAnalyticsRepository;
         private readonly IRankingService _rankingService;
@@ -26,6 +29,7 @@ namespace EduShpere.Application.Services.SearchService
             IUserRepository userRepository,
             IPostRepository postRepository,
             EduShpere.Infrastructure.Repositories.IActivityRepository activityRepository,
+            IClubRepository clubRepository,
             ISearchHistoryRepository searchHistoryRepository,
             ISearchAnalyticsRepository searchAnalyticsRepository,
             IRankingService rankingService,
@@ -35,6 +39,7 @@ namespace EduShpere.Application.Services.SearchService
             _userRepository = userRepository;
             _postRepository = postRepository;
             _activityRepository = activityRepository;
+            _clubRepository = clubRepository;
             _searchHistoryRepository = searchHistoryRepository;
             _searchAnalyticsRepository = searchAnalyticsRepository;
             _rankingService = rankingService;
@@ -224,15 +229,24 @@ namespace EduShpere.Application.Services.SearchService
         {
             try
             {
-                var posts = await _postRepository.SearchAsync(query, pageSize * 2); // Get more for ranking
-                
-                // Get current user ID for ranking
-                var userIdClaim = _httpContextService.GetCurrentUserId();
-                var currentUserId = userIdClaim ?? 0;
-                
+                var posts = await _postRepository.SearchAsync(query, pageSize * 3, includeClubMembers: true); // fetch extra for permission filter
+
+                var currentUserId = _httpContextService.GetCurrentUserId() ?? 0;
+                var (classGroupIds, clubIds, userRole) = await GetUserContextAsync(currentUserId);
+
+                var filteredPosts = posts.Where(p =>
+                    // exclude admin posts
+                    (p.User?.Role ?? UserRole.Student) != UserRole.Admin &&
+                    (
+                        p.PrivacyLevel == Domain.Enum.PostVisibility.Public ||
+                        (p.ClassGroupId.HasValue && classGroupIds.Contains(p.ClassGroupId.Value)) ||
+                        (p.ClubId.HasValue && clubIds.Contains(p.ClubId.Value))
+                    )
+                );
+
                 // Rank posts
-                var rankedPosts = await _rankingService.RankPostsAsync(posts, query, currentUserId);
-                
+                var rankedPosts = await _rankingService.RankPostsAsync(filteredPosts, query, currentUserId);
+
                 return rankedPosts.Take(pageSize);
             }
             catch (Exception ex)
@@ -247,15 +261,21 @@ namespace EduShpere.Application.Services.SearchService
             {
                 var stopwatch = Stopwatch.StartNew();
                 
-                // Build search query with filters
-                var posts = await _postRepository.SearchAsync(request.Query, request.PageSize * 2);
-                
-                // Get current user ID for ranking
-                var userIdClaim = _httpContextService.GetCurrentUserId();
-                var currentUserId = userIdClaim ?? 0;
-                
-                // Rank posts
-                var rankedPosts = await _rankingService.RankPostsAsync(posts, request.Query, currentUserId);
+                var posts = await _postRepository.SearchAsync(request.Query, request.PageSize * 3, includeClubMembers: true);
+
+                var currentUserId = _httpContextService.GetCurrentUserId() ?? 0;
+                var (classGroupIds, clubIds, userRole) = await GetUserContextAsync(currentUserId);
+
+                var filteredPosts = posts.Where(p =>
+                    (p.User?.Role ?? UserRole.Student) != UserRole.Admin &&
+                    (
+                        p.PrivacyLevel == Domain.Enum.PostVisibility.Public ||
+                        (p.ClassGroupId.HasValue && classGroupIds.Contains(p.ClassGroupId.Value)) ||
+                        (p.ClubId.HasValue && clubIds.Contains(p.ClubId.Value))
+                    )
+                );
+
+                var rankedPosts = await _rankingService.RankPostsAsync(filteredPosts, request.Query, currentUserId);
                 
                 // Convert to PostAdvancedSearchResultDto
                 var convertedPosts = rankedPosts.Select(p => new PostAdvancedSearchResultDto
@@ -329,9 +349,24 @@ namespace EduShpere.Application.Services.SearchService
         {
             try
             {
-                // This would need a ClubRepository - placeholder implementation
-                await Task.Delay(1); // Remove when real implementation is added
-                return new List<ClubSearchResultDto>();
+                var clubs = await _clubRepository.SearchAsync(query, pageSize * 2);
+
+                var clubDtos = clubs.Select(c => new ClubSearchResultDto
+                {
+                    Id = c.Id,
+                    Name = c.Name ?? string.Empty,
+                    Description = c.Description ?? string.Empty,
+                    AvatarUrl = c.AvatarUrl,
+                    CoverUrl = c.CoverUrl,
+                    MembersCount = c.ClubMembers?.Count(cm => !cm.IsDeleted) ?? 0,
+                    CreatedByUserName = c.CreatedByUser != null
+                        ? $"{c.CreatedByUser.FirstName} {c.CreatedByUser.LastName}".Trim()
+                        : string.Empty,
+                    CreatedAt = c.CreatedAt ?? DateTime.UtcNow,
+                    IsActive = !c.IsDeleted
+                });
+
+                return clubDtos.Take(pageSize);
             }
             catch (Exception ex)
             {
@@ -437,6 +472,39 @@ namespace EduShpere.Application.Services.SearchService
             {
                 throw new Exception($"Getting trending searches failed: {ex.Message}", ex);
             }
+        }
+
+        private async Task<(HashSet<int> ClassGroupIds, HashSet<int> ClubIds, UserRole? Role)> GetUserContextAsync(int userId)
+        {
+            if (userId <= 0)
+            {
+                return (new HashSet<int>(), new HashSet<int>(), null);
+            }
+
+            var userInfo = await _userRepository.GetQueryable()
+                .Where(u => u.Id == userId)
+                .Select(u => new
+                {
+                    u.Role,
+                    ClassGroups = u.ClassGroupMembers
+                        .Where(cgm => !cgm.IsDeleted && cgm.ClassGroup != null && !cgm.ClassGroup.IsDeleted)
+                        .Select(cgm => cgm.ClassGroupId),
+                    Clubs = u.ClubMembers
+                        .Where(cm => !cm.IsDeleted && cm.Club != null && !cm.Club.IsDeleted)
+                        .Select(cm => cm.ClubId)
+                })
+                .FirstOrDefaultAsync();
+
+            if (userInfo == null)
+            {
+                return (new HashSet<int>(), new HashSet<int>(), null);
+            }
+
+            return (
+                userInfo.ClassGroups.ToHashSet(),
+                userInfo.Clubs.ToHashSet(),
+                userInfo.Role
+            );
         }
 
 

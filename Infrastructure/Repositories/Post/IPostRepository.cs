@@ -15,8 +15,8 @@ namespace EduShpere.Infrastructure
         Task AddRangeAsync(IEnumerable<Post> entities);
         Task UpdateAsync(Post entity);
         Task DeleteAsync(int id);
-        Task<IEnumerable<Post>> SearchAsync(string query, int limit = 10);
-        Task<IEnumerable<Post>> SearchWithFiltersAsync(object request);
+        Task<IEnumerable<Post>> SearchAsync(string query, int limit = 10, bool includeClubMembers = false);
+        Task<IEnumerable<Post>> SearchWithFiltersAsync(object request, bool includeClubMembers = false);
         Task<Dictionary<int, (int LikesCount, int CommentsCount)>> GetPostEngagementStatsAsync(IEnumerable<int> postIds);
         IQueryable<Post> GetAllPostIncluding();
         Task DeleteSoft(int id);

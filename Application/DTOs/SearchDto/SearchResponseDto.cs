@@ -48,6 +48,7 @@ namespace EduShpere.Application.DTOs.SearchDto
         public string Title { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
         public string AuthorName { get; set; } = string.Empty;
+        public string? AuthorAvatarUrl { get; set; }
         public int AuthorId { get; set; }
         public int? Status { get; set; }
         public int? PrivacyLevel { get; set; }

@@ -31,6 +31,7 @@ namespace EduShpere.Application.Mappings
             CreateMap<Post, PostSearchResultDto>()
                 .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => 
                     $"{src.User.FirstName} {src.User.LastName}".Trim()))
+                .ForMember(dest => dest.AuthorAvatarUrl, opt => opt.MapFrom(src => src.User.AvatarUrl))
                 .ForMember(dest => dest.LikesCount, opt => opt.Ignore()) // Set in service
                 .ForMember(dest => dest.CommentsCount, opt => opt.Ignore()) // Set in service
                 .ForMember(dest => dest.Hashtags, opt => opt.Ignore()) // Set in service
