@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Models;
+using EduShpere.Application.DTOs;
 
 namespace EduShpere.Controllers
 {
@@ -18,6 +19,8 @@ namespace EduShpere.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
+
+        private const string SystemErrorMessage = "Lỗi hệ thống. Vui lòng liên hệ quản trị viên (Admin IT) để được hỗ trợ.";
 
         public AuthController(IAuthService authService, IEmailService emailService)
         {
@@ -28,14 +31,27 @@ namespace EduShpere.Controllers
         [HttpPost(ApiEndpoints.Auth.Login)]
         public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
         {
-            if (loginRequest == null)
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
+            try
+            {
+                if (loginRequest == null)
+                    return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
 
-            var result = await _authService.Login(loginRequest);
-            if (result == null)
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
+                var result = await _authService.Login(loginRequest);
+                if (result == null)
+                    return BadRequest(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidCredentials, 400));
 
-            return Ok(new ResponseDto<TokenModel>(result, "Đăng nhập thành công"));
+                return Ok(new ResponseDto<TokenModel>(result, "Đăng nhập thành công"));
+            }
+
+            catch (Exception ex) { 
+                return StatusCode(500, new
+                {
+                    message = ex.Message,
+                    detail = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+
         }
 
         [HttpGet(ApiEndpoints.Auth.GetMe)]
@@ -70,8 +86,9 @@ namespace EduShpere.Controllers
                 Description = "This is a test endpoint to verify that the API is operational."
             }, "API hoạt động bình thường"));
         }
+
         [HttpPost(ApiEndpoints.Auth.CreateUser)]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             try
@@ -79,9 +96,9 @@ namespace EduShpere.Controllers
                 var result = await _authService.CreateUserAndGenerateOtlAsync(dto);
                 return Ok(new ResponseDto<bool>(result, "Tạo người dùng thành công"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -90,7 +107,7 @@ namespace EduShpere.Controllers
         {
             if (!env.IsDevelopment())
             {
-                return NotFound(); // hoặc Forbidden
+                return NotFound();
             }
 
             try
@@ -98,24 +115,37 @@ namespace EduShpere.Controllers
                 var result = await _authService.CreateUserAndReturnTokenAsync(dto);
                 return Ok(new ResponseDto<TokenModel>(result, "Tạo người dùng thành công - Development Mode"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
-        [HttpGet(ApiEndpoints.Auth.UserUrl)]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllUsers([FromQuery] PaginationRequestDto? paginationRequest = null)
+        [HttpGet(ApiEndpoints.User.Users)]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers(
+            [FromQuery] UserPaginationRequestDto? paginationRequest = null,
+            [FromQuery] int? status = null,
+            [FromQuery] int? role = null,
+            [FromQuery] string? sortField = null,
+            [FromQuery] string? sortDirection = null)
         {
             try
             {
-                // Set default values if paginationRequest is null
-                paginationRequest ??= new PaginationRequestDto
+                paginationRequest ??= new UserPaginationRequestDto
                 {
                     PageNumber = 1,
                     PageSize = 10
                 };
+
+                if (status.HasValue)
+                    paginationRequest.Status = status;
+                if (role.HasValue)
+                    paginationRequest.Role = role;
+                if (!string.IsNullOrEmpty(sortField))
+                    paginationRequest.SortBy = sortField;
+                if (!string.IsNullOrEmpty(sortDirection))
+                    paginationRequest.SortDescending = sortDirection.ToLower() == "desc";
 
                 var result = await _authService.GetAllUsersAsync(paginationRequest);
 
@@ -123,15 +153,14 @@ namespace EduShpere.Controllers
                     (int)HttpStatusCode.OK
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new ResponseDto<string>(null, $"Internal Server Error: {ex.Message}", 500));
+                return StatusCode(500, new ResponseDto<string>(null, SystemErrorMessage, 500));
             }
         }
 
-
-        [HttpPut(ApiEndpoints.Auth.UserUrl)]
-        [Authorize(Roles = "Admin")]
+        [HttpPut(ApiEndpoints.User.Users)]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto dto)
         {
             try
@@ -139,12 +168,11 @@ namespace EduShpere.Controllers
                 var result = await _authService.UpdateUserAsync(dto);
                 return Ok(new ResponseDto<bool>(result, "Chỉnh sửa thông tin người dùng thành công"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
-
 
         [HttpGet(ApiEndpoints.Auth.OneTimeLogin)]
         public async Task<IActionResult> OneTimeLogin([FromQuery] string token)
@@ -154,9 +182,9 @@ namespace EduShpere.Controllers
                 var fullName = await _authService.OneTimeLoginAsync(token);
                 return Ok(new ResponseDto<string>(fullName));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, e.Message, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -178,7 +206,7 @@ namespace EduShpere.Controllers
             }
             catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
             }
         }
 
@@ -195,7 +223,10 @@ namespace EduShpere.Controllers
             {
                 return BadRequest(new ResponseDto<string>(null, ex.Message, 400));
             }
-
+            catch (Exception)
+            {
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
+            }
         }
 
         [HttpPost(ApiEndpoints.Auth.ForgotPassword)]
@@ -212,7 +243,54 @@ namespace EduShpere.Controllers
             }
             catch (Exception)
             {
-                return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
+            }
+        }
+
+        [HttpDelete(ApiEndpoints.User.Users + "/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                var result = await _authService.DeleteUserAsync(id);
+                return Ok(new ResponseDto<bool>(result, "Xóa người dùng thành công"));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound(new ResponseDto<string>(null, ErrorMessages.Auth.UserNotFound, 404));
+            }
+            catch (Exception)
+            {
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
+            }
+        }
+
+        [HttpGet(ApiEndpoints.User.Statistics)]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUserStatistics()
+        {
+            try
+            {
+                var statistics = await _authService.GetUserStatisticsAsync();
+                return Ok(new ResponseDto<UserStatisticsDto>(statistics, "Lấy thống kê người dùng thành công"));
+            }
+            catch (Exception)
+            {
+                return BadRequest(new ResponseDto<string>(null, SystemErrorMessage, 400));
+            }
+        }
+        [HttpPost(ApiEndpoints.Auth.CreateStaff)]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateStaff(CreateStaffDto dto)
+        {
+            try {  
+                var result = await _authService.CreateStaff(dto);
+                return Ok(new ResponseDto<UserResponseDto>(result, "Tạo nhân viên thành công"));
+            }
+            catch (BadRequestException err)
+            {
+                return BadRequest(new ResponseDto<string>(null, err.Message, 400));
             }
         }
     }

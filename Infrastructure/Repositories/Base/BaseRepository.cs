@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EduShpere.Infrastructure
 {
@@ -12,7 +14,9 @@ namespace EduShpere.Infrastructure
             _dbSet = _context.Set<T>();
         }
         public async Task<IEnumerable<T>> GetAllAsync()
-        => await _dbSet.ToListAsync();
+        {
+            return await _dbSet.ToListAsync();
+        }
 
         public async Task<T?> GetByIdAsync(int id)
             => await _dbSet.FindAsync(id);

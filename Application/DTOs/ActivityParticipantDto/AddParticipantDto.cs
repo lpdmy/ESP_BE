@@ -10,5 +10,6 @@ namespace EduShpere.Application.DTOs
     {
         public int ActivityId { get; set; }
         public int UserId { get; set; }
+        public int? ClassGroupId { get; set; }
     }
 }

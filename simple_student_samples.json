@@ -1,0 +1,48 @@
+{
+  "student_basic": {
+    "username": "student001",
+    "email": "student001@example.com",
+    "firstName": "Nguyễn Văn",
+    "lastName": "An",
+    "phoneNumber": "+84901234567",
+    "role": 1,
+    "studentNumber": "SV2024001",
+    "enrollmentYear": 2024,
+    "bio": "Sinh viên năm 1 chuyên ngành Công nghệ thông tin",
+    "extraJson": "{\"hobbies\":[\"Lập trình\",\"Đọc sách\"],\"skills\":[\"C#\",\"JavaScript\"]}",
+    "avatarUrl": "https://example.com/avatars/student001.jpg",
+    "birthDate": "2005-03-15",
+    "classGroupId": 1
+  },
+  "student_advanced": {
+    "username": "student002",
+    "email": "student002@example.com",
+    "firstName": "Trần Thị",
+    "lastName": "Bình",
+    "phoneNumber": "+84901234568",
+    "role": 1,
+    "studentNumber": "SV2023002",
+    "enrollmentYear": 2023,
+    "bio": "Sinh viên năm 2 chuyên ngành Toán học, có kinh nghiệm về Machine Learning",
+    "extraJson": "{\"hobbies\":[\"Toán học\",\"Machine Learning\"],\"skills\":[\"Python\",\"R\",\"MATLAB\"],\"achievements\":[\"Giải nhất cuộc thi lập trình\"]}",
+    "avatarUrl": "https://example.com/avatars/student002.jpg",
+    "birthDate": "2004-07-22",
+    "classGroupId": 2
+  },
+  "student_graduating": {
+    "username": "student003",
+    "email": "student003@example.com",
+    "firstName": "Lê Văn",
+    "lastName": "Cường",
+    "phoneNumber": "+84901234569",
+    "role": 1,
+    "studentNumber": "SV2021003",
+    "enrollmentYear": 2021,
+    "bio": "Sinh viên năm cuối chuyên ngành Kỹ thuật phần mềm, có kinh nghiệm thực tập",
+    "extraJson": "{\"hobbies\":[\"Phát triển phần mềm\",\"Nghiên cứu AI\"],\"skills\":[\"Java\",\"Spring Boot\",\"React\",\"Docker\"],\"experience\":[\"Thực tập tại FPT Software\"]}",
+    "avatarUrl": "https://example.com/avatars/student003.jpg",
+    "birthDate": "2002-11-08",
+    "classGroupId": 3
+  }
+}
+

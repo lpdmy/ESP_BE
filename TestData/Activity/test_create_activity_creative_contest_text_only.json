@@ -1,0 +1,65 @@
+{
+  "description": "Test data cho CreativeContest chỉ có ProblemText (không có file)",
+  "testCase": "CreativeContest với ProblemText, không có ProblemFileUrl",
+  "data": {
+    "title": "Cuộc thi Sáng tác văn học 'Tuổi trẻ và ước mơ'",
+    "description": "Cuộc thi sáng tác văn học dành cho học sinh khối THPT, thể hiện tài năng văn chương và ước mơ tuổi trẻ.",
+    "category": 1,
+    "subType": "CreativeContest",
+    "location": "Phòng Văn học",
+    "organizer": "Tổ Ngữ văn",
+    "thumbnailUrl": "https://example.com/thumbnails/writing-contest.jpg",
+    "startDate": "2024-04-01T08:00:00Z",
+    "endDate": "2024-04-30T17:00:00Z",
+    "registerDate": "2024-03-15T00:00:00Z",
+    "endRegisterDate": "2024-03-25T23:59:59Z",
+    "maxParticipants": 50,
+    "clubId": null,
+    "rules": [
+      "Tác phẩm phải là truyện ngắn hoặc thơ",
+      "Độ dài: 500-2000 từ (truyện ngắn) hoặc 20-50 dòng (thơ)",
+      "Nội dung phù hợp với chủ đề 'Tuổi trẻ và ước mơ'",
+      "Nộp file Word (.docx) hoặc PDF",
+      "Không được sao chép từ nguồn khác"
+    ],
+    "theme": "Tuổi trẻ và ước mơ",
+    "genre": "Sáng tác văn học",
+    "paperSize": "500-2000 từ (truyện ngắn) hoặc 20-50 dòng (thơ)",
+    "drawingMedium": "Truyện ngắn, Thơ",
+    "timeLimit": "Tự do (nộp trong thời gian quy định)",
+    "submissionFormat": "File Word (.docx) hoặc PDF",
+    "problemText": "ĐỀ BÀI:\n\nHãy sáng tác một tác phẩm văn học (truyện ngắn hoặc thơ) với chủ đề 'Tuổi trẻ và ước mơ'.\n\nYÊU CẦU:\n\n1. THỂ LOẠI:\n   - Truyện ngắn: 500-2000 từ\n   - Thơ: 20-50 dòng\n\n2. NỘI DUNG:\n   - Thể hiện ước mơ, hoài bão của tuổi trẻ\n   - Có tính nhân văn, tích cực\n   - Sáng tạo, không sao chép\n\n3. HÌNH THỨC:\n   - File Word (.docx) hoặc PDF\n   - Font: Times New Roman, size 12\n   - Căn lề: 2.5cm mỗi bên\n   - Đặt tên file: [Họ tên]_[Lớp]_[Tên tác phẩm].docx\n\n4. THỜI HẠN:\n   - Nộp bài trước 17:00 ngày 28/04/2024\n\nChúc các em thành công!",
+    "problemFileUrl": null,
+    "submissionDeadline": "2024-04-28T17:00:00Z",
+    "onlyTeacherCanRegister": false,
+    "registrationSettings": {
+      "groupRegistration": {
+        "minMembers": 1,
+        "maxMembers": null,
+        "requireLeader": false
+      }
+    },
+    "starPointRewards": {
+      "registration": "5",
+      "awards": [
+        { "name": "Giải Nhất", "points": "150" },
+        { "name": "Giải Nhì", "points": "120" },
+        { "name": "Giải Ba", "points": "100" }
+      ]
+    },
+    "gradingSettings": {
+      "criteria": [
+        "Nội dung và ý tưởng (30 điểm)",
+        "Kỹ thuật viết (25 điểm)",
+        "Sáng tạo (25 điểm)",
+        "Phù hợp chủ đề (20 điểm)"
+      ]
+    }
+  },
+  "expectedBehavior": {
+    "beforeStartDate": "Chỉ hiển thị thông báo 'Chưa tới thời gian mở đề'",
+    "afterStartDate": "Hiển thị ProblemText và SubmissionDeadline, không có ProblemFileUrl"
+  }
+}
+
+

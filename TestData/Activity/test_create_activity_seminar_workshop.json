@@ -1,0 +1,83 @@
+{
+  "description": "Test data cho SeminarWorkshop (không có đề bài)",
+  "testCase": "SeminarWorkshop - không có ProblemText/ProblemFileUrl/SubmissionDeadline",
+  "data": {
+    "title": "Hội thảo 'Kỹ năng học tập hiệu quả'",
+    "description": "Hội thảo chia sẻ các phương pháp học tập hiệu quả, kỹ năng quản lý thời gian và chuẩn bị cho kỳ thi.",
+    "category": 2,
+    "subType": "SeminarWorkshop",
+    "location": "Hội trường lớn",
+    "organizer": "Tổ Tư vấn học đường",
+    "thumbnailUrl": "https://example.com/thumbnails/seminar.jpg",
+    "startDate": "2024-05-10T14:00:00Z",
+    "endDate": "2024-05-10T17:00:00Z",
+    "registerDate": "2024-04-20T00:00:00Z",
+    "endRegisterDate": "2024-05-05T23:59:59Z",
+    "maxParticipants": 200,
+    "clubId": null,
+    "rules": [
+      "Đăng ký trước ngày 5/5/2024",
+      "Có mặt đúng giờ",
+      "Tham gia đầy đủ chương trình",
+      "Tắt điện thoại trong suốt buổi hội thảo"
+    ],
+    "speakers": [
+      {
+        "name": "TS. Nguyễn Văn A",
+        "title": "Chuyên gia tâm lý học",
+        "bio": "Tiến sĩ tâm lý học, 15 năm kinh nghiệm trong lĩnh vực giáo dục",
+        "imageUrl": "https://example.com/speakers/nguyen-van-a.jpg",
+        "order": 1
+      },
+      {
+        "name": "ThS. Trần Thị B",
+        "title": "Chuyên gia kỹ năng học tập",
+        "bio": "Thạc sĩ Giáo dục, tác giả của nhiều cuốn sách về phương pháp học tập",
+        "imageUrl": "https://example.com/speakers/tran-thi-b.jpg",
+        "order": 2
+      }
+    ],
+    "programItems": [
+      {
+        "title": "Khai mạc",
+        "time": "14:00 - 14:10",
+        "description": "Giới thiệu chương trình và diễn giả",
+        "order": 1
+      },
+      {
+        "title": "Phương pháp học tập hiệu quả",
+        "time": "14:10 - 15:00",
+        "description": "Chia sẻ các kỹ thuật học tập khoa học và hiệu quả",
+        "order": 2
+      },
+      {
+        "title": "Nghỉ giải lao",
+        "time": "15:00 - 15:15",
+        "description": "Nghỉ giải lao",
+        "order": 3
+      },
+      {
+        "title": "Kỹ năng quản lý thời gian",
+        "time": "15:15 - 16:00",
+        "description": "Hướng dẫn cách lập kế hoạch và quản lý thời gian hiệu quả",
+        "order": 4
+      },
+      {
+        "title": "Q&A và Kết thúc",
+        "time": "16:00 - 17:00",
+        "description": "Hỏi đáp và tổng kết",
+        "order": 5
+      }
+    ],
+    "onlyTeacherCanRegister": false,
+    "starPointRewards": {
+      "registration": "15",
+      "awards": []
+    }
+  },
+  "expectedBehavior": {
+    "note": "SeminarWorkshop không có ProblemText/ProblemFileUrl/SubmissionDeadline"
+  }
+}
+
+

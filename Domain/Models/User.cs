@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using EduShpere.Domain.Enum;
 
 namespace EduShpere.Domain.Models;
 
@@ -43,6 +44,8 @@ public partial class User : BaseEntity
 
     [StringLength(255)]
     public string? Password { get; set; }
+
+    public UserStatus Status { get; set; } = UserStatus.Active;
 
     public byte[] RowVersion { get; set; } = null!;
 
@@ -110,7 +113,7 @@ public partial class User : BaseEntity
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 
     [InverseProperty("User")]
-    public virtual ICollection<RewardRedemptionLog> RewardRedemptionLogs { get; set; } = new List<RewardRedemptionLog>();
+    public virtual ICollection<RewardRedemption> RewardRedemptionLogs { get; set; } = new List<RewardRedemption>();
 
     [ForeignKey("SchoolId")]
     [InverseProperty("Users")]
@@ -136,4 +139,16 @@ public partial class User : BaseEntity
 
     [InverseProperty("User")]
     public virtual UserPoint? UserPoint { get; set; }
+    [InverseProperty("MentionedUser")]
+    public virtual ICollection<PostMention> MentionsInPosts { get; set; } = new List<PostMention>();
+    [InverseProperty("Teacher")]
+    public virtual ICollection<ClassGroup> ClassGroups { get; set; } = new List<ClassGroup>();
+    [InverseProperty("Mentor")]
+    public virtual ICollection<Club> MentoredClubs { get; set; } = new List<Club>();
+
+    [InverseProperty("President")]
+    public virtual ICollection<Club> PresidedClubs { get; set; } = new List<Club>();
+    public virtual ICollection<UserRight> UserRights { get; set; } = new List<UserRight>();
+    public virtual ICollection<JuryAssignment> JuryAssignments { get; set; } = new List<JuryAssignment>();
+
 }

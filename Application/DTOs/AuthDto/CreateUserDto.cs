@@ -46,5 +46,15 @@ namespace EduShpere.Application.DTOs.UserDto
         public DateTime? BirthDate { get; set; }
 
         public int? ClassGroupId { get; set; }
+
+        // Thông tin teacher profile (chỉ áp dụng cho Teacher)
+        [StringLength(100, ErrorMessage = ErrorMessages.UserProfile.TeacherCodeTooLong)]
+        public string? TeacherCode { get; set; }
+
+        [StringLength(100, ErrorMessage = ErrorMessages.UserProfile.DepartmentTooLong)]
+        public string? Department { get; set; }
+
+        [StringLength(100, ErrorMessage = ErrorMessages.UserProfile.PositionTooLong)]
+        public string? Position { get; set; }
     }
 }

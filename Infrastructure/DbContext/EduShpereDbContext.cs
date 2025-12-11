@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,18 +17,27 @@ public partial class EduShpereDbContext : DbContext
         : base(options)
     {
     }
-
+    public virtual DbSet<AcademicYear> AcademicYears { get; set; }
     public virtual DbSet<Activity> Activities { get; set; }
-
+    public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
-
+    public virtual DbSet<ActivityMatch> ActivityMatches { get; set; }
     public virtual DbSet<ActivityReward> ActivityRewards { get; set; }
+    public virtual DbSet<ActivitySpeaker> ActivitySpeakers { get; set; }
+    public virtual DbSet<ActivityProgram> ActivityPrograms { get; set; }
+    public virtual DbSet<ActivitySport> ActivitySports { get; set; }
+    public virtual DbSet<ActivityDetail> ActivityDetails { get; set; }
+    public virtual DbSet<ActivityRegistrationReward> ActivityRegistrationRewards { get; set; }
 
     public virtual DbSet<Attachment> Attachments { get; set; }
 
     public virtual DbSet<ClassGroup> ClassGroups { get; set; }
 
     public virtual DbSet<ClassGroupMember> ClassGroupMembers { get; set; }
+
+    public virtual DbSet<ClassGroupSchedule> ClassGroupSchedules { get; set; }
+
+    public virtual DbSet<Timetable> Timetables { get; set; }
 
     public virtual DbSet<Club> Clubs { get; set; }
 
@@ -64,11 +74,10 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<PostReport> PostReports { get; set; }
 
     public virtual DbSet<Reward> Rewards { get; set; }
-
-    public virtual DbSet<RewardRedemptionLog> RewardRedemptionLogs { get; set; }
-
+    public virtual DbSet<RewardRedemption> RewardRedemptions { get; set; }
+    public virtual DbSet<RewardRule> RewardRules { get; set; }
+    public virtual DbSet<PointHistory> PointHistory { get; set; }
     public virtual DbSet<School> Schools { get; set; }
-
     public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
 
     public virtual DbSet<Submission> Submissions { get; set; }
@@ -83,7 +92,19 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<UserPoint> UserPoints { get; set; }
     public virtual DbSet<OneTimeLoginToken> OneTimeLoginTokens { get; set; }
+    public virtual DbSet<PostMention> PostMentions { get; set; }
+    public virtual DbSet<PostHashtag> PostHashtags { get; set; }
+    public virtual DbSet<Hashtag> Hashtags { get; set; }
+    public virtual DbSet<ClubCategory> ClubCategory { get; set; }
+    public virtual DbSet<ClubCreationRequest> ClubCreationRequest { get; set; }
 
+    public virtual DbSet<SearchHistory> SearchHistories { get; set; }
+    public virtual DbSet<SearchAnalytics> SearchAnalytics { get; set; }
+    public virtual DbSet<Right> Rights { get; set; }
+    public virtual DbSet<UserRight> UserRights { get; set; }
+    public virtual DbSet<JuryActivity> JuryActivity { get; set; }
+    public virtual DbSet<JuryAssignment> JuryAssignment { get; set; }
+    public virtual DbSet<ReportedContent> ReportedContent { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -100,6 +121,21 @@ public partial class EduShpereDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AcademicYear>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__AcademicYear__3214EC07");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            entity.HasOne(d => d.School).WithMany(p => p.AcademicYears)
+                .HasForeignKey(d => d.SchoolId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__AcademicYear__SchoolId");
+        });
+
         modelBuilder.Entity<Activity>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Activiti__3214EC073E220058");
@@ -132,6 +168,10 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ActivityParticipants)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ActivityP__UserI__6EC0713C");
+
+            entity.HasOne(d => d.Sport).WithMany(p => p.ActivityParticipants)
+                .HasForeignKey(d => d.SportId)
+                .HasConstraintName("FK__ActivityP__SportI__72C60C4A");
         });
 
         modelBuilder.Entity<ActivityReward>(entity =>
@@ -160,6 +200,8 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.Comment).WithMany(p => p.Attachments).HasConstraintName("FK__Attachmen__Comme__5E8A0973");
 
             entity.HasOne(d => d.Post).WithMany(p => p.Attachments).HasConstraintName("FK__Attachmen__PostI__5D95E53A");
+
+            entity.HasOne(d => d.Submission).WithMany(p => p.Attachments).HasConstraintName("FK__Attachmen__Submi__SubmissionId");
         });
 
         modelBuilder.Entity<ClassGroup>(entity =>
@@ -170,6 +212,11 @@ public partial class EduShpereDbContext : DbContext
             entity.Property(e => e.RowVersion)
                 .IsRowVersion()
                 .IsConcurrencyToken();
+
+            entity.HasOne(d => d.AcademicYears).WithMany(p => p.ClassGroups)
+                .HasForeignKey(d => d.AcademicYearId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ClassGroup__AcademicYearId");
         });
 
         modelBuilder.Entity<ClassGroupMember>(entity =>
@@ -188,6 +235,25 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ClassGroupMembers)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ClassGrou__UserI__55009F39");
+        });
+
+        modelBuilder.Entity<ClassGroupSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ClassGroupSchedule__3214EC07");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
+            entity.HasOne(d => d.ClassGroup).WithMany(p => p.Schedules)
+                .HasForeignKey(d => d.ClassGroupId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__ClassGroupSchedule__ClassGroupId");
+
+            entity.HasIndex(e => new { e.ClassGroupId, e.DayOfWeek, e.Period })
+                .HasDatabaseName("IX_ClassGroupSchedule_ClassGroup_Day_Period")
+                .IsUnique();
         });
 
         modelBuilder.Entity<Club>(entity =>
@@ -484,24 +550,6 @@ public partial class EduShpereDbContext : DbContext
                 .IsConcurrencyToken();
         });
 
-        modelBuilder.Entity<RewardRedemptionLog>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__RewardRe__3214EC0726FAC239");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            entity.HasOne(d => d.Reward).WithMany(p => p.RewardRedemptionLogs)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RewardRed__Rewar__76619304");
-
-            entity.HasOne(d => d.User).WithMany(p => p.RewardRedemptionLogs)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RewardRed__UserI__756D6ECB");
-        });
-
         modelBuilder.Entity<School>(entity =>
         {
             entity.HasKey(e => e.SchoolId).HasName("PK__Schools__3DA4675B2FE61093");
@@ -619,6 +667,115 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.UserPoint)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserPoint__UserI__73852659");
+        });
+        modelBuilder.Entity<Club>()
+    .HasOne(c => c.President)
+    .WithMany(u => u.PresidedClubs)
+    .HasForeignKey(c => c.PresidentUserId)
+    .OnDelete(DeleteBehavior.Restrict)
+    .IsRequired(false);
+
+        modelBuilder.Entity<Club>()
+            .HasIndex(c => c.PresidentUserId)
+            .IsUnique()
+            .HasFilter(null);
+        modelBuilder.Entity<Club>()
+    .HasOne(c => c.Mentor)
+    .WithMany(u => u.MentoredClubs)
+    .HasForeignKey(c => c.MentorUserId)
+    .OnDelete(DeleteBehavior.Restrict)
+    .IsRequired(false);
+
+        modelBuilder.Entity<Club>()
+            .HasIndex(c => c.MentorUserId)
+            .IsUnique()
+            .HasFilter(null);
+
+        modelBuilder.Entity<Reward>()
+            .Property(r => r.RowVersion)
+            .IsRowVersion();
+
+        modelBuilder.Entity<RewardRedemption>()
+            .Property(r => r.RowVersion)
+            .IsRowVersion();
+
+
+        modelBuilder.Entity<PostHashtag>()
+    .HasKey(ph => new { ph.PostId, ph.HashtagId });
+        modelBuilder.Entity<PostMention>()
+    .HasKey(pm => new { pm.PostId, pm.MentionedUserId });
+
+        // SearchHistory configuration
+        modelBuilder.Entity<SearchHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.ResultCount).HasDefaultValue(0);
+            entity.Property(e => e.SearchedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.UserId, e.SearchedAt });
+            entity.HasIndex(e => e.Query);
+        });
+
+        // SearchAnalytics configuration
+        modelBuilder.Entity<SearchAnalytics>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Query).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Category).IsRequired();
+            entity.Property(e => e.SearchCount).HasDefaultValue(1);
+            entity.Property(e => e.UniqueUsersCount).HasDefaultValue(1);
+            entity.Property(e => e.FirstSearched).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.LastSearched).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.IsTrending).HasDefaultValue(false);
+            entity.Property(e => e.TrendingScore).HasDefaultValue(0.0);
+
+            entity.HasIndex(e => new { e.Query, e.Category }).IsUnique();
+            entity.HasIndex(e => e.TrendingScore);
+            entity.HasIndex(e => e.SearchCount);
+        });
+
+
+        modelBuilder.Entity<ActivityDetail>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivitySport>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivitySpeaker>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivityProgram>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<ActivityRegistrationReward>(entity =>
+        {
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
         });
 
         OnModelCreatingPartial(modelBuilder);
