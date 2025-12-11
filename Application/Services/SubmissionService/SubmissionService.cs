@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using AutoMapper;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Application.DTOs.SubmissionDto;
+using EduShpere.Domain;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
@@ -52,14 +54,32 @@ namespace EduShpere.Application.Services
         public async Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityId(
     int activityId,
     PaginationRequestDto paginationRequest,
-    string? search = null)
+    string? search = null, int? currentUserId = null)
         {
-            var query = _repo.GetAllSubmissionsByActivityId(activityId);
+            // Check if user is Teacher (jury) - if yes, use anonymous query
+            bool isAnonymous = false;
+            if (currentUserId.HasValue)
+        {
+                var userRole = await _context.Users
+                    .Where(u => u.Id == currentUserId.Value)
+                    .Select(u => u.Role)
+                    .FirstOrDefaultAsync();
+                isAnonymous = userRole == UserRole.Teacher;
+            }
+
+            // Use optimized query (no deep ClassGroupMembers navigation)
+            var query = isAnonymous 
+                ? _repo.GetAllSubmissionsByActivityIdAnonymous(activityId)
+                : _repo.GetAllSubmissionsByActivityId(activityId);
 
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(c => c.Title.Contains(search));
+                query = query.Where(c => c.Title != null && c.Title.Contains(search));
             }
+            
+            // Order by CreatedAt for consistent ordering (needed for submission codes)
+            query = query.OrderBy(s => s.CreatedAt);
+            
             var totalCount = await query.CountAsync();
             var data = await query
                 .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
@@ -69,28 +89,147 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
-            var activity = await _activityRepository.GetByIdWithIncludesAsync(activityId);
-            if (activity == null)
+            
+            // Get all submission IDs for batch counting
+            var submissionIds = data.Select(s => s.Id).ToList();
+            
+            // Get jury counts for all submissions in a single query (fixes N+1 problem)
+            var juryCounts = await _context.JuryAssignment
+                .Where(ja => submissionIds.Contains(ja.SubmissionId))
+                .GroupBy(ja => ja.SubmissionId)
+                .Select(g => new { SubmissionId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SubmissionId, x => x.Count);
+            
+            // Optimized: Get only GradingSettings instead of loading full activity with all includes
+            var gradingSettings = await _activityRepository.GetGradingSettingsAsync(activityId);
+            if (gradingSettings == null)
+            {
+                // Verify activity exists
+                var activityExists = await _activityRepository.GetByIdAsync(activityId);
+                if (activityExists == null)
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
-            var mapped = _mapper.Map<List<SubmissionResponseDto>>(data);
-            for (int i = 0; i < mapped.Count; i++)
-            {
-                var submission = mapped[i];
-                submission.NumberJurys = await _juryAssign.GetCountAsyncBySubmission(submission.Id);
             }
-            foreach (var item in mapped)
+            
+            // Precompute submission codes once for the whole activity (deterministic ordering)
+            var allSubmissionIdsOrdered = await _repo.GetAllSubmissionsByActivityIdAnonymous(activityId)
+                .OrderBy(s => s.CreatedAt)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            string BuildSubmissionCode(int submissionId)
             {
-                item.GradeSettings = activity.GradingSettings;
+                var indexInAll = allSubmissionIdsOrdered.IndexOf(submissionId);
+                return $"SUB-{(indexInAll + 1):D3}";
             }
-            return new PaginationResponseDto<SubmissionResponseDto>
+
+            int BuildOrderNumber(int submissionId)
             {
-                Data = mapped,
-                TotalCount = totalCount,
-                PageNumber = paginationRequest.PageNumber,
-                PageSize = paginationRequest.PageSize
-            };
+                var indexInAll = allSubmissionIdsOrdered.IndexOf(submissionId);
+                return indexInAll + 1;
+            }
+
+            if (isAnonymous)
+            {
+                // Return anonymous DTO for Teachers (jurors) - hide user information
+                var anonymousMapped = new List<SubmissionResponseDto>();
+                
+                foreach (var submission in data)
+                {
+                    var submissionCode = BuildSubmissionCode(submission.Id);
+                    var orderNumber = BuildOrderNumber(submission.Id);
+                    
+                    // Map ScoreDetail from ScoreTemp JSON
+                    var juryAssignments = submission.JuryAssignments.Select(ja => 
+                    {
+                        var dto = new JuryAssignmentDto
+                        {
+                            Id = ja.Id,
+                            UserId = ja.UserId,
+                            SubmissionId = ja.SubmissionId,
+                            ScoreTemp = ja.ScoreTemp,
+                            TotalScore = ja.TotalScore ?? 0,
+                            Comment = ja.Comment
+                        };
+                        
+                        // Parse ScoreDetail from ScoreTemp JSON
+                        if (!string.IsNullOrEmpty(ja.ScoreTemp))
+                        {
+                            try
+                            {
+                                dto.ScoreDetail = JsonConvert.DeserializeObject<Dictionary<string, float>>(ja.ScoreTemp);
+                            }
+                            catch
+                            {
+                                dto.ScoreDetail = new Dictionary<string, float>();
+                            }
+                        }
+                        
+                        return dto;
+                    }).ToList();
+                    
+                    anonymousMapped.Add(new SubmissionResponseDto
+                    {
+                        Id = submission.Id,
+                        ActivityId = submission.ActivityId,
+                        // Hide user information for anonymous mode
+                        UserId = 0, // Hidden
+                        FirstName = string.Empty, // Hidden
+                        LastName = string.Empty, // Hidden
+                        Class = null, // Hidden
+                        Users = new List<int>(), // Hidden
+                        Title = submission.Title ?? string.Empty,
+                        SubmissionCode = submissionCode,
+                        OrderNumber = orderNumber,
+                        NumberJurys = juryCounts.TryGetValue(submission.Id, out var count) ? count : 0,
+                        GradeSettings = gradingSettings,
+                        CreatedAt = submission.CreatedAt,
+                        Score = submission.Score ?? 0,
+                        ActivityName = string.Empty, // Not needed for anonymous view
+                        Status = string.Empty, // Not set in this context
+                        Attachments = submission.Attachments
+                            .Where(a => !a.IsDeleted)
+                            .Select(a => new SubmissionAttachmentDto
+                            {
+                                Url = a.FileUrl ?? string.Empty,
+                                FileName = a.FileName ?? string.Empty,
+                                FileType = a.FileType ?? string.Empty
+                            })
+                            .ToList(),
+                        JuryAssignments = juryAssignments
+                    });
+                }
+                
+                return new PaginationResponseDto<SubmissionResponseDto>
+                {
+                    Data = anonymousMapped,
+                    TotalCount = totalCount,
+                    PageNumber = paginationRequest.PageNumber,
+                    PageSize = paginationRequest.PageSize
+                };
+            }
+            else
+            {
+                // Return normal DTO for Students/Admins but also include code/order for consistent display
+                var mapped = _mapper.Map<List<SubmissionResponseDto>>(data);
+                
+                foreach (var item in mapped)
+                {
+                    item.NumberJurys = juryCounts.TryGetValue(item.Id, out var count) ? count : 0;
+                    item.GradeSettings = gradingSettings;
+                    item.SubmissionCode = BuildSubmissionCode(item.Id);
+                    item.OrderNumber = BuildOrderNumber(item.Id);
+                }
+                
+                return new PaginationResponseDto<SubmissionResponseDto>
+                {
+                    Data = mapped,
+                    TotalCount = totalCount,
+                    PageNumber = paginationRequest.PageNumber,
+                    PageSize = paginationRequest.PageSize
+                };
+            }
         }
         public async Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityIdByUserId(
     int activityId, int userId,
@@ -112,17 +251,30 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
+            
+            // Get all submission IDs for batch counting
+            var submissionIds = data.Select(s => s.Id).ToList();
+            
+            // Get jury counts for all submissions in a single query (fixes N+1 problem)
+            var juryCounts = await _context.JuryAssignment
+                .Where(ja => submissionIds.Contains(ja.SubmissionId))
+                .GroupBy(ja => ja.SubmissionId)
+                .Select(g => new { SubmissionId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SubmissionId, x => x.Count);
+            
             var activity = await _activityRepository.GetByIdWithIncludesAsync(activityId);
             if (activity == null)
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
             var mapped = _mapper.Map<List<SubmissionResponseDto>>(data);
-            for (int i = 0; i < mapped.Count; i++)
+            
+            // Set jury counts from the dictionary (no additional queries)
+            foreach (var item in mapped)
             {
-                var submission = mapped[i];
-                submission.NumberJurys = await _juryAssign.GetCountAsyncBySubmission(submission.Id);
+                item.NumberJurys = juryCounts.TryGetValue(item.Id, out var count) ? count : 0;
             }
+            
             return new PaginationResponseDto<SubmissionResponseDto>
             {
                 Data = mapped,
@@ -152,19 +304,27 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
 
+            // Get all submission IDs for batch counting
+            var submissionIds = data.Select(s => s.Id).ToList();
+            
+            // Get jury counts for all submissions in a single query (fixes N+1 problem)
+            var juryCounts = await _context.JuryAssignment
+                .Where(ja => submissionIds.Contains(ja.SubmissionId))
+                .GroupBy(ja => ja.SubmissionId)
+                .Select(g => new { SubmissionId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SubmissionId, x => x.Count);
+
             var activity = await _activityRepository.GetByIdWithIncludesAsync(activityId);
             if (activity == null)
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
             var mapped = _mapper.Map<List<SubmissionResponseDto>>(data);
-            for (int i = 0; i < mapped.Count; i++)
-            {
-                var submission = mapped[i];
-                submission.NumberJurys = await _juryAssign.GetCountAsyncBySubmission(submission.Id);
-            }
+            
+            // Set jury counts from the dictionary (no additional queries)
             foreach (var item in mapped)
             {
+                item.NumberJurys = juryCounts.TryGetValue(item.Id, out var count) ? count : 0;
                 item.GradeSettings = activity.GradingSettings;
             }
 
@@ -197,19 +357,27 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Submission.ListSubmissionNotFound);
             }
 
+            // Get all submission IDs for batch counting
+            var submissionIds = data.Select(s => s.Id).ToList();
+            
+            // Get jury counts for all submissions in a single query (fixes N+1 problem)
+            var juryCounts = await _context.JuryAssignment
+                .Where(ja => submissionIds.Contains(ja.SubmissionId))
+                .GroupBy(ja => ja.SubmissionId)
+                .Select(g => new { SubmissionId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.SubmissionId, x => x.Count);
+
             var activity = await _activityRepository.GetByIdWithIncludesAsync(activityId);
             if (activity == null)
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
             var mapped = _mapper.Map<List<SubmissionResponseDto>>(data);
-            for (int i = 0; i < mapped.Count; i++)
-            {
-                var submission = mapped[i];
-                submission.NumberJurys = await _juryAssign.GetCountAsyncBySubmission(submission.Id);
-            }
+            
+            // Set jury counts from the dictionary (no additional queries)
             foreach (var item in mapped)
             {
+                item.NumberJurys = juryCounts.TryGetValue(item.Id, out var count) ? count : 0;
                 item.GradeSettings = activity.GradingSettings;
             }
 

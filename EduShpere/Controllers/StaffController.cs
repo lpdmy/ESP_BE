@@ -6,11 +6,13 @@ using EduShpere.Application.Services;
 using EduShpere.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using EduShpere.Shared;
 
 namespace EduShpere.Controllers
 {
     [ApiController]
+    [Authorize(Roles = "Admin,Staff")]
     public class StaffController : ControllerBase
     {
         private readonly IStaffService _staffService;
@@ -19,6 +21,7 @@ namespace EduShpere.Controllers
             _staffService = staffService;
         }
         [HttpGet(ApiEndpoints.Staff.Staffs)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllStaffs([FromQuery] PaginationRequestDto paginationRequest)
         {
             var result = await _staffService.GetAllAsync(paginationRequest);
@@ -30,6 +33,7 @@ namespace EduShpere.Controllers
                     ));
         }
         [HttpGet(ApiEndpoints.Staff.GetStaffById)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetStaffById(int id)
         {
             try
@@ -49,6 +53,7 @@ namespace EduShpere.Controllers
         }
         [HttpPut]
         [Route(ApiEndpoints.Staff.Staffs)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStaff([FromBody] UpdateStaffDto dto)
         {
             try
@@ -66,6 +71,7 @@ namespace EduShpere.Controllers
             }
         }
         [HttpDelete(ApiEndpoints.Staff.GetStaffById)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteStaff(int id)
         {
             try
@@ -84,6 +90,7 @@ namespace EduShpere.Controllers
         }
         [HttpPut]
         [Route(ApiEndpoints.Staff.GetStaffById)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RecoveryStaff(int id)
         {
             try

@@ -38,5 +38,10 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(ja => ja.Activity)
                 .ThenInclude(a => a.Submissions);
         }
+        
+        public IQueryable<JuryActivity> GetQueryable()
+        {
+            return _dbSet.AsQueryable();
+        }
     }
 }

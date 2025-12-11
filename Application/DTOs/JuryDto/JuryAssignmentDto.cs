@@ -21,5 +21,6 @@ namespace EduShpere.Application.DTOs
         public string? GradeSetting { get; set; }
         public List<string> Criteria { get; set; }
         public int TotalScore { get; set; }
+        public string? Comment { get; set; }
     }
 }

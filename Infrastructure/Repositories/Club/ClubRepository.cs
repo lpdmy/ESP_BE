@@ -13,6 +13,25 @@ namespace EduShpere.Infrastructure.Repositories
         public ClubRepository(EduShpereDbContext context) : base(context)
         {
         }
+        public async Task<IEnumerable<Club>> SearchAsync(string query, int pageSize)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new List<Club>();
+            }
+
+            var normalizedQuery = query.Trim().ToLower();
+
+            return await _context.Clubs
+                .Where(c => !c.IsDeleted &&
+                            ((c.Name ?? string.Empty).ToLower().Contains(normalizedQuery) ||
+                             (c.Description ?? string.Empty).ToLower().Contains(normalizedQuery)))
+                .Include(c => c.ClubMembers)
+                .Include(c => c.CreatedByUser)
+                .OrderByDescending(c => c.CreatedAt)
+                .Take(pageSize)
+                .ToListAsync();
+        }
         public async Task<Club?> GetByIdWithIncludesAsync(int id)
         {
             return await _context.Clubs

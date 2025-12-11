@@ -85,13 +85,12 @@ namespace EduShpere.Application.Services.ChatService
             var rooms = await _repo.GetRoomsByUserId(userId);
             var allIds = rooms.SelectMany(r => r.ParticipantIds).Distinct().ToList();
 
-            // 🔹 Lấy thông tin người dùng tuần tự để tránh DbContext bị conflict
+            // 🔹 Lấy thông tin người dùng tuần tự để tránh DbContext concurrency
             var users = new List<User>();
             foreach (var id in allIds)
             {
-                var user = await _userService.GetUserByIdAsync(id);
-                if (user != null)
-                    users.Add(user);
+                var u = await _userService.GetUserByIdAsync(id);
+                if (u != null) users.Add(u);
             }
 
             var userDict = users
@@ -105,13 +104,10 @@ namespace EduShpere.Application.Services.ChatService
                     }
                 );
 
-            // 🔹 Lấy tin nhắn cuối cùng tuần tự (tránh chạy song song)
-            var lastMsgDict = new Dictionary<string, ChatMessage>();
-            foreach (var r in rooms)
-            {
-                var lastMsg = await _repo.GetLastMessageByRoomId(r.Id);
-                lastMsgDict[r.Id] = lastMsg;
-            }
+            // 🔹 Lấy tin nhắn cuối cùng song song
+            var lastMsgTasks = rooms.ToDictionary(r => r.Id, r => _repo.GetLastMessageByRoomId(r.Id));
+            await Task.WhenAll(lastMsgTasks.Values);
+            var lastMsgDict = lastMsgTasks.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Result);
 
             // 🔹 Map kết quả
             var result = rooms.Select(r =>

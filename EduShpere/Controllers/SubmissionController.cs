@@ -30,7 +30,8 @@ namespace EduShpere.Controllers
         {
             try
             {
-                var result = await _service.GetAllSubmissionByActivityId(Id, dto, search);
+                var userId = _httpContextService.GetCurrentUserId();
+                var result = await _service.GetAllSubmissionByActivityId(Id, dto, search, userId);
                 return Ok(new ResponseDto<PaginationResponseDto<SubmissionResponseDto>>(result, "Lấy danh sách thành công", 200));
             }
             catch (BadRequestException err)

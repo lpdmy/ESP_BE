@@ -289,6 +289,7 @@
         }
         public struct Assignment { 
             public const string AssignMentNotFound = "Phân công không tồn tại.";
+            public const string UnauthorizedGrading = "Bạn không có quyền chấm điểm bài này.";
         }
 
     }

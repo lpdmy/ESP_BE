@@ -50,7 +50,13 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(Submission => Submission.Activity)
                 .Include(ja => ja.Submission)
                 .ThenInclude(Submission => Submission.User)
-                .Where(ja => ja.Submission.ActivityId == activityId && ja.UserId == userId);
+                .Include(ja => ja.Submission)
+                .ThenInclude(Submission => Submission.Attachments)
+                .Where(ja => !ja.IsDeleted 
+                    && ja.Submission.ActivityId == activityId 
+                    && ja.UserId == userId
+                    && !ja.Submission.IsDeleted
+                    && !ja.Submission.Activity.IsDeleted);
         }
         public IQueryable<JuryAssignment> GetAllByActivityIdUserIdGrading(int activityId, int userId)
         {
@@ -61,7 +67,12 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(Submission => Submission.User)
                 .Include(ja => ja.Submission)
                 .ThenInclude(Submission => Submission.Attachments)
-                .Where(ja => ja.Submission.ActivityId == activityId && ja.UserId == userId && ja.ScoreTemp != null);
+                .Where(ja => !ja.IsDeleted 
+                    && ja.Submission.ActivityId == activityId 
+                    && ja.UserId == userId 
+                    && ja.ScoreTemp != null
+                    && !ja.Submission.IsDeleted
+                    && !ja.Submission.Activity.IsDeleted);
         }
 
         public IQueryable<JuryAssignment> GetAllByActivityIdUserIdNotGrading(int activityId, int userId)
@@ -73,7 +84,12 @@ namespace EduShpere.Infrastructure.Repositories
                 .ThenInclude(Submission => Submission.User)
                 .Include(ja => ja.Submission)
                 .ThenInclude(Submission => Submission.Attachments)
-                .Where(ja => ja.Submission.ActivityId == activityId && ja.UserId == userId && ja.ScoreTemp == null);
+                .Where(ja => !ja.IsDeleted 
+                    && ja.Submission.ActivityId == activityId 
+                    && ja.UserId == userId 
+                    && ja.ScoreTemp == null
+                    && !ja.Submission.IsDeleted
+                    && !ja.Submission.Activity.IsDeleted);
         }
         public async Task DeleteAllByActivityIdAsync(int activityId)
         {
@@ -114,6 +130,13 @@ namespace EduShpere.Infrastructure.Repositories
                     g => g.Key,        
                     g => g.Count()
                 );
+        }
+        /// <summary>
+        /// Gets a queryable collection of JuryAssignment entities for custom queries
+        /// </summary>
+        public IQueryable<JuryAssignment> GetQueryable()
+        {
+            return _dbSet.AsQueryable();
         }
     }
 }

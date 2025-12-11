@@ -39,11 +39,11 @@ namespace EduShpere.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Post>> SearchAsync(string query, int limit = 10)
+        public async Task<IEnumerable<Post>> SearchAsync(string query, int limit = 10, bool includeClubMembers = false)
         {
             var searchQuery = query.ToLower().Trim();
 
-            return await _dbSet
+            var queryable = _dbSet
                 .Include(p => p.User)
                 .Include(p => p.PostHashtags)
                     .ThenInclude(ph => ph.Hashtag)
@@ -52,7 +52,6 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(p => p.Club)
                 .Include(p => p.ClassGroup)
                 .Where(p => !p.IsDeleted)
-                .Where(p => p.PrivacyLevel != 0) // Exclude private posts from search
                 .Where(p => 
                     (p.Title != null && p.Title.ToLower().Contains(searchQuery)) ||
                     (p.Body != null && p.Body.ToLower().Contains(searchQuery)) ||
@@ -60,8 +59,14 @@ namespace EduShpere.Infrastructure.Repositories
                     (p.User.FirstName + " " + p.User.LastName).ToLower().Contains(searchQuery)
                 )
                 .OrderByDescending(p => p.CreatedAt)
-                .Take(limit)
-                .ToListAsync();
+                .Take(limit * 2); // fetch extra for permission filtering
+
+            if (includeClubMembers)
+            {
+                queryable = queryable.Include(p => p.Club).ThenInclude(c => c.ClubMembers);
+            }
+
+            return await queryable.ToListAsync();
         }
 
         public async Task<Dictionary<int, (int LikesCount, int CommentsCount)>> GetPostEngagementStatsAsync(IEnumerable<int> postIds)
@@ -82,11 +87,11 @@ namespace EduShpere.Infrastructure.Repositories
             );
         }
 
-        public async Task<IEnumerable<Post>> SearchWithFiltersAsync(object request)
+        public async Task<IEnumerable<Post>> SearchWithFiltersAsync(object request, bool includeClubMembers = false)
         {
             // For now, return basic search results
             // This method will be implemented when the DTO namespace issues are resolved
-            return await SearchAsync("", 10);
+            return await SearchAsync("", 10, includeClubMembers);
         }
 
         public IQueryable<Post> GetQueryable()

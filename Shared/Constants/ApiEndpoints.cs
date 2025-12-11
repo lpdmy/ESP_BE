@@ -245,8 +245,15 @@ namespace EduShpere.Shared.Constants
             public const string GetAllAssignByUser = "api/jury/assign/user/{Id}";
             public const string GetAllAssignByUserNotGrading = "api/jury/assign-not-grading/user/{Id}";
             public const string GetAllAssignByUserGrading = "api/jury/assign-grading/user/{Id}";
+            
+            // Endpoints không pagination - trả về toàn bộ danh sách
+            public const string GetAllAssignByUserNotGradingAll = "api/jury/assign-not-grading/user/{Id}/all";
+            public const string GetAllAssignByUserGradingAll = "api/jury/assign-grading/user/{Id}/all";
 
             public const string GradeSubmission = "api/jury/grade-submission";
+            public const string IsAssigned = "api/jury/is-assigned/{userId}/{submissionId}";
+            public const string GetActivitiesWithoutJury = "api/jury/activities-without-jury";
+            public const string ImprovedRandomAssign = "api/jury/improved-random-assign";
         }
         public static class Submission
         {

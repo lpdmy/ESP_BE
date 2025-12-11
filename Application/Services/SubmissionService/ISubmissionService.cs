@@ -12,7 +12,7 @@ namespace EduShpere.Application.Services
     {
         Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityId(int activityId,
     PaginationRequestDto paginationRequest,
-    string? search = null);
+    string? search = null, int? currentUserId = null);
         Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityIdByUserId(
     int activityId, int userId,
     PaginationRequestDto paginationRequest,
