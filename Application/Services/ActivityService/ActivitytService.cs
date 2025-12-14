@@ -530,14 +530,8 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
             }
-            if (dto.RegisterDate >= dto.EndRegisterDate)
-            {
-                throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDayRegister);
-            }
-            if (dto.EndRegisterDate >= dto.StartDate)
-            {
-                throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
-            }
+            // Date validation removed - handled by frontend
+            // Frontend ensures: Now ≤ RegisterDate ≤ EndRegisterDate ≤ StartDate ≤ EndDate
             // Validate MaxParticipants: n?u c� gi� tr? th? ph?i > 0, null = kh�ng gi?i h?n (�p d?ng cho t?t c? lo?i activity)
             if (dto.MaxParticipants.HasValue && dto.MaxParticipants.Value <= 0)
             {
