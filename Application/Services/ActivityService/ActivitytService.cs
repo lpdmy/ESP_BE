@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Enum;
@@ -70,12 +70,166 @@ namespace EduShpere.Application.Services
         }
 
         /// <summary>
-        /// Lấy danh sách activities tối ưu cho list view - chỉ trả về các field cần thiết, không load navigation properties
+        /// Get paginated list of activities with optimized DTO (for list view)
+        /// Only selects necessary fields and calculates NumberOfParticipants in query
+        /// </summary>
+        public async Task<PaginationResponseDto<ActivityListItemDto>> GetAllOptimizedAsync(int pageNumber, int pageSize, string? search = null)
+        {
+            // Base query - filter deleted items
+            var query = _context.Activities.Where(a => !a.IsDeleted);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchLower = search.ToLower().Trim();
+                query = query.Where(a => 
+                    (a.Title != null && a.Title.ToLower().Contains(searchLower)) ||
+                    (a.Description != null && a.Description.ToLower().Contains(searchLower))
+                );
+            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Get activity IDs for the current page (for efficient loading of related data)
+            var activityIds = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(a => a.Id)
+                .ToListAsync();
+
+            if (!activityIds.Any())
+            {
+                return new PaginationResponseDto<ActivityListItemDto>
+                {
+                    Data = new List<ActivityListItemDto>(),
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+            }
+
+            // Load participant counts in batch (avoid N+1)
+            var participantCounts = await _context.ActivityParticipants
+                .Where(p => activityIds.Contains(p.ActivityId) && !p.IsDeleted)
+                .GroupBy(p => p.ActivityId)
+                .Select(g => new { ActivityId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ActivityId, x => x.Count);
+
+            // Load sports data in batch (only for SportsFestival activities)
+            var sportsData = await _context.ActivitySports
+                .Where(s => activityIds.Contains(s.ActivityId) && !s.IsDeleted)
+                .Select(s => new
+                {
+                    s.ActivityId,
+                    Sport = new ActivitySportDto
+                    {
+                        Id = s.Id,
+                        ActivityId = s.ActivityId,
+                        SportName = s.SportName,
+                        IsCustom = s.IsCustom,
+                        MaxMembers = s.MaxMembers
+                    }
+                })
+                .ToListAsync();
+
+            var sportsByActivity = sportsData
+                .GroupBy(s => s.ActivityId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.Sport).ToList());
+
+            // Load participants data in batch (only basic info for list view)
+            var participantsData = await _context.ActivityParticipants
+                .Where(p => activityIds.Contains(p.ActivityId) && !p.IsDeleted)
+                .Select(p => new ActivityParticipantDto
+                {
+                    Id = p.Id,
+                    ActivityId = p.ActivityId,
+                    UserId = p.UserId,
+                    UserFullName = p.User != null ? 
+                        (string.IsNullOrEmpty(p.User.FirstName) && string.IsNullOrEmpty(p.User.LastName) 
+                            ? null 
+                            : $"{p.User.FirstName ?? ""} {p.User.LastName ?? ""}".Trim()) 
+                        : null,
+                    GroupCode = p.GroupCode,
+                    SportId = p.SportId
+                })
+                .ToListAsync();
+
+            var participantsByActivity = participantsData
+                .GroupBy(p => p.ActivityId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // Select only necessary fields from Activities
+            var activitiesData = await _context.Activities
+                .Where(a => activityIds.Contains(a.Id))
+                .Select(a => new
+                {
+                    a.Id,
+                    a.Title,
+                    a.Description,
+                    a.StartDate,
+                    a.EndDate,
+                    a.RegisterDate,
+                    a.EndRegisterDate,
+                    a.Location,
+                    a.Organizer,
+                    a.MaxParticipants,
+                    a.Category,
+                    a.SubType,
+                    a.ThumbnailUrl,
+                    a.OnlyTeacherCanRegister,
+                    a.GradingSettings,
+                    a.RegistrationSettings,
+                    a.IsDeleted
+                })
+                .ToListAsync();
+
+            // Map to DTO and deserialize JSON fields, maintain order by activityIds
+            var activities = activitiesData
+                .OrderBy(a => activityIds.IndexOf(a.Id))
+                .Select(a => new ActivityListItemDto
+            {
+                Id = a.Id,
+                Title = a.Title,
+                Description = a.Description,
+                StartDate = a.StartDate,
+                EndDate = a.EndDate,
+                RegisterDate = a.RegisterDate,
+                EndRegisterDate = a.EndRegisterDate,
+                Location = a.Location,
+                Organizer = a.Organizer ?? string.Empty,
+                MaxParticipants = a.MaxParticipants,
+                Category = a.Category,
+                SubType = a.SubType,
+                ThumbnailUrl = a.ThumbnailUrl ?? string.Empty,
+                NumberOfParticipants = participantCounts.ContainsKey(a.Id) ? participantCounts[a.Id] : 0,
+                OnlyTeacherCanRegister = a.OnlyTeacherCanRegister ?? false,
+                GradingSettings = a.GradingSettings,
+                RegistrationSettings = !string.IsNullOrEmpty(a.RegistrationSettings)
+                    ? JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(a.RegistrationSettings, RegistrationSettingsJsonOptions)
+                    : null,
+                Sports = sportsByActivity.ContainsKey(a.Id) ? sportsByActivity[a.Id] : new List<ActivitySportDto>(),
+                Participants = participantsByActivity.ContainsKey(a.Id) ? participantsByActivity[a.Id] : new List<ActivityParticipantDto>(),
+                IsDeleted = a.IsDeleted
+            }).ToList();
+
+            return new PaginationResponseDto<ActivityListItemDto>
+            {
+                Data = activities,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
+        /// <summary>
+        /// L?y danh s�ch activities t?i �u cho list view - ch? tr? v? c�c field c?n thi?t, kh�ng load navigation properties
         /// </summary>
         public async Task<IEnumerable<ActivityListItemDto>> GetListItemsAsync()
         {
-            // Query tối ưu: chỉ select các field cần thiết, không include navigation properties
-            // Lưu ý: Không thể deserialize JSON trong LINQ query, nên load raw data trước
+            // Query t?i �u: ch? select c�c field c?n thi?t, kh�ng include navigation properties
+            // L�u ?: Kh�ng th? deserialize JSON trong LINQ query, n�n load raw data tr�?c
             var activitiesData = await _context.Activities
                 .Where(a => !a.IsDeleted)
                 .Select(a => new
@@ -97,7 +251,7 @@ namespace EduShpere.Application.Services
                 })
                 .ToListAsync();
 
-            // Deserialize và map sang DTO sau khi đã load từ DB (tránh memory leak warning)
+            // Deserialize v� map sang DTO sau khi �? load t? DB (tr�nh memory leak warning)
             var jsonOptions = RegistrationSettingsJsonOptions;
             var activities = activitiesData.Select(a => new ActivityListItemDto
             {
@@ -117,17 +271,17 @@ namespace EduShpere.Application.Services
                 RegistrationSettings = !string.IsNullOrEmpty(a.RegistrationSettings)
                     ? JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(a.RegistrationSettings, jsonOptions)
                     : null,
-                // Tính status dựa trên ngày tháng (sử dụng UTC để đảm bảo consistency)
+                // T�nh status d?a tr�n ng�y th�ng (s? d?ng UTC �? �?m b?o consistency)
                 Status = a.StartDate.HasValue && a.EndDate.HasValue
                     ? (DateTime.UtcNow < a.StartDate.Value.ToUniversalTime()
-                        ? "Sắp diễn ra"
+                        ? "S?p di?n ra"
                         : DateTime.UtcNow >= a.StartDate.Value.ToUniversalTime() && DateTime.UtcNow <= a.EndDate.Value.ToUniversalTime()
-                        ? "Đang diễn ra"
-                        : "Đã kết thúc")
-                    : "Đang cập nhật"
+                        ? "�ang di?n ra"
+                        : "�? k?t th�c")
+                    : "�ang c?p nh?t"
             }).ToList();
 
-            // Tính số lượng participants cho mỗi activity (batch query để tối ưu)
+            // T�nh s? l�?ng participants cho m?i activity (batch query �? t?i �u)
             var activityIds = activities.Select(a => a.Id).ToList();
             var participantCounts = await _context.ActivityParticipants
                 .Where(p => activityIds.Contains(p.ActivityId) && !p.IsDeleted)
@@ -135,7 +289,7 @@ namespace EduShpere.Application.Services
                 .Select(g => new { ActivityId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.ActivityId, x => x.Count);
 
-            // Gán số lượng participants
+            // G�n s? l�?ng participants
             foreach (var activity in activities)
             {
                 activity.NumberOfParticipants = participantCounts.GetValueOrDefault(activity.Id, 0);
@@ -145,18 +299,18 @@ namespace EduShpere.Application.Services
         }
 
         /// <summary>
-        /// Lấy danh sách activities với filtering, paging và sorting tối ưu
-        /// Mặc định sắp xếp theo StartDate DESC (hoạt động gần nhất)
+        /// L?y danh s�ch activities v?i filtering, paging v� sorting t?i �u
+        /// M?c �?nh s?p x?p theo StartDate DESC (ho?t �?ng g?n nh?t)
         /// </summary>
         public async Task<PaginationResponseDto<ActivityListItemDto>> GetListItemsWithFilterAsync(ActivityListFilterDto filter, int? userId = null)
         {
-            // Validation được xử lý bởi PaginationRequestDto attributes
-            // Set defaults nếu cần
+            // Validation ��?c x? l? b?i PaginationRequestDto attributes
+            // Set defaults n?u c?n
             if (filter.PageNumber < 1) filter.PageNumber = 1;
             if (filter.PageSize < 1) filter.PageSize = 30;
             if (filter.PageSize > 100) filter.PageSize = 100; // Limit max page size
 
-            // Build base query với filtering
+            // Build base query v?i filtering
             var query = _context.Activities
                 .Where(a => !a.IsDeleted)
                 .AsQueryable();
@@ -178,7 +332,7 @@ namespace EduShpere.Application.Services
             }
 
             // Apply Status filter (upcoming, ongoing, ended)
-            // Sử dụng UTC time để đảm bảo consistency
+            // S? d?ng UTC time �? �?m b?o consistency
             if (!string.IsNullOrWhiteSpace(filter.Status) && filter.Status.ToLower() != "all")
             {
                 var now = DateTime.UtcNow;
@@ -200,7 +354,7 @@ namespace EduShpere.Application.Services
             }
 
             // Apply DateFrom filter
-            // Convert to UTC để đảm bảo consistency
+            // Convert to UTC �? �?m b?o consistency
             if (filter.DateFrom.HasValue)
             {
                 var dateFromUtc = filter.DateFrom.Value.ToUniversalTime();
@@ -210,7 +364,7 @@ namespace EduShpere.Application.Services
             }
 
             // Apply DateTo filter
-            // Convert to UTC và set to end of day để include cả ngày đó
+            // Convert to UTC v� set to end of day �? include c? ng�y ��
             if (filter.DateTo.HasValue)
             {
                 var dateToUtc = filter.DateTo.Value.Date.AddDays(1).AddTicks(-1).ToUniversalTime();
@@ -247,7 +401,7 @@ namespace EduShpere.Application.Services
             var totalCount = await query.CountAsync();
 
             // Apply sorting
-            // SortBy và SortDescending đã được kế thừa từ PaginationRequestDto
+            // SortBy v� SortDescending �? ��?c k? th?a t? PaginationRequestDto
             var sortBy = filter.SortBy?.ToLower() ?? "startdate";
             var sortOrder = filter.SortDescending ? "DESC" : "ASC";
 
@@ -289,7 +443,7 @@ namespace EduShpere.Application.Services
                 .Take(filter.PageSize)
                 .ToListAsync();
 
-            // Deserialize và map sang DTO
+            // Deserialize v� map sang DTO
             var jsonOptions = RegistrationSettingsJsonOptions;
             var activities = activitiesData.Select(a => new ActivityListItemDto
             {
@@ -309,17 +463,17 @@ namespace EduShpere.Application.Services
                 RegistrationSettings = !string.IsNullOrEmpty(a.RegistrationSettings)
                     ? JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(a.RegistrationSettings, jsonOptions)
                     : null,
-                // Tính status dựa trên ngày tháng (sử dụng UTC để đảm bảo consistency)
+                // T�nh status d?a tr�n ng�y th�ng (s? d?ng UTC �? �?m b?o consistency)
                 Status = a.StartDate.HasValue && a.EndDate.HasValue
                     ? (DateTime.UtcNow < a.StartDate.Value.ToUniversalTime()
-                        ? "Sắp diễn ra"
+                        ? "S?p di?n ra"
                         : DateTime.UtcNow >= a.StartDate.Value.ToUniversalTime() && DateTime.UtcNow <= a.EndDate.Value.ToUniversalTime()
-                        ? "Đang diễn ra"
-                        : "Đã kết thúc")
-                    : "Đang cập nhật"
+                        ? "�ang di?n ra"
+                        : "�? k?t th�c")
+                    : "�ang c?p nh?t"
             }).ToList();
 
-            // Tính số lượng participants cho mỗi activity (batch query để tối ưu)
+            // T�nh s? l�?ng participants cho m?i activity (batch query �? t?i �u)
             var activityIds = activities.Select(a => a.Id).ToList();
             if (activityIds.Any())
             {
@@ -330,11 +484,11 @@ namespace EduShpere.Application.Services
                     .ToDictionaryAsync(x => x.ActivityId, x => x.Count);
 
                 // Check if user is registered for each activity (if userId provided)
-                // Query tất cả participants của user trong các activities này
+                // Query t?t c? participants c?a user trong c�c activities n�y
                 var userRegisteredActivityIds = new HashSet<int>();
                 if (userId.HasValue && userId.Value > 0 && activityIds.Any())
                 {
-                    // Query đơn giản và rõ ràng: tìm tất cả ActivityParticipants của user trong các activities này
+                    // Query ��n gi?n v� r? r�ng: t?m t?t c? ActivityParticipants c?a user trong c�c activities n�y
                     var userParticipants = await _context.ActivityParticipants
                         .Where(p => 
                             activityIds.Contains(p.ActivityId) && 
@@ -347,7 +501,7 @@ namespace EduShpere.Application.Services
                     userRegisteredActivityIds = userParticipants.ToHashSet();
                 }
 
-                // Gán số lượng participants và IsRegistered
+                // G�n s? l�?ng participants v� IsRegistered
                 foreach (var activity in activities)
                 {
                     activity.NumberOfParticipants = participantCounts.GetValueOrDefault(activity.Id, 0);
@@ -371,7 +525,7 @@ namespace EduShpere.Application.Services
         public async Task<ActivityResponseDto> AddAsync(CreateActivityDto dto)
         {
             // Validation
-            // Cho phép ngày bắt đầu bằng ngày kết thúc
+            // Cho ph�p ng�y b?t �?u b?ng ng�y k?t th�c
             if (dto.StartDate > dto.EndDate)
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
@@ -384,29 +538,29 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
             }
-            // Validate MaxParticipants: nếu có giá trị thì phải > 0, null = không giới hạn (áp dụng cho tất cả loại activity)
+            // Validate MaxParticipants: n?u c� gi� tr? th? ph?i > 0, null = kh�ng gi?i h?n (�p d?ng cho t?t c? lo?i activity)
             if (dto.MaxParticipants.HasValue && dto.MaxParticipants.Value <= 0)
             {
                 throw new BadRequestException(ErrorMessages.Activity.MaxParticipantGreaterThanZero);
             }
 
-            // Validation cho SubmissionDeadline (chỉ áp dụng cho Activity có nộp bài)
+            // Validation cho SubmissionDeadline (ch? �p d?ng cho Activity c� n?p b�i)
             if (dto.SubmissionDeadline.HasValue)
             {
-                // Kiểm tra SubType có phải là CreativeContest hoặc có submission không
+                // Ki?m tra SubType c� ph?i l� CreativeContest ho?c c� submission kh�ng
                 var hasSubmission = string.Equals(dto.SubType, "CreativeContest", StringComparison.OrdinalIgnoreCase) ||
                                    dto.SubType?.ToLower().Contains("submission") == true ||
                                    dto.SubType?.ToLower().Contains("contest") == true;
                 
                 if (hasSubmission)
                 {
-                    // SubmissionDeadline phải >= StartDate
+                    // SubmissionDeadline ph?i >= StartDate
                     if (dto.SubmissionDeadline.Value < dto.StartDate)
                     {
                         throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineBeforeStartDate);
                     }
                     
-                    // SubmissionDeadline phải <= EndDate
+                    // SubmissionDeadline ph?i <= EndDate
                     if (dto.SubmissionDeadline.Value > dto.EndDate)
                     {
                         throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineAfterEndDate);
@@ -522,8 +676,8 @@ namespace EduShpere.Application.Services
                 // Predefined sports list (should match frontend)
                 var predefinedSports = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    "Chạy 100m", "Chạy 400m", "Nhảy cao", "Nhảy xa", 
-                    "Ném bóng", "Bóng đá", "Bóng chuyền", "Bóng rổ"
+                    "Ch?y 100m", "Ch?y 400m", "Nh?y cao", "Nh?y xa", 
+                    "N�m b�ng", "B�ng ��", "B�ng chuy?n", "B�ng r?"
                 };
                 
                 var sportsConfigurations = dto.SportsConfigurations != null && dto.SportsConfigurations.Any()
@@ -670,7 +824,7 @@ namespace EduShpere.Application.Services
 
             var now = DateTime.UtcNow;
 
-            // Helper function: Kiểm tra xem ngày đã qua chưa (chỉ so sánh ngày, bỏ qua giờ)
+            // Helper function: Ki?m tra xem ng�y �? qua ch�a (ch? so s�nh ng�y, b? qua gi?)
             bool IsDatePassed(DateTime? date)
             {
                 if (!date.HasValue) return false;
@@ -679,11 +833,11 @@ namespace EduShpere.Application.Services
                 return dateOnly <= nowOnly;
             }
 
-            // Chỉ validate nếu ngày chưa qua
-            // Cho phép ngày bắt đầu bằng ngày kết thúc
+            // Ch? validate n?u ng�y ch�a qua
+            // Cho ph�p ng�y b?t �?u b?ng ng�y k?t th�c
             if (startDate.HasValue && endDate.HasValue && startDate > endDate)
             {
-                // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                // Ch? validate n?u �t nh?t m?t trong hai ng�y ch�a qua
                 if (!IsDatePassed(startDate) && !IsDatePassed(endDate))
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDay);
@@ -691,7 +845,7 @@ namespace EduShpere.Application.Services
             }
             if (registerDate.HasValue && endRegisterDate.HasValue && registerDate >= endRegisterDate)
             {
-                // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                // Ch? validate n?u �t nh?t m?t trong hai ng�y ch�a qua
                 if (!IsDatePassed(registerDate) && !IsDatePassed(endRegisterDate))
             {
                 throw new BadRequestException(ErrorMessages.Activity.StartDayAfterEndDayRegister);
@@ -699,7 +853,7 @@ namespace EduShpere.Application.Services
             }
             if (endRegisterDate.HasValue && startDate.HasValue && endRegisterDate >= startDate)
             {
-                // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                // Ch? validate n?u �t nh?t m?t trong hai ng�y ch�a qua
                 if (!IsDatePassed(endRegisterDate) && !IsDatePassed(startDate))
             {
                 throw new BadRequestException(ErrorMessages.Activity.EndDayRegisterAfterStarDay);
@@ -761,15 +915,15 @@ namespace EduShpere.Application.Services
                 if (dto.SubType != null) existingActivity.SubType = dto.SubType;
                 if (dto.ThumbnailUrl != null) existingActivity.ThumbnailUrl = dto.ThumbnailUrl;
                 if (dto.Organizer != null) existingActivity.Organizer = dto.Organizer;
-                // Update MaxParticipants: null = không giới hạn, có giá trị = giới hạn số người
-                // Có thể cập nhật cho tất cả các loại activity
+                // Update MaxParticipants: null = kh�ng gi?i h?n, c� gi� tr? = gi?i h?n s? ng�?i
+                // C� th? c?p nh?t cho t?t c? c�c lo?i activity
                 if (dto.MaxParticipants.HasValue)
                 {
                     existingActivity.MaxParticipants = dto.MaxParticipants.Value;
                 }
                 else
                 {
-                    // Nếu MaxParticipants là null, set thành null (không giới hạn)
+                    // N?u MaxParticipants l� null, set th�nh null (kh�ng gi?i h?n)
                     existingActivity.MaxParticipants = null;
                 }
                 if (dto.RegisterDate.HasValue)
@@ -786,16 +940,16 @@ namespace EduShpere.Application.Services
                 }
                 if (dto.ClubId.HasValue) existingActivity.ClubId = dto.ClubId;
                 
-                // Validation cho SubmissionDeadline (chỉ áp dụng cho Activity có nộp bài)
+                // Validation cho SubmissionDeadline (ch? �p d?ng cho Activity c� n?p b�i)
                 if (dto.SubmissionDeadline.HasValue)
                 {
                     var finalStartDate = dto.StartDate ?? existingActivity.StartDate;
                     var finalEndDate = dto.EndDate ?? existingActivity.EndDate;
                     
-                    // Chỉ validate nếu các ngày chưa qua
+                    // Ch? validate n?u c�c ng�y ch�a qua
                     if (finalStartDate.HasValue && dto.SubmissionDeadline.Value < finalStartDate.Value)
                     {
-                        // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                        // Ch? validate n?u �t nh?t m?t trong hai ng�y ch�a qua
                         if (!IsDatePassed(finalStartDate) && !IsDatePassed(dto.SubmissionDeadline))
                     {
                         throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineBeforeStartDate);
@@ -804,7 +958,7 @@ namespace EduShpere.Application.Services
                     
                     if (finalEndDate.HasValue && dto.SubmissionDeadline.Value > finalEndDate.Value)
                     {
-                        // Chỉ validate nếu ít nhất một trong hai ngày chưa qua
+                        // Ch? validate n?u �t nh?t m?t trong hai ng�y ch�a qua
                         if (!IsDatePassed(finalEndDate) && !IsDatePassed(dto.SubmissionDeadline))
                     {
                         throw new BadRequestException(ErrorMessages.Activity.SubmissionDeadlineAfterEndDate);
@@ -817,7 +971,7 @@ namespace EduShpere.Application.Services
                 }
                 else if (dto.SubmissionDeadline == null && dto.SubType != null)
                 {
-                    // Nếu SubmissionDeadline được set thành null (xóa), chỉ xóa nếu không phải CreativeContest
+                    // N?u SubmissionDeadline ��?c set th�nh null (x�a), ch? x�a n?u kh�ng ph?i CreativeContest
                     var hasSubmission = string.Equals(dto.SubType, "CreativeContest", StringComparison.OrdinalIgnoreCase);
                     if (!hasSubmission)
                     {
@@ -825,7 +979,7 @@ namespace EduShpere.Application.Services
                     }
                 }
                 
-                // Update ProblemText và ProblemFileUrl
+                // Update ProblemText v� ProblemFileUrl
                 if (dto.ProblemText != null) existingActivity.ProblemText = dto.ProblemText;
                 if (dto.ProblemFileUrl != null) existingActivity.ProblemFileUrl = dto.ProblemFileUrl;
                 
@@ -909,8 +1063,8 @@ namespace EduShpere.Application.Services
                 // Predefined sports list (should match frontend)
                 var predefinedSports = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    "Chạy 100m", "Chạy 400m", "Nhảy cao", "Nhảy xa", 
-                    "Ném bóng", "Bóng đá", "Bóng chuyền", "Bóng rổ"
+                    "Ch?y 100m", "Ch?y 400m", "Nh?y cao", "Nh?y xa", 
+                    "N�m b�ng", "B�ng ��", "B�ng chuy?n", "B�ng r?"
                 };
                 
                 var hasSportsPayload = (dto.SportsConfigurations != null && dto.SportsConfigurations.Any()) ||
@@ -1156,7 +1310,7 @@ namespace EduShpere.Application.Services
 
         public async Task<RecentActivityInputsDto> GetRecentInputsAsync(int userId, int take = 5)
         {
-            // Lấy một số bản ghi gần nhất để trích xuất giá trị gợi ý, tránh load toàn bộ
+            // L?y m?t s? b?n ghi g?n nh?t �? tr�ch xu?t gi� tr? g?i ?, tr�nh load to�n b?
             const int queryTake = 50;
 
             var recentItems = await _context.Activities
@@ -1187,7 +1341,7 @@ namespace EduShpere.Application.Services
             {
                 Locations = locations,
                 Organizers = organizers,
-                Contacts = new List<string>() // Hiện chưa lưu contact trong Activity, trả về danh sách trống
+                Contacts = new List<string>() // Hi?n ch�a l�u contact trong Activity, tr? v? danh s�ch tr?ng
             };
         }
 
@@ -1195,7 +1349,7 @@ namespace EduShpere.Application.Services
         {
             var now = DateTime.UtcNow;
 
-            // Lấy tất cả activities chưa bị xóa
+            // L?y t?t c? activities ch�a b? x�a
             var allActivities = await _context.Activities
                 .Where(a => !a.IsDeleted)
                 .Select(a => new
@@ -1206,7 +1360,7 @@ namespace EduShpere.Application.Services
                 })
                 .ToListAsync();
 
-            // Tính số lượng activities theo trạng thái
+            // T�nh s? l�?ng activities theo tr?ng th�i
             var ongoingCount = allActivities.Count(a =>
                 a.StartDate.HasValue &&
                 a.EndDate.HasValue &&
@@ -1221,7 +1375,7 @@ namespace EduShpere.Application.Services
                 a.EndDate.HasValue &&
                 a.EndDate.Value.ToUniversalTime() < now);
 
-            // Tính tổng số người tham gia từ ActivityParticipants
+            // T�nh t?ng s? ng�?i tham gia t? ActivityParticipants
             var totalParticipants = await _context.ActivityParticipants
                 .Where(p => !p.IsDeleted)
                 .CountAsync();
@@ -1233,532 +1387,6 @@ namespace EduShpere.Application.Services
                 CompletedCount = completedCount,
                 TotalParticipants = totalParticipants
             };
-        }
-
-        public async Task<ImportActivityResponseDto> ImportActivitiesAsync(IFormFile file)
-        {
-            var response = new ImportActivityResponseDto
-            {
-                Valid = true,
-                Errors = new List<ImportErrorDto>(),
-                Activities = new List<CreateActivityDto>()
-            };
-
-            // Validate file type
-            var allowedExtensions = new[] { ".csv", ".xlsx", ".xls" };
-            var fileExtension = Path.GetExtension(file.FileName).ToLower();
-            if (!allowedExtensions.Contains(fileExtension))
-            {
-                response.Valid = false;
-                response.Errors.Add(new ImportErrorDto
-                {
-                    Row = 0,
-                    Message = "Chỉ chấp nhận file CSV hoặc Excel (.csv, .xlsx, .xls)"
-                });
-                return response;
-            }
-
-            // Parse file
-            using var stream = new MemoryStream();
-            await file.CopyToAsync(stream);
-            stream.Position = 0;
-
-            var activities = new List<CreateActivityDto>();
-            var errors = new List<ImportErrorDto>();
-            int rowNumber = 0;
-
-            try
-            {
-                if (fileExtension == ".csv")
-                {
-                    // Parse CSV
-                    using var reader = new StreamReader(stream);
-                    using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
-                    {
-                        HasHeaderRecord = true,
-                        TrimOptions = TrimOptions.Trim,
-                        MissingFieldFound = null
-                    });
-
-                    await csv.ReadAsync();
-                    csv.ReadHeader();
-
-                    while (await csv.ReadAsync())
-                    {
-                        rowNumber++;
-                        var activity = ParseActivityRow(csv, rowNumber, errors);
-                        if (activity != null)
-                        {
-                            activities.Add(activity);
-                        }
-                    }
-                }
-                else
-                {
-                    // Parse Excel
-                    using var workbook = new XLWorkbook(stream);
-                    var worksheet = workbook.Worksheet(1);
-                    var rows = worksheet.RowsUsed().Skip(1); // Skip header
-
-                    foreach (var row in rows)
-                    {
-                        rowNumber++;
-                        var activity = ParseActivityRowExcel(row, rowNumber, errors);
-                        if (activity != null)
-                        {
-                            activities.Add(activity);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                response.Valid = false;
-                response.Errors.Add(new ImportErrorDto
-                {
-                    Row = 0,
-                    Message = $"Lỗi khi đọc file: {ex.Message}"
-                });
-                return response;
-            }
-
-            response.TotalRows = rowNumber;
-            response.ValidRows = activities.Count;
-            response.Errors = errors;
-            response.Activities = activities;
-            response.Valid = errors.Count == 0;
-
-            return response;
-        }
-
-        private CreateActivityDto? ParseActivityRow(CsvReader csv, int rowNumber, List<ImportErrorDto> errors)
-        {
-            try
-            {
-                var title = csv.GetField<string>("Tên hoạt động")?.Trim();
-                var subType = csv.GetField<string>("Loại hoạt động")?.Trim();
-                var startDateStr = csv.GetField<string>("Ngày bắt đầu")?.Trim();
-                var startTimeStr = csv.GetField<string>("Giờ bắt đầu")?.Trim();
-                var endDateStr = csv.GetField<string>("Ngày kết thúc")?.Trim();
-                var endTimeStr = csv.GetField<string>("Giờ kết thúc")?.Trim();
-                var location = csv.GetField<string>("Địa điểm")?.Trim();
-                var organizer = csv.GetField<string>("Đơn vị tổ chức")?.Trim();
-                var description = csv.GetField<string>("Mô tả")?.Trim();
-                var maxParticipantsStr = csv.GetField<string>("Số người tham gia tối đa")?.Trim();
-
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(title))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Tên hoạt động", Message = "Tên hoạt động không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(subType))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = "Loại hoạt động không được để trống" });
-                    return null;
-                }
-
-                if (!new[] { "SeminarWorkshop", "CreativeContest", "SportsFestival" }.Contains(subType))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = $"Loại hoạt động không hợp lệ. Chỉ chấp nhận: SeminarWorkshop, CreativeContest, SportsFestival" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(startDateStr))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = "Ngày bắt đầu không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(endDateStr))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(location))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Địa điểm", Message = "Địa điểm không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(organizer))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Đơn vị tổ chức", Message = "Đơn vị tổ chức không được để trống" });
-                    return null;
-                }
-
-                // Parse dates
-                if (!DateTime.TryParse(startDateStr, out var startDate))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = $"Định dạng ngày không hợp lệ: {startDateStr}" });
-                    return null;
-                }
-
-                if (!DateTime.TryParse(endDateStr, out var endDate))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = $"Định dạng ngày không hợp lệ: {endDateStr}" });
-                    return null;
-                }
-
-                // Parse times if provided
-                if (!string.IsNullOrWhiteSpace(startTimeStr))
-                {
-                    if (TimeSpan.TryParse(startTimeStr, out var startTime))
-                    {
-                        startDate = startDate.Date.Add(startTime);
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(endTimeStr))
-                {
-                    if (TimeSpan.TryParse(endTimeStr, out var endTime))
-                    {
-                        endDate = endDate.Date.Add(endTime);
-                    }
-                }
-
-                // Validate date logic
-                if (endDate < startDate)
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc phải sau ngày bắt đầu" });
-                    return null;
-                }
-
-                // Parse MaxParticipants
-                int? maxParticipants = null;
-                if (!string.IsNullOrWhiteSpace(maxParticipantsStr))
-                {
-                    if (int.TryParse(maxParticipantsStr, out var max))
-                    {
-                        if (max > 0)
-                        {
-                            maxParticipants = max;
-                        }
-                    }
-                }
-
-                // Determine Category from SubType
-                var category = subType switch
-                {
-                    "SeminarWorkshop" => ActivityType.Activity,
-                    "CreativeContest" => ActivityType.Activity,
-                    "SportsFestival" => ActivityType.Event,
-                    _ => ActivityType.Activity
-                };
-
-                var activity = new CreateActivityDto
-                {
-                    Title = title,
-                    SubType = subType,
-                    Category = category,
-                    Description = description ?? $"{title} - {subType}",
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    Location = location,
-                    Organizer = organizer,
-                    MaxParticipants = maxParticipants,
-                    RegisterDate = startDate.AddDays(-7), // Default: 7 days before start
-                    EndRegisterDate = startDate.AddDays(-1), // Default: 1 day before start
-                    ThumbnailUrl = "https://via.placeholder.com/400x300?text=Activity", // Default thumbnail
-                    Rules = new List<string>(),
-                    OnlyTeacherCanRegister = false
-                };
-
-                return activity;
-            }
-            catch (Exception ex)
-            {
-                errors.Add(new ImportErrorDto { Row = rowNumber, Message = $"Lỗi khi parse dòng: {ex.Message}" });
-                return null;
-            }
-        }
-
-        private CreateActivityDto? ParseActivityRowExcel(IXLRow row, int rowNumber, List<ImportErrorDto> errors)
-        {
-            try
-            {
-                var title = row.Cell(1).GetString()?.Trim();
-                var subType = row.Cell(2).GetString()?.Trim();
-                var startDateStr = row.Cell(3).GetString()?.Trim();
-                var startTimeStr = row.Cell(4).GetString()?.Trim();
-                var endDateStr = row.Cell(5).GetString()?.Trim();
-                var endTimeStr = row.Cell(6).GetString()?.Trim();
-                var location = row.Cell(7).GetString()?.Trim();
-                var organizer = row.Cell(8).GetString()?.Trim();
-                var description = row.Cell(9).GetString()?.Trim();
-                var maxParticipantsStr = row.Cell(10).GetString()?.Trim();
-
-                // Same validation logic as CSV
-                if (string.IsNullOrWhiteSpace(title))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Tên hoạt động", Message = "Tên hoạt động không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(subType))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = "Loại hoạt động không được để trống" });
-                    return null;
-                }
-
-                if (!new[] { "SeminarWorkshop", "CreativeContest", "SportsFestival" }.Contains(subType))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = $"Loại hoạt động không hợp lệ. Chỉ chấp nhận: SeminarWorkshop, CreativeContest, SportsFestival" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(startDateStr))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = "Ngày bắt đầu không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(endDateStr))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(location))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Địa điểm", Message = "Địa điểm không được để trống" });
-                    return null;
-                }
-
-                if (string.IsNullOrWhiteSpace(organizer))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Đơn vị tổ chức", Message = "Đơn vị tổ chức không được để trống" });
-                    return null;
-                }
-
-                // Parse dates (Excel might return DateTime directly)
-                DateTime startDate;
-                if (row.Cell(3).DataType == XLDataType.DateTime)
-                {
-                    startDate = row.Cell(3).GetDateTime();
-                }
-                else if (!DateTime.TryParse(startDateStr, out startDate))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = $"Định dạng ngày không hợp lệ: {startDateStr}" });
-                    return null;
-                }
-
-                DateTime endDate;
-                if (row.Cell(5).DataType == XLDataType.DateTime)
-                {
-                    endDate = row.Cell(5).GetDateTime();
-                }
-                else if (!DateTime.TryParse(endDateStr, out endDate))
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = $"Định dạng ngày không hợp lệ: {endDateStr}" });
-                    return null;
-                }
-
-                // Parse times if provided
-                if (!string.IsNullOrWhiteSpace(startTimeStr))
-                {
-                    if (TimeSpan.TryParse(startTimeStr, out var startTime))
-                    {
-                        startDate = startDate.Date.Add(startTime);
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(endTimeStr))
-                {
-                    if (TimeSpan.TryParse(endTimeStr, out var endTime))
-                    {
-                        endDate = endDate.Date.Add(endTime);
-                    }
-                }
-
-                // Validate date logic
-                if (endDate < startDate)
-                {
-                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc phải sau ngày bắt đầu" });
-                    return null;
-                }
-
-                // Parse MaxParticipants
-                int? maxParticipants = null;
-                if (!string.IsNullOrWhiteSpace(maxParticipantsStr))
-                {
-                    if (int.TryParse(maxParticipantsStr, out var max))
-                    {
-                        if (max > 0)
-                        {
-                            maxParticipants = max;
-                        }
-                    }
-                }
-
-                // Determine Category from SubType
-                var category = subType switch
-                {
-                    "SeminarWorkshop" => ActivityType.Activity,
-                    "CreativeContest" => ActivityType.Activity,
-                    "SportsFestival" => ActivityType.Event,
-                    _ => ActivityType.Activity
-                };
-
-                var activity = new CreateActivityDto
-                {
-                    Title = title,
-                    SubType = subType,
-                    Category = category,
-                    Description = description ?? $"{title} - {subType}",
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    Location = location,
-                    Organizer = organizer,
-                    MaxParticipants = maxParticipants,
-                    RegisterDate = startDate.AddDays(-7),
-                    EndRegisterDate = startDate.AddDays(-1),
-                    ThumbnailUrl = "https://via.placeholder.com/400x300?text=Activity",
-                    Rules = new List<string>(),
-                    OnlyTeacherCanRegister = false
-                };
-
-                return activity;
-            }
-            catch (Exception ex)
-            {
-                errors.Add(new ImportErrorDto { Row = rowNumber, Message = $"Lỗi khi parse dòng: {ex.Message}" });
-                return null;
-            }
-        }
-
-        public async Task<List<ActivityResponseDto>> BulkCreateActivitiesAsync(BulkCreateActivitiesDto dto)
-        {
-            var createdActivities = new List<ActivityResponseDto>();
-
-            foreach (var activityDto in dto.Activities)
-            {
-                try
-                {
-                    var createdActivity = await AddAsync(activityDto);
-                    createdActivities.Add(createdActivity);
-                }
-                catch (Exception ex)
-                {
-                    // Log error but continue with other activities
-                    // In production, you might want to collect these errors
-                    Console.WriteLine($"Error creating activity '{activityDto.Title}': {ex.Message}");
-                }
-            }
-
-            return createdActivities;
-        }
-
-        public async Task<ActivityResponseDto> DuplicateAsync(int activityId)
-        {
-            var originalActivity = await GetByIdAsync(activityId);
-            if (originalActivity == null)
-                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
-
-            // Get full activity with all related data
-            var fullActivity = await _repo.GetByIdWithIncludesAsync(activityId);
-            if (fullActivity == null)
-                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
-
-            // Create new activity DTO from original
-            var duplicateDto = new CreateActivityDto
-            {
-                Title = $"{originalActivity.Title} (Bản sao)",
-                Description = originalActivity.Description,
-                Category = originalActivity.Category,
-                SubType = originalActivity.SubType,
-                Location = originalActivity.Location,
-                Organizer = originalActivity.Organizer,
-                ThumbnailUrl = originalActivity.ThumbnailUrl,
-                StartDate = originalActivity.StartDate ?? DateTime.UtcNow,
-                EndDate = originalActivity.EndDate ?? DateTime.UtcNow,
-                RegisterDate = originalActivity.RegisterDate,
-                EndRegisterDate = originalActivity.EndRegisterDate,
-                MaxParticipants = originalActivity.MaxParticipants,
-                OnlyTeacherCanRegister = originalActivity.OnlyTeacherCanRegister ?? false,
-                CompetitionType = fullActivity.ActivityDetail?.CompetitionType,
-                Theme = fullActivity.ActivityDetail?.Theme,
-                Genre = fullActivity.ActivityDetail?.Genre,
-                PaperSize = fullActivity.ActivityDetail?.PaperSize,
-                DrawingMedium = fullActivity.ActivityDetail?.DrawingMedium,
-                TimeLimit = fullActivity.ActivityDetail?.TimeLimit,
-                SubmissionFormat = fullActivity.ActivityDetail?.SubmissionFormat,
-                ProblemText = originalActivity.ProblemText,
-                ProblemFileUrl = originalActivity.ProblemFileUrl,
-                SubmissionDeadline = originalActivity.SubmissionDeadline,
-                Rules = fullActivity.Rules?.Where(r => !r.IsDeleted).Select(r => r.RuleText).ToList() ?? new List<string>(),
-                SportsCategories = fullActivity.Sports?.Where(s => !s.IsDeleted).Select(s => s.SportName).ToList() ?? new List<string>(),
-                SportsConfigurations = fullActivity.Sports?.Where(s => !s.IsDeleted).Select(s => new ActivitySportConfigDto
-                {
-                    SportName = s.SportName,
-                    MaxMembers = s.MaxMembers
-                }).ToList() ?? new List<ActivitySportConfigDto>(),
-                Speakers = fullActivity.Speakers?.Where(s => !s.IsDeleted).OrderBy(s => s.Order).Select(s => new ActivitySpeakerDto
-                {
-                    Name = s.Name,
-                    Title = s.Title,
-                    Bio = s.Bio,
-                    ImageUrl = s.ImageUrl
-                }).ToList() ?? new List<ActivitySpeakerDto>(),
-                ProgramItems = fullActivity.Programs?.Where(p => !p.IsDeleted).OrderBy(p => p.Order).Select(p => new ActivityProgramDto
-                {
-                    Title = p.Title,
-                    Time = p.Time,
-                    Description = p.Description
-                }).ToList() ?? new List<ActivityProgramDto>(),
-            };
-
-            // Copy grading settings
-            if (originalActivity.IsGrade == true && !string.IsNullOrEmpty(originalActivity.GradingSettings))
-            {
-                try
-                {
-                    duplicateDto.GradingSettings = JsonSerializer.Deserialize<GradingSettingsDto>(originalActivity.GradingSettings, RegistrationSettingsJsonOptions);
-                }
-                catch
-                {
-                    // Ignore if deserialization fails
-                }
-            }
-
-            // Copy registration settings
-            if (!string.IsNullOrEmpty(originalActivity.RegistrationSettings))
-            {
-                try
-                {
-                    duplicateDto.RegistrationSettings = JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(originalActivity.RegistrationSettings, RegistrationSettingsJsonOptions);
-                }
-                catch
-                {
-                    // Ignore if deserialization fails
-                }
-            }
-
-            // Copy star point rewards
-            if (originalActivity.RegistrationReward != null)
-            {
-                duplicateDto.RegistrationReward = new ActivityRegistrationRewardDto
-                {
-                    StarPoints = originalActivity.RegistrationReward.StarPoints
-                };
-            }
-
-            if (fullActivity.ActivityRewards != null && fullActivity.ActivityRewards.Any(r => !r.IsDeleted))
-            {
-                duplicateDto.Awards = fullActivity.ActivityRewards
-                    .Where(r => !r.IsDeleted)
-                    .Select(r => new ActivityAwardDto
-                    {
-                        Name = r.Rank ?? "Giải thưởng",
-                        Points = r.StarPoints
-                    })
-                    .ToList();
-            }
-
-            // Create the duplicate activity
-            return await AddAsync(duplicateDto);
         }
     }
 }

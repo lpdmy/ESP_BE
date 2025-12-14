@@ -1,4 +1,6 @@
 using System.Text;
+using System.Threading;
+using Microsoft.Data.SqlClient;
 using EduShpere.Application;
 using EduShpere.Application.Mappings;
 using EduShpere.Application.Services;
@@ -29,13 +31,38 @@ namespace EduShpere
     {
         public static void Main(string[] args)
         {
+            // Tăng ThreadPool để xử lý nhiều concurrent requests
+            ThreadPool.SetMinThreads(workerThreads: 100, completionPortThreads: 100);
+            ThreadPool.SetMaxThreads(workerThreads: 500, completionPortThreads: 500);
+            
             var builder = WebApplication.CreateBuilder(args);
+            
+            // Cấu hình Kestrel để xử lý nhiều concurrent connections
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.Limits.MaxConcurrentConnections = 1000;
+                options.Limits.MaxConcurrentUpgradedConnections = 1000;
+                options.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10MB
+                options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
+                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+            });
 
             // Add services to the container.
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
             {
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnectionString");
+                
+                // Tăng Max Pool Size để xử lý nhiều concurrent requests
+                // Thêm vào connection string nếu chưa có
+                var connectionStringBuilder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString);
+                if (connectionStringBuilder.MaxPoolSize < 200)
+                {
+                    connectionStringBuilder.MaxPoolSize = 200;
+                    connectionStringBuilder.MinPoolSize = 10;
+                }
+                
                 options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnectionString"),
+                    connectionStringBuilder.ConnectionString,
                     sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
                         maxRetryCount: 5,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
@@ -61,7 +88,6 @@ namespace EduShpere
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.TeacherProfile.ITeacherProfileRepository, EduShpere.Infrastructure.Repositories.TeacherProfile.TeacherProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
-            builder.Services.AddScoped<IActivityDraftRepository, ActivityDraftRepository>();
             builder.Services.AddScoped<IActivityTemplateRepository, ActivityTemplateRepository>();
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
             builder.Services.AddScoped<IActivityMatchRepository, ActivityMatchRepository>();
@@ -117,6 +143,8 @@ namespace EduShpere
             {
                 options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
                 options.ModelValidatorProviders.Clear();
+                // Tăng request queue size để xử lý nhiều requests đồng thời
+                options.MaxModelBindingCollectionSize = 10000;
             })
             .AddJsonOptions(options =>
             {
@@ -132,7 +160,6 @@ namespace EduShpere
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
-            builder.Services.AddScoped<IActivityDraftService, ActivityDraftService>();
             builder.Services.AddScoped<IActivityTemplateService, ActivityTemplateService>();
             builder.Services.AddScoped<ITournamentScheduleService, TournamentScheduleService>();
             builder.Services.AddScoped<IHttpContextService, HttpContextService>();

@@ -153,6 +153,16 @@
             public const string NotFound = "Bản nháp không tồn tại hoặc bạn không có quyền truy cập.";
             public const string AlreadyExists = "Bản nháp đã tồn tại.";
         }
+        public struct ActivityTemplate
+        {
+            public const string NotFound = "Mẫu hoạt động không tồn tại.";
+            public const string AlreadyExists = "Mẫu hoạt động đã tồn tại.";
+            public const string CreateFailed = "Tạo mẫu hoạt động thất bại. Vui lòng thử lại.";
+            public const string UpdateFailed = "Cập nhật mẫu hoạt động thất bại. Vui lòng thử lại.";
+            public const string DeleteFailed = "Xóa mẫu hoạt động thất bại. Vui lòng thử lại.";
+            public const string CannotModifySystemTemplate = "Không thể chỉnh sửa mẫu hệ thống.";
+            public const string CannotDeleteSystemTemplate = "Không thể xóa mẫu hệ thống.";
+        }
         public struct Post
         {
             public const string PostIsFlaged = "Bài viết đã bị vi phạm nội dung.";

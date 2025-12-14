@@ -39,25 +39,10 @@ namespace EduShpere.Controllers
         [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
-            var (Activity, totalCount) = await _Service.GetAllAsync(pageNumber, pageSize, search);
+            // Use optimized method that only selects necessary fields and calculates NumberOfParticipants in query
+            var result = await _Service.GetAllOptimizedAsync(pageNumber, pageSize, search);
             
-            // Map each item individually to avoid AfterMap issues with collections
-            var ActivityDtos = new List<ActivityResponseDto>();
-            foreach (var activity in Activity)
-            {
-                var dto = _mapper.Map<ActivityResponseDto>(activity);
-                dto.NumberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
-                ActivityDtos.Add(dto);
-            }
-
-            var result = new PaginationResponseDto<ActivityResponseDto>
-            {
-                Data = ActivityDtos,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-            return Ok(new ResponseDto<PaginationResponseDto<ActivityResponseDto>>(
+            return Ok(new ResponseDto<PaginationResponseDto<ActivityListItemDto>>(
                 result,
                 "Lấy danh sách thành công",
                 (int)HttpStatusCode.OK
@@ -319,61 +304,6 @@ namespace EduShpere.Controllers
             ));
         }
 
-        [HttpPost(ApiEndpoints.Activity.Import)]
-        [Authorize(Roles = "Teacher,Admin")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ImportActivities([FromForm] ImportActivityFileDto dto)
-        {
-            if (dto?.File == null || dto.File.Length == 0)
-            {
-                return BadRequest(new ResponseDto<string>(
-                    null,
-                    "File không được để trống",
-                    (int)HttpStatusCode.BadRequest
-                ));
-            }
-
-            try
-            {
-                var result = await _Service.ImportActivitiesAsync(dto.File);
-                return Ok(new ResponseDto<ImportActivityResponseDto>(
-                    result,
-                    result.Valid ? "File đã được kiểm tra thành công" : "File có lỗi, vui lòng kiểm tra lại",
-                    (int)HttpStatusCode.OK
-                ));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ResponseDto<string>(
-                    null,
-                    $"Lỗi khi import file: {ex.Message}",
-                    (int)HttpStatusCode.BadRequest
-                ));
-            }
-        }
-
-        [HttpPost(ApiEndpoints.Activity.BulkCreate)]
-        [Authorize(Roles = "Teacher,Admin")]
-        public async Task<IActionResult> BulkCreateActivities([FromBody] BulkCreateActivitiesDto dto)
-        {
-            try
-            {
-                var result = await _Service.BulkCreateActivitiesAsync(dto);
-                return Ok(new ResponseDto<List<ActivityResponseDto>>(
-                    result,
-                    $"Đã tạo thành công {result.Count} hoạt động",
-                    (int)HttpStatusCode.OK
-                ));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ResponseDto<string>(
-                    null,
-                    $"Lỗi khi tạo hoạt động: {ex.Message}",
-                    (int)HttpStatusCode.BadRequest
-                ));
-            }
-        }
 
         [HttpPost(ApiEndpoints.Activity.TrainScheduleModel)]
         [Authorize(Roles = "Admin")]
@@ -399,16 +329,5 @@ namespace EduShpere.Controllers
             ));
         }
 
-        [HttpPost("api/activity/{id}/duplicate")]
-        [Authorize(Roles = "Teacher,Staff,Admin")]
-        public async Task<IActionResult> Duplicate(int id)
-        {
-            var result = await _Service.DuplicateAsync(id);
-            return Ok(new ResponseDto<ActivityResponseDto>(
-                result,
-                "Nhân bản hoạt động thành công",
-                (int)HttpStatusCode.OK
-            ));
-        }
     }
 }

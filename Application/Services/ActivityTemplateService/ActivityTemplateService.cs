@@ -3,6 +3,7 @@ using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Encodings.Web;
 
@@ -65,6 +66,76 @@ public class ActivityTemplateService : IActivityTemplateService
             SubType = dto.SubType,
             PrefillData = dto.PrefillData != null ? JsonSerializer.Serialize(dto.PrefillData, JsonOptions) : null,
             Checklist = dto.Checklist != null ? JsonSerializer.Serialize(dto.Checklist, JsonOptions) : null,
+            IsSystemTemplate = false,
+            UsageCount = 0
+        };
+
+        _auditService.SetAuditFieldsForCreate(template);
+        await _repository.AddAsync(template);
+
+        return MapToDto(template);
+    }
+
+    public async Task<ActivityTemplateDto> CreateFromFormDataAsync(CreateActivityTemplateFromFormDto dto)
+    {
+        // Chuyển đổi form data thành PrefillData dictionary
+        var prefillData = new Dictionary<string, object>();
+
+        // Basic info
+        if (!string.IsNullOrEmpty(dto.Title)) prefillData["title"] = dto.Title;
+        if (!string.IsNullOrEmpty(dto.Description)) prefillData["description"] = dto.Description;
+        prefillData["category"] = (int)dto.Category;
+        prefillData["subType"] = dto.SubType;
+        if (!string.IsNullOrEmpty(dto.Location)) prefillData["location"] = dto.Location;
+        if (!string.IsNullOrEmpty(dto.Organizer)) prefillData["organizer"] = dto.Organizer;
+        if (!string.IsNullOrEmpty(dto.ThumbnailUrl)) prefillData["thumbnailUrl"] = dto.ThumbnailUrl;
+
+        // Dates
+        if (dto.StartDate.HasValue) prefillData["startDate"] = dto.StartDate.Value;
+        if (dto.EndDate.HasValue) prefillData["endDate"] = dto.EndDate.Value;
+        if (dto.RegisterDate.HasValue) prefillData["registerDate"] = dto.RegisterDate.Value;
+        if (dto.EndRegisterDate.HasValue) prefillData["endRegisterDate"] = dto.EndRegisterDate.Value;
+        if (dto.SubmissionDeadline.HasValue) prefillData["submissionDeadline"] = dto.SubmissionDeadline.Value;
+
+        // Participants
+        if (dto.MaxParticipants.HasValue) prefillData["maxParticipants"] = dto.MaxParticipants.Value;
+        if (dto.OnlyTeacherCanRegister.HasValue) prefillData["onlyTeacherCanRegister"] = dto.OnlyTeacherCanRegister.Value;
+
+        // SportsFestival
+        if (!string.IsNullOrEmpty(dto.CompetitionType)) prefillData["competitionType"] = dto.CompetitionType;
+        if (dto.SportsCategories != null && dto.SportsCategories.Any()) prefillData["sportsCategories"] = dto.SportsCategories;
+        if (dto.SportsConfigurations != null && dto.SportsConfigurations.Any()) prefillData["sportsConfigurations"] = dto.SportsConfigurations;
+
+        // CreativeContest
+        if (!string.IsNullOrEmpty(dto.Theme)) prefillData["theme"] = dto.Theme;
+        if (!string.IsNullOrEmpty(dto.Genre)) prefillData["genre"] = dto.Genre;
+        if (!string.IsNullOrEmpty(dto.PaperSize)) prefillData["paperSize"] = dto.PaperSize;
+        if (!string.IsNullOrEmpty(dto.DrawingMedium)) prefillData["drawingMedium"] = dto.DrawingMedium;
+        if (!string.IsNullOrEmpty(dto.TimeLimit)) prefillData["timeLimit"] = dto.TimeLimit;
+        if (!string.IsNullOrEmpty(dto.SubmissionFormat)) prefillData["submissionFormat"] = dto.SubmissionFormat;
+
+        // Problem/Submission
+        if (!string.IsNullOrEmpty(dto.ProblemText)) prefillData["problemText"] = dto.ProblemText;
+        if (!string.IsNullOrEmpty(dto.ProblemFileUrl)) prefillData["problemFileUrl"] = dto.ProblemFileUrl;
+
+        // Settings
+        if (dto.IsGrade.HasValue) prefillData["isGrade"] = dto.IsGrade.Value;
+        if (!string.IsNullOrEmpty(dto.GradingSettings)) prefillData["gradingSettings"] = dto.GradingSettings;
+        if (!string.IsNullOrEmpty(dto.RegistrationSettings)) prefillData["registrationSettings"] = dto.RegistrationSettings;
+        if (!string.IsNullOrEmpty(dto.StarPointRewards)) prefillData["starPointRewards"] = dto.StarPointRewards;
+
+        // Collections
+        if (dto.Rules != null && dto.Rules.Any()) prefillData["rules"] = dto.Rules;
+        if (dto.Speakers != null && dto.Speakers.Any()) prefillData["speakers"] = dto.Speakers;
+        if (dto.ProgramItems != null && dto.ProgramItems.Any()) prefillData["programItems"] = dto.ProgramItems;
+
+        var template = new ActivityTemplate
+        {
+            Name = dto.TemplateName,
+            Description = dto.TemplateDescription,
+            SubType = dto.SubType,
+            PrefillData = prefillData.Any() ? JsonSerializer.Serialize(prefillData, JsonOptions) : null,
+            Checklist = dto.Checklist != null && dto.Checklist.Any() ? JsonSerializer.Serialize(dto.Checklist, JsonOptions) : null,
             IsSystemTemplate = false,
             UsageCount = 0
         };

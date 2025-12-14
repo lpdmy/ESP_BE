@@ -19,7 +19,6 @@ public partial class EduShpereDbContext : DbContext
     }
     public virtual DbSet<AcademicYear> AcademicYears { get; set; }
     public virtual DbSet<Activity> Activities { get; set; }
-    public virtual DbSet<ActivityDraft> ActivityDrafts { get; set; }
     public virtual DbSet<ActivityTemplate> ActivityTemplates { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }

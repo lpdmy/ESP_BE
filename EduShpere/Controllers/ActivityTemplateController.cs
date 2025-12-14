@@ -14,10 +14,14 @@ namespace EduShpere.Controllers;
 public class ActivityTemplateController : BaseController
 {
     private readonly IActivityTemplateService _service;
+    private readonly IHttpContextService _httpContextService;
 
-    public ActivityTemplateController(IActivityTemplateService service)
+    public ActivityTemplateController(
+        IActivityTemplateService service,
+        IHttpContextService httpContextService)
     {
         _service = service;
+        _httpContextService = httpContextService;
     }
 
     /// <summary>
@@ -129,6 +133,44 @@ public class ActivityTemplateController : BaseController
             return Ok(new ResponseDto<ActivityTemplateDto>(
                 result,
                 "Tạo mẫu hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+        catch (BadRequestException ex)
+        {
+            return BadRequest(new ResponseDto<string>(
+                null,
+                ex.Message,
+                (int)HttpStatusCode.BadRequest
+            ));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new ResponseDto<string>(
+                null,
+                $"Lỗi: {ex.Message}",
+                (int)HttpStatusCode.BadRequest
+            ));
+        }
+    }
+
+    /// <summary>
+    /// Lưu template từ form data (thay thế cho Draft)
+    /// </summary>
+    [HttpPost(ApiEndpoints.ActivityTemplate.SaveFromForm)]
+    [Authorize(Roles = "Teacher,Staff,Admin")]
+    public async Task<IActionResult> SaveFromForm([FromBody] CreateActivityTemplateFromFormDto dto)
+    {
+        try
+        {
+            var userId = _httpContextService.GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new ResponseDto<string>(null, "Unauthorized", 401));
+
+            var result = await _service.CreateFromFormDataAsync(dto);
+            return Ok(new ResponseDto<ActivityTemplateDto>(
+                result,
+                "Lưu mẫu hoạt động thành công",
                 (int)HttpStatusCode.OK
             ));
         }
