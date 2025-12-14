@@ -13,6 +13,7 @@ using EduShpere.Infrastructure;
 using System.Security.Claims;
 using EduShpere.Domain.Models;
 using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 
 namespace EduShpere.Controllers
 {
@@ -329,5 +330,86 @@ namespace EduShpere.Controllers
             ));
         }
 
+        /// <summary>
+        /// Quét danh sách participants đã hoàn thành hoạt động và cộng điểm tham gia
+        /// Chỉ Admin/Staff mới có quyền
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.AwardParticipationPoints)]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> AwardParticipationPoints(int id)
+        {
+            try
+            {
+                var awardedCount = await _Service.AwardParticipationPointsAsync(id);
+                return Ok(new ResponseDto<int>(
+                    awardedCount,
+                    $"Đã cộng điểm tham gia cho {awardedCount} người tham gia thành công",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<int>(
+                    0,
+                    $"Lỗi khi cộng điểm tham gia: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+
+        /// <summary>
+        /// Trao điểm thưởng cho participants dựa trên rank (ActivityReward)
+        /// Chỉ Admin/Staff mới có quyền
+        /// Body: { "participantRanks": { "1": "Giải Nhất", "2": "Giải Nhì", "3": "Giải Ba" } }
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.AwardRankRewards)]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> AwardRankRewards(int id, [FromBody] AwardRankRewardsRequestDto request)
+        {
+            try
+            {
+                if (request?.ParticipantRanks == null || !request.ParticipantRanks.Any())
+                {
+                    return BadRequest(new ResponseDto<bool>(
+                        false,
+                        "Participant ranks không được để trống",
+                        (int)HttpStatusCode.BadRequest
+                    ));
+                }
+
+                // Convert Dictionary<string, string> to Dictionary<int, string>
+                var participantRanks = new Dictionary<int, string>();
+                foreach (var kvp in request.ParticipantRanks)
+                {
+                    if (int.TryParse(kvp.Key, out int participantId))
+                    {
+                        participantRanks[participantId] = kvp.Value;
+                    }
+                    else
+                    {
+                        return BadRequest(new ResponseDto<bool>(
+                            false,
+                            $"Participant ID không hợp lệ: {kvp.Key}",
+                            (int)HttpStatusCode.BadRequest
+                        ));
+                    }
+                }
+
+                var success = await _Service.AwardRankRewardsAsync(id, participantRanks);
+                return Ok(new ResponseDto<bool>(
+                    success,
+                    success ? "Đã trao giải thưởng thành công" : "Không có giải thưởng nào được trao",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<bool>(
+                    false,
+                    $"Lỗi khi trao giải thưởng: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
     }
 }

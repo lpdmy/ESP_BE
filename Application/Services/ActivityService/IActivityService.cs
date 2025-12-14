@@ -21,5 +21,13 @@ namespace EduShpere.Application.Services
         Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null);
         Task<ActivityStatisticsDto> GetStatisticsAsync();
         Task<RecentActivityInputsDto> GetRecentInputsAsync(int userId, int take = 5);
+        /// <summary>
+        /// Quét danh sách participants đã hoàn thành hoạt động và cộng điểm tham gia
+        /// </summary>
+        Task<int> AwardParticipationPointsAsync(int activityId);
+        /// <summary>
+        /// Trao điểm thưởng cho participants dựa trên rank (ActivityReward)
+        /// </summary>
+        Task<bool> AwardRankRewardsAsync(int activityId, Dictionary<int, string> participantRanks);
     }
 }

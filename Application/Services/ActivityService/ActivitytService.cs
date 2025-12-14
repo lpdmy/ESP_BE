@@ -7,6 +7,7 @@ using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
+using EduShpere.Application.Services.StarPointService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -32,6 +33,7 @@ namespace EduShpere.Application.Services
         private readonly IMapper _mapper;
         private readonly IAuditService _auditService;
         private readonly EduShpereDbContext _context;
+        private readonly IPointHistoryService _pointHistoryService;
         private static readonly JsonSerializerOptions RegistrationSettingsJsonOptions = new()
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -49,7 +51,8 @@ namespace EduShpere.Application.Services
             IActivityRewardRepository awardRepo,
             IMapper mapper,
             IAuditService auditService,
-            EduShpereDbContext context)
+            EduShpereDbContext context,
+            IPointHistoryService pointHistoryService)
         {
             _repo = repo;
             _ruleRepo = ruleRepo;
@@ -62,6 +65,7 @@ namespace EduShpere.Application.Services
             _mapper = mapper;
             _auditService = auditService;
             _context = context;
+            _pointHistoryService = pointHistoryService;
         }
         public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null)
         {
@@ -1381,6 +1385,167 @@ namespace EduShpere.Application.Services
                 CompletedCount = completedCount,
                 TotalParticipants = totalParticipants
             };
+        }
+
+        /// <summary>
+        /// Quét danh sách participants đã hoàn thành hoạt động và cộng điểm tham gia
+        /// Điều kiện: Activity đã kết thúc (EndDate < Now) và participant có Status = Joined
+        /// </summary>
+        public async Task<int> AwardParticipationPointsAsync(int activityId)
+        {
+            var activity = await _repo.GetByIdAsync(activityId);
+            if (activity == null)
+            {
+                throw new NotFoundException($"Activity with ID {activityId} not found");
+            }
+
+            // Kiểm tra activity đã kết thúc chưa
+            if (activity.EndDate == null || activity.EndDate.Value.ToUniversalTime() > DateTime.UtcNow)
+            {
+                throw new BadRequestException("Activity has not ended yet. Cannot award participation points.");
+            }
+
+            // Lấy điểm thưởng đăng ký từ ActivityRegistrationReward
+            var registrationReward = await _registrationRewardRepo.GetByActivityIdAsync(activityId);
+            if (registrationReward == null || registrationReward.StarPoints <= 0)
+            {
+                // Không có điểm thưởng đăng ký, không cần cộng điểm
+                return 0;
+            }
+
+            // Lấy danh sách participants đã tham gia (Status = Joined và không bị xóa)
+            var participants = await _context.ActivityParticipants
+                .Where(p => p.ActivityId == activityId 
+                    && !p.IsDeleted 
+                    && p.Status == ParticipantStatus.Joined)
+                .ToListAsync();
+
+            if (!participants.Any())
+            {
+                return 0;
+            }
+
+            int awardedCount = 0;
+            var errors = new List<string>();
+
+            // Cộng điểm cho từng participant
+            foreach (var participant in participants)
+            {
+                try
+                {
+                    var description = $"Điểm tham gia hoạt động: {activity.Title}";
+                    await _pointHistoryService.AddPointsWithTransactionAsync(
+                        participant.UserId,
+                        registrationReward.StarPoints,
+                        description,
+                        PointActionType.Earn
+                    );
+                    awardedCount++;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Failed to award points to user {participant.UserId}: {ex.Message}");
+                    // Continue with other participants
+                }
+            }
+
+            if (errors.Any() && awardedCount == 0)
+            {
+                throw new Exception($"Failed to award points to all participants. Errors: {string.Join("; ", errors)}");
+            }
+
+            return awardedCount;
+        }
+
+        /// <summary>
+        /// Trao điểm thưởng cho participants dựa trên rank (ActivityReward)
+        /// participantRanks: Dictionary<participantId, rank> (ví dụ: "Giải Nhất", "Giải Nhì", "Giải Ba")
+        /// </summary>
+        public async Task<bool> AwardRankRewardsAsync(int activityId, Dictionary<int, string> participantRanks)
+        {
+            var activity = await _repo.GetByIdAsync(activityId);
+            if (activity == null)
+            {
+                throw new NotFoundException($"Activity with ID {activityId} not found");
+            }
+
+            if (participantRanks == null || !participantRanks.Any())
+            {
+                throw new BadRequestException("Participant ranks cannot be empty");
+            }
+
+            // Lấy danh sách ActivityReward theo rank
+            var rewards = await _awardRepo.GetByActivityIdAsync(activityId);
+            if (rewards == null || !rewards.Any())
+            {
+                throw new BadRequestException($"No reward configuration found for activity {activityId}");
+            }
+
+            // Tạo dictionary để tra cứu điểm theo rank
+            var rewardByRank = rewards.ToDictionary(r => r.Rank, r => r.StarPoints, StringComparer.OrdinalIgnoreCase);
+
+            int awardedCount = 0;
+            var errors = new List<string>();
+
+            // Trao điểm cho từng participant
+            foreach (var kvp in participantRanks)
+            {
+                var participantId = kvp.Key;
+                var rank = kvp.Value;
+
+                if (string.IsNullOrWhiteSpace(rank))
+                {
+                    errors.Add($"Participant {participantId} has empty rank");
+                    continue;
+                }
+
+                // Kiểm tra rank có trong reward config không
+                if (!rewardByRank.ContainsKey(rank))
+                {
+                    errors.Add($"Rank '{rank}' not found in reward configuration for participant {participantId}");
+                    continue;
+                }
+
+                var points = rewardByRank[rank];
+                if (points <= 0)
+                {
+                    errors.Add($"Rank '{rank}' has invalid points ({points}) for participant {participantId}");
+                    continue;
+                }
+
+                // Kiểm tra participant có tồn tại không
+                var participant = await _context.ActivityParticipants
+                    .FirstOrDefaultAsync(p => p.Id == participantId && p.ActivityId == activityId && !p.IsDeleted);
+
+                if (participant == null)
+                {
+                    errors.Add($"Participant {participantId} not found or deleted");
+                    continue;
+                }
+
+                try
+                {
+                    var description = $"Giải thưởng {rank} - Hoạt động: {activity.Title}";
+                    await _pointHistoryService.AddPointsWithTransactionAsync(
+                        participant.UserId,
+                        points,
+                        description,
+                        PointActionType.Earn
+                    );
+                    awardedCount++;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Failed to award points to participant {participantId} (user {participant.UserId}): {ex.Message}");
+                }
+            }
+
+            if (errors.Any() && awardedCount == 0)
+            {
+                throw new Exception($"Failed to award rank rewards. Errors: {string.Join("; ", errors)}");
+            }
+
+            return awardedCount > 0;
         }
     }
 }

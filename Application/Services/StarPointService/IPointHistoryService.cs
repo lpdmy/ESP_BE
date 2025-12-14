@@ -1,4 +1,5 @@
 ﻿using EduShpere.Application.DTOs.StarPointDto;
+using EduShpere.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +13,9 @@ namespace EduShpere.Application.Services.StarPointService
         Task<List<PointHistoryDto>> GetUserHistoryAsync();
         Task<PointHistoryDto> CreateHistoryAsync(CreatePointHistoryDto dto);
         Task<UserPointsDto> GetCurrentUserPoints(int userId);
+        /// <summary>
+        /// Cộng điểm cho user với transaction (cập nhật UserPoint.Balance + tạo PointHistory)
+        /// </summary>
+        Task<bool> AddPointsWithTransactionAsync(int userId, int points, string description, PointActionType actionType = PointActionType.Earn);
     }
 }
