@@ -101,7 +101,7 @@
         {
             public const string ActivityNotFound = "Hoạt động không tồn tại.";
             public const string ActivityAlreadyExists = "Hoạt động đã tồn tại.";
-            public const string StartDayAfterEndDay = "Ngày bắt đầu phải trước ngày kết thúc.";
+            public const string StartDayAfterEndDay = "Ngày bắt đầu không được sau ngày kết thúc.";
             public const string StartDayAfterEndDayRegister = "Ngày bắt đầu đăng ký phải trước ngày kết thúc đăng ký.";
             public const string EndDayRegisterAfterStarDay = "Ngày kết thúc đăng ký phải trước Ngày bắt đầu sự kiện.";
             public const string MaxParticipantGreaterThanZero = "số lượng người đăng ký phải lớn hơn 0.";
@@ -146,6 +146,12 @@
             public const string SportNotFound = "Không tìm thấy môn thể thao này trong hoạt động.";
             public const string ClassGroupNotRegistered = "Lớp này chưa đăng ký hoạt động.";
 
+        }
+
+        public struct ActivityDraft
+        {
+            public const string NotFound = "Bản nháp không tồn tại hoặc bạn không có quyền truy cập.";
+            public const string AlreadyExists = "Bản nháp đã tồn tại.";
         }
         public struct Post
         {
@@ -289,6 +295,7 @@
         }
         public struct Assignment { 
             public const string AssignMentNotFound = "Phân công không tồn tại.";
+            public const string UnauthorizedGrading = "Bạn không có quyền chấm điểm bài này.";
         }
 
     }

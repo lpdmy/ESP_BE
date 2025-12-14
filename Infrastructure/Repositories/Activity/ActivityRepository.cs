@@ -91,6 +91,15 @@ namespace EduShpere.Infrastructure.Repositories
             
             return activity;
         }
+        
+        public async Task<string?> GetGradingSettingsAsync(int id)
+        {
+            // Optimized: Get only GradingSettings without loading all related data
+            return await _context.Activities
+                .Where(a => a.Id == id && !a.IsDeleted)
+                .Select(a => a.GradingSettings)
+                .FirstOrDefaultAsync();
+        }
 
         public async Task<IEnumerable<Activity>> SearchAsync(string query, int limit = 10)
         {
@@ -208,6 +217,11 @@ namespace EduShpere.Infrastructure.Repositories
                 Console.WriteLine(ex.ToString());
                 return (new List<Activity>(), totalCount);
             }
+        }
+
+        public IQueryable<Activity> GetQueryable()
+        {
+            return _dbSet.AsQueryable();
         }
     }
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.SystemAnnouncementDto;
 using EduShpere.Domain.Models;
+using System.Collections.Generic;
 
 namespace EduShpere.Application.Mappings;
 
@@ -64,20 +65,28 @@ public class SystemAnnouncementProfile : Profile
         CreateMap<Post, SystemAnnouncementDto>()
             .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Body))
             .ForMember(dest => dest.IsVisible, opt => opt.MapFrom(src => src.Status == Domain.Enum.PostStatus.Published))
-            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName))
-            .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments));
+            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.User != null 
+                ? (src.User.FirstName + " " + src.User.LastName).Trim() 
+                : "Unknown"))
+            .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments != null ? src.Attachments : new List<Attachment>()));
 
         CreateMap<Post, SystemAnnouncementDetailDto>()
             .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Body))
             .ForMember(dest => dest.IsVisible, opt => opt.MapFrom(src => src.Status == Domain.Enum.PostStatus.Published))
-            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName))
-            .ForMember(dest => dest.UpdatedBy, opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName))
-            .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments));
+            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.User != null 
+                ? (src.User.FirstName + " " + src.User.LastName).Trim() 
+                : "Unknown"))
+            .ForMember(dest => dest.UpdatedBy, opt => opt.MapFrom(src => src.User != null 
+                ? (src.User.FirstName + " " + src.User.LastName).Trim() 
+                : "Unknown"))
+            .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments != null ? src.Attachments : new List<Attachment>()));
 
         CreateMap<Post, SystemAnnouncementListItemDto>()
             .ForMember(dest => dest.IsVisible, opt => opt.MapFrom(src => src.Status == Domain.Enum.PostStatus.Published))
-            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.User.FirstName + " " + src.User.LastName))
-            .ForMember(dest => dest.AttachmentCount, opt => opt.MapFrom(src => src.Attachments.Count));
+            .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.User != null 
+                ? (src.User.FirstName + " " + src.User.LastName).Trim() 
+                : "Unknown"))
+            .ForMember(dest => dest.AttachmentCount, opt => opt.MapFrom(src => src.Attachments != null ? src.Attachments.Count : 0));
 
         CreateMap<Attachment, SystemAttachmentDto>();
     }

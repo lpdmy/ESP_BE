@@ -19,6 +19,8 @@ public partial class EduShpereDbContext : DbContext
     }
     public virtual DbSet<AcademicYear> AcademicYears { get; set; }
     public virtual DbSet<Activity> Activities { get; set; }
+    public virtual DbSet<ActivityDraft> ActivityDrafts { get; set; }
+    public virtual DbSet<ActivityTemplate> ActivityTemplates { get; set; }
     public virtual DbSet<ActivityRule> ActivityRules { get; set; }
     public virtual DbSet<ActivityParticipant> ActivityParticipants { get; set; }
     public virtual DbSet<ActivityMatch> ActivityMatches { get; set; }
@@ -150,6 +152,17 @@ public partial class EduShpereDbContext : DbContext
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.Activities)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Activitie__Creat__6AEFE058");
+        });
+
+        modelBuilder.Entity<ActivityTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_ActivityTemplates");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.IsSystemTemplate).HasDefaultValue(false);
+            entity.Property(e => e.UsageCount).HasDefaultValue(0);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
         });
 
         modelBuilder.Entity<ActivityParticipant>(entity =>

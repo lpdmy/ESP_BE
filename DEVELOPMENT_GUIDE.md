@@ -32,12 +32,13 @@ ESP_BE/
 
 ### Role-Based Authorization
 
-Hệ thống sử dụng 3 roles chính:
+Hệ thống sử dụng 4 roles chính:
 
 ```csharp
 public enum UserRole : byte
 {
     Admin = 0,      // Quyền cao nhất - quản lý toàn bộ hệ thống
+    Staff = 1,      // Quyền quản lý với permissions cụ thể (quản lý nhân sự, hoạt động, v.v.)
     Teacher = 2,    // Quyền quản lý hoạt động
     Student = 4     // Quyền cơ bản - tham gia hoạt động
 }
@@ -46,21 +47,35 @@ public enum UserRole : byte
 ### Cách sử dụng Authorization
 
 ```csharp
-[Authorize(Roles = "Admin")]                    // Chỉ Admin
-[Authorize(Roles = "Teacher,Admin")]           // Teacher và Admin
-[Authorize(Roles = "Student,Teacher,Admin")]   // Tất cả authenticated users
-[Authorize]                                     // Bất kỳ user nào đã đăng nhập
+[Authorize(Roles = "Admin")]                           // Chỉ Admin
+[Authorize(Roles = "Staff,Admin")]                     // Staff và Admin
+[Authorize(Roles = "Teacher,Admin")]                   // Teacher và Admin
+[Authorize(Roles = "Staff,Teacher,Admin")]             // Staff, Teacher và Admin
+[Authorize(Roles = "Student,Teacher,Admin,Staff")]      // Tất cả authenticated users
+[Authorize]                                             // Bất kỳ user nào đã đăng nhập
 ```
+
+**Lưu ý về Staff role:**
+- Staff có quyền hạn dựa trên **permissions** được gán, không phải full quyền như Admin
+- Staff chỉ có thể truy cập các endpoints mà họ có permission tương ứng
+- Sử dụng `requiredPermissions` trong frontend để kiểm tra quyền cụ thể
 
 ### Quyền hạn theo Role
 
-| Endpoint | Admin | Teacher | Student | Mô tả |
-|----------|-------|---------|---------|-------|
-| User Management | ✅ | ❌ | ❌ | Quản lý users, import, tạo user |
-| Profile Management | ✅ | ❌ | ✅ | Quản lý profiles (Admin: tất cả, Student: của mình) |
-| Activity Management | ✅ | ✅ | ❌ | Tạo, cập nhật hoạt động |
-| Activity Participation | ✅ | ✅ | ✅ | Tham gia hoạt động |
-| File Upload | ✅ | ✅ | ✅ | Upload files/ảnh |
+| Endpoint | Admin | Staff | Teacher | Student | Mô tả |
+|----------|-------|-------|---------|---------|-------|
+| User Management | ✅ | ⚠️* | ❌ | ❌ | Quản lý users, import, tạo user (*Staff cần permission MANAGE_USER) |
+| Staff Management | ✅ | ⚠️* | ❌ | ❌ | Quản lý nhân viên (*Staff cần permission MANAGE_STAFF) |
+| Profile Management | ✅ | ❌ | ❌ | ✅ | Quản lý profiles (Admin: tất cả, Student: của mình) |
+| Activity Management | ✅ | ⚠️* | ✅ | ❌ | Tạo, cập nhật hoạt động (*Staff cần permission MANAGE_ACTIVITIES) |
+| Activity Participation | ✅ | ✅ | ✅ | ✅ | Tham gia hoạt động |
+| Club Management | ✅ | ⚠️* | ❌ | ❌ | Quản lý câu lạc bộ (*Staff cần permission MANAGE_CLUBS) |
+| Class Management | ✅ | ⚠️* | ❌ | ❌ | Quản lý lớp học (*Staff cần permission MANAGE_CLASSES) |
+| Rewards Management | ✅ | ⚠️* | ❌ | ❌ | Quản lý điểm thưởng (*Staff cần permission MANAGE_REWARDS) |
+| Moderation | ✅ | ⚠️* | ❌ | ❌ | Kiểm duyệt nội dung (*Staff cần permission MODERATE_CONTENT) |
+| File Upload | ✅ | ✅ | ✅ | ✅ | Upload files/ảnh |
+
+**Ghi chú:** Staff role hoạt động dựa trên hệ thống permissions. Mỗi staff member có thể được gán các permissions cụ thể để truy cập các chức năng tương ứng.
 
 ## 🏗️ Entity Development
 

@@ -60,11 +60,37 @@ namespace EduShpere.Shared.Constants
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
             public const string GetListItems = "api/activity/list-items";
+            public const string RecentInputs = "api/activity/recent-inputs";
             public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
             public const string ApplyTournamentSchedule = "api/activity/{id}/apply-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
             public const string MyActivities = "api/my-activities";
+            public const string Statistics = "api/activity/statistics";
+            public const string Import = "api/activity/import";
+            public const string BulkCreate = "api/activity/bulk-create";
+            public const string Duplicate = "api/activity/{id}/duplicate";
 
+        }
+
+        public static class ActivityTemplate
+        {
+            public const string GetAll = "api/activity-template";
+            public const string GetById = "api/activity-template/{id}";
+            public const string GetBySubType = "api/activity-template/subtype";
+            public const string Create = "api/activity-template";
+            public const string Update = "api/activity-template";
+            public const string Delete = "api/activity-template/{id}";
+            public const string IncrementUsage = "api/activity-template/{id}/increment-usage";
+        }
+
+        public static class ActivityDraft
+        {
+            public const string Drafts = "api/activity-drafts";
+            public const string GetDraftById = "api/activity-drafts/{id}";
+            public const string CreateDraft = "api/activity-drafts";
+            public const string UpdateDraft = "api/activity-drafts/{id}";
+            public const string DeleteDraft = "api/activity-drafts/{id}";
+            public const string ConvertToActivity = "api/activity-drafts/{id}/convert-to-activity";
         }
 
 
@@ -244,8 +270,15 @@ namespace EduShpere.Shared.Constants
             public const string GetAllAssignByUser = "api/jury/assign/user/{Id}";
             public const string GetAllAssignByUserNotGrading = "api/jury/assign-not-grading/user/{Id}";
             public const string GetAllAssignByUserGrading = "api/jury/assign-grading/user/{Id}";
+            
+            // Endpoints không pagination - trả về toàn bộ danh sách
+            public const string GetAllAssignByUserNotGradingAll = "api/jury/assign-not-grading/user/{Id}/all";
+            public const string GetAllAssignByUserGradingAll = "api/jury/assign-grading/user/{Id}/all";
 
             public const string GradeSubmission = "api/jury/grade-submission";
+            public const string IsAssigned = "api/jury/is-assigned/{userId}/{submissionId}";
+            public const string GetActivitiesWithoutJury = "api/jury/activities-without-jury";
+            public const string ImprovedRandomAssign = "api/jury/improved-random-assign";
         }
         public static class Submission
         {

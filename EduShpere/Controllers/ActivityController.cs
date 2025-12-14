@@ -12,6 +12,7 @@ using System.Linq;
 using EduShpere.Infrastructure;
 using System.Security.Claims;
 using EduShpere.Domain.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace EduShpere.Controllers
 {
@@ -189,6 +190,31 @@ namespace EduShpere.Controllers
             ));
         }
 
+        [HttpGet(ApiEndpoints.Activity.RecentInputs)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GetRecentInputs([FromQuery] int take = 5)
+        {
+            var userId = _HttpContextService.GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new ResponseDto<string>(
+                    null,
+                    "Không thể xác định người dùng",
+                    (int)HttpStatusCode.Unauthorized
+                ));
+            }
+
+            if (take < 1) take = 1;
+            if (take > 20) take = 20; // giới hạn để tránh trả về quá nhiều
+
+            var result = await _Service.GetRecentInputsAsync(userId.Value, take);
+            return Ok(new ResponseDto<RecentActivityInputsDto>(
+                result,
+                "Lấy dữ liệu nhập gần đây thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
         [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)
@@ -293,6 +319,62 @@ namespace EduShpere.Controllers
             ));
         }
 
+        [HttpPost(ApiEndpoints.Activity.Import)]
+        [Authorize(Roles = "Teacher,Admin")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ImportActivities([FromForm] ImportActivityFileDto dto)
+        {
+            if (dto?.File == null || dto.File.Length == 0)
+            {
+                return BadRequest(new ResponseDto<string>(
+                    null,
+                    "File không được để trống",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+
+            try
+            {
+                var result = await _Service.ImportActivitiesAsync(dto.File);
+                return Ok(new ResponseDto<ImportActivityResponseDto>(
+                    result,
+                    result.Valid ? "File đã được kiểm tra thành công" : "File có lỗi, vui lòng kiểm tra lại",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<string>(
+                    null,
+                    $"Lỗi khi import file: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+
+        [HttpPost(ApiEndpoints.Activity.BulkCreate)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> BulkCreateActivities([FromBody] BulkCreateActivitiesDto dto)
+        {
+            try
+            {
+                var result = await _Service.BulkCreateActivitiesAsync(dto);
+                return Ok(new ResponseDto<List<ActivityResponseDto>>(
+                    result,
+                    $"Đã tạo thành công {result.Count} hoạt động",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<string>(
+                    null,
+                    $"Lỗi khi tạo hoạt động: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+
         [HttpPost(ApiEndpoints.Activity.TrainScheduleModel)]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> TrainScheduleModel()
@@ -301,6 +383,30 @@ namespace EduShpere.Controllers
             return Ok(new ResponseDto<string>(
                 null,
                 "Train ML model thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        [HttpGet(ApiEndpoints.Activity.Statistics)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var statistics = await _Service.GetStatisticsAsync();
+            return Ok(new ResponseDto<ActivityStatisticsDto>(
+                statistics,
+                "Lấy thống kê hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        [HttpPost("api/activity/{id}/duplicate")]
+        [Authorize(Roles = "Teacher,Staff,Admin")]
+        public async Task<IActionResult> Duplicate(int id)
+        {
+            var result = await _Service.DuplicateAsync(id);
+            return Ok(new ResponseDto<ActivityResponseDto>(
+                result,
+                "Nhân bản hoạt động thành công",
                 (int)HttpStatusCode.OK
             ));
         }

@@ -13,6 +13,9 @@ namespace EduShpere.Application.Mappings
             CreateMap<Post, PostResponseDto>()
     .ForMember(dest => dest.ClubName,
         opt => opt.MapFrom(src => src.Club != null ? src.Club.Name : null))
+.ForMember(dest => dest.CreatedAt,
+    opt => opt.MapFrom(src =>
+        src.CreatedAt ?? src.UpdatedAt ?? DateTime.UtcNow))
 
     .ForMember(dest => dest.UserFullName,
     opt => opt.MapFrom(src =>

@@ -29,5 +29,9 @@ namespace EduShpere.Infrastructure.Repositories
         Task<int> NumberJuryRequired(int submissionId);
         Task<int> NumberJuryGrade(int submissionId);
         Task<Dictionary<int, int>> NumberJuryRequiredByActivity(int activityId);
+        /// <summary>
+        /// Gets a queryable collection of JuryAssignment entities for custom queries
+        /// </summary>
+        IQueryable<JuryAssignment> GetQueryable();
     }
 }

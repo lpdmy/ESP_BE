@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using EduShpere.Application.DTOs.SubmissionDto;
+using ClassGroupDtoAlias = EduShpere.Application.DTOs.ClassGroupDto.ClassGroupDto;
 using EduShpere.Domain.Models;
 
 namespace EduShpere.Application
@@ -32,7 +33,7 @@ namespace EduShpere.Application
                 ))
                .ForMember(dest => dest.Score, opt => opt.MapFrom(p => p.Score))
                .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(p => p.Activity.Title));
-            CreateMap<ClassGroup, ClassGroupDto>();
+            CreateMap<ClassGroup, ClassGroupDtoAlias>();
             CreateMap<Attachment, SubmissionAttachmentDto>()
                 .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.FileUrl ?? string.Empty))
                 .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.FileName ?? string.Empty))

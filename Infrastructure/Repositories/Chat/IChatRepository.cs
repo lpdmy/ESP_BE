@@ -18,5 +18,6 @@ namespace EduShpere.Infrastructure.Repositories.Chat
         Task<ChatRoom> GetRoomById(string id);
         Task<ChatMessage?> GetLastMessageByRoomId(string roomId);
         Task MarkMessagesAsRead(string roomId, int userId);
+        Task UpdateRoomAsync(ChatRoom room);
     }
 }
