@@ -403,9 +403,12 @@ namespace EduShpere.Application.Services
 
             foreach (var s in completedSubmissions)
             {
-                s.Score = s.JuryAssignments
+                var scores = s.JuryAssignments?
                     .Where(j => j.TotalScore.HasValue)
-                    .Average(j => j.TotalScore.Value);
+                    .Select(j => j.TotalScore.Value);
+                s.Score = scores != null && scores.Any()
+                    ? scores.Average()
+                    : 0;
             }
             var ranked = completedSubmissions
                 .OrderByDescending(s => s.Score)
