@@ -147,6 +147,12 @@
             public const string ClassGroupNotRegistered = "Lớp này chưa đăng ký hoạt động.";
 
         }
+
+        public struct ActivityDraft
+        {
+            public const string NotFound = "Bản nháp không tồn tại hoặc bạn không có quyền truy cập.";
+            public const string AlreadyExists = "Bản nháp đã tồn tại.";
+        }
         public struct Post
         {
             public const string PostIsFlaged = "Bài viết đã bị vi phạm nội dung.";

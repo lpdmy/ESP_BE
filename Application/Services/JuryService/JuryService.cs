@@ -198,7 +198,51 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
-            var mapped = _mapper.Map<IEnumerable<JuryActivityResponseDto>>(data);
+            var mapped = _mapper.Map<IEnumerable<JuryActivityResponseDto>>(data).ToList();
+            
+            // Load tất cả assignments của user này cho các activity trong danh sách để tránh N+1 queries
+            var activityIds = mapped.Select(x => x.ActivityId).Distinct().ToList();
+            var allAssignments = await _juryAssignRepo.GetQueryable()
+                .Where(ja => ja.UserId == user.Id 
+                    && activityIds.Contains(ja.Submission.ActivityId)
+                    && !ja.IsDeleted
+                    && !ja.Submission.IsDeleted
+                    && !ja.Submission.Activity.IsDeleted)
+                .Select(ja => new { ja.Submission.ActivityId, ja.ScoreTemp })
+                .ToListAsync();
+            
+            // Group assignments theo ActivityId và tính toán số liệu
+            var assignmentsByActivity = allAssignments
+                .GroupBy(a => a.ActivityId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        Total = g.Count(),
+                        Completed = g.Count(a => a.ScoreTemp != null),
+                        Pending = g.Count(a => a.ScoreTemp == null)
+                    }
+                );
+            
+            // Cập nhật số liệu cho từng activity
+            foreach (var item in mapped)
+            {
+                if (item.Activity != null && assignmentsByActivity.TryGetValue(item.ActivityId, out var stats))
+                {
+                    // Chỉ đếm các bài được phân công cho giám khảo này
+                    item.Activity.numberOfSubmission = stats.Total;
+                    item.Activity.numberOfCompletedSubmission = stats.Completed;
+                    item.Activity.numberOfPendingSubmission = stats.Pending;
+                }
+                else if (item.Activity != null)
+                {
+                    // Nếu không có assignment nào, set về 0
+                    item.Activity.numberOfSubmission = 0;
+                    item.Activity.numberOfCompletedSubmission = 0;
+                    item.Activity.numberOfPendingSubmission = 0;
+                }
+            }
+            
             var sql = query.ToQueryString();
             return new PaginationResponseDto<JuryActivityResponseDto>
             {
@@ -681,16 +725,33 @@ namespace EduShpere.Application.Services
 
         public async Task<List<ActivityWithoutJuryDto>> GetActivitiesWithoutJuryAsync()
         {
-            var juryActivityQuery = _juryActivityRepo.GetQueryable()
-                .Where(ja => !ja.IsDeleted);
+            // Load all data upfront to avoid N+1 queries
+            var allJuryActivities = await _juryActivityRepo.GetQueryable()
+                .AsNoTracking()
+                .Where(ja => !ja.IsDeleted)
+                .Select(ja => ja.ActivityId)
+                .Distinct()
+                .ToListAsync();
 
-            var submissionQuery = _submissionRepository.GetQueryable()
-                .Where(s => !s.IsDeleted);
+            var allSubmissions = await _submissionRepository.GetQueryable()
+                .AsNoTracking()
+                .Where(s => !s.IsDeleted)
+                .GroupBy(s => s.ActivityId)
+                .Select(g => new
+                {
+                    ActivityId = g.Key,
+                    Count = g.Count(),
+                    HasSubmissions = g.Any()
+                })
+                .ToListAsync();
 
+            var submissionDict = allSubmissions.ToDictionary(s => s.ActivityId, s => new { s.Count, s.HasSubmissions });
+
+            // Get activities without jury using efficient filtering
             var activities = await _activityRepo.GetQueryable()
                 .AsNoTracking()
                 .Where(a => !a.IsDeleted)
-                .Where(a => !juryActivityQuery.Any(ja => ja.ActivityId == a.Id && !ja.IsDeleted))
+                .Where(a => !allJuryActivities.Contains(a.Id))
                 .Select(a => new ActivityWithoutJuryDto
                 {
                     Id = a.Id,
@@ -699,11 +760,24 @@ namespace EduShpere.Application.Services
                     StartDate = a.StartDate,
                     EndDate = a.EndDate,
                     SubmissionDeadline = a.SubmissionDeadline,
-                    SubmissionCount = submissionQuery.Count(s => s.ActivityId == a.Id && !s.IsDeleted),
-                    HasSubmissions = submissionQuery.Any(s => s.ActivityId == a.Id && !s.IsDeleted),
                     CreatedAt = a.CreatedAt ?? DateTime.UtcNow
                 })
                 .ToListAsync();
+
+            // Map submission data in memory (much faster than subqueries)
+            foreach (var activity in activities)
+            {
+                if (submissionDict.TryGetValue(activity.Id, out var submissionData))
+                {
+                    activity.SubmissionCount = submissionData.Count;
+                    activity.HasSubmissions = submissionData.HasSubmissions;
+                }
+                else
+                {
+                    activity.SubmissionCount = 0;
+                    activity.HasSubmissions = false;
+                }
+            }
 
             return activities;
         }

@@ -7,10 +7,15 @@ using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Encodings.Web;
 using System.Linq;
+using ClosedXML.Excel;
+using CsvHelper;
+using CsvHelper.Configuration;
+using System.Globalization;
 
 namespace EduShpere.Application.Services
 {
@@ -1149,6 +1154,43 @@ namespace EduShpere.Application.Services
             return await _repo.GetActivitiesByUserIdAsync(userId, pageNumber, pageSize, search, status);
         }
 
+        public async Task<RecentActivityInputsDto> GetRecentInputsAsync(int userId, int take = 5)
+        {
+            // Lấy một số bản ghi gần nhất để trích xuất giá trị gợi ý, tránh load toàn bộ
+            const int queryTake = 50;
+
+            var recentItems = await _context.Activities
+                .Where(a => !a.IsDeleted && a.CreatedBy == userId)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new
+                {
+                    a.Location,
+                    a.Organizer
+                })
+                .Take(queryTake)
+                .ToListAsync();
+
+            static List<string> BuildDistinct(List<string?> source, int max)
+            {
+                return source
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Select(s => s!.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(max)
+                    .ToList();
+            }
+
+            var locations = BuildDistinct(recentItems.Select(r => r.Location).ToList(), take);
+            var organizers = BuildDistinct(recentItems.Select(r => r.Organizer).ToList(), take);
+
+            return new RecentActivityInputsDto
+            {
+                Locations = locations,
+                Organizers = organizers,
+                Contacts = new List<string>() // Hiện chưa lưu contact trong Activity, trả về danh sách trống
+            };
+        }
+
         public async Task<ActivityStatisticsDto> GetStatisticsAsync()
         {
             var now = DateTime.UtcNow;
@@ -1191,6 +1233,532 @@ namespace EduShpere.Application.Services
                 CompletedCount = completedCount,
                 TotalParticipants = totalParticipants
             };
+        }
+
+        public async Task<ImportActivityResponseDto> ImportActivitiesAsync(IFormFile file)
+        {
+            var response = new ImportActivityResponseDto
+            {
+                Valid = true,
+                Errors = new List<ImportErrorDto>(),
+                Activities = new List<CreateActivityDto>()
+            };
+
+            // Validate file type
+            var allowedExtensions = new[] { ".csv", ".xlsx", ".xls" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLower();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                response.Valid = false;
+                response.Errors.Add(new ImportErrorDto
+                {
+                    Row = 0,
+                    Message = "Chỉ chấp nhận file CSV hoặc Excel (.csv, .xlsx, .xls)"
+                });
+                return response;
+            }
+
+            // Parse file
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
+
+            var activities = new List<CreateActivityDto>();
+            var errors = new List<ImportErrorDto>();
+            int rowNumber = 0;
+
+            try
+            {
+                if (fileExtension == ".csv")
+                {
+                    // Parse CSV
+                    using var reader = new StreamReader(stream);
+                    using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+                    {
+                        HasHeaderRecord = true,
+                        TrimOptions = TrimOptions.Trim,
+                        MissingFieldFound = null
+                    });
+
+                    await csv.ReadAsync();
+                    csv.ReadHeader();
+
+                    while (await csv.ReadAsync())
+                    {
+                        rowNumber++;
+                        var activity = ParseActivityRow(csv, rowNumber, errors);
+                        if (activity != null)
+                        {
+                            activities.Add(activity);
+                        }
+                    }
+                }
+                else
+                {
+                    // Parse Excel
+                    using var workbook = new XLWorkbook(stream);
+                    var worksheet = workbook.Worksheet(1);
+                    var rows = worksheet.RowsUsed().Skip(1); // Skip header
+
+                    foreach (var row in rows)
+                    {
+                        rowNumber++;
+                        var activity = ParseActivityRowExcel(row, rowNumber, errors);
+                        if (activity != null)
+                        {
+                            activities.Add(activity);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Valid = false;
+                response.Errors.Add(new ImportErrorDto
+                {
+                    Row = 0,
+                    Message = $"Lỗi khi đọc file: {ex.Message}"
+                });
+                return response;
+            }
+
+            response.TotalRows = rowNumber;
+            response.ValidRows = activities.Count;
+            response.Errors = errors;
+            response.Activities = activities;
+            response.Valid = errors.Count == 0;
+
+            return response;
+        }
+
+        private CreateActivityDto? ParseActivityRow(CsvReader csv, int rowNumber, List<ImportErrorDto> errors)
+        {
+            try
+            {
+                var title = csv.GetField<string>("Tên hoạt động")?.Trim();
+                var subType = csv.GetField<string>("Loại hoạt động")?.Trim();
+                var startDateStr = csv.GetField<string>("Ngày bắt đầu")?.Trim();
+                var startTimeStr = csv.GetField<string>("Giờ bắt đầu")?.Trim();
+                var endDateStr = csv.GetField<string>("Ngày kết thúc")?.Trim();
+                var endTimeStr = csv.GetField<string>("Giờ kết thúc")?.Trim();
+                var location = csv.GetField<string>("Địa điểm")?.Trim();
+                var organizer = csv.GetField<string>("Đơn vị tổ chức")?.Trim();
+                var description = csv.GetField<string>("Mô tả")?.Trim();
+                var maxParticipantsStr = csv.GetField<string>("Số người tham gia tối đa")?.Trim();
+
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Tên hoạt động", Message = "Tên hoạt động không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(subType))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = "Loại hoạt động không được để trống" });
+                    return null;
+                }
+
+                if (!new[] { "SeminarWorkshop", "CreativeContest", "SportsFestival" }.Contains(subType))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = $"Loại hoạt động không hợp lệ. Chỉ chấp nhận: SeminarWorkshop, CreativeContest, SportsFestival" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(startDateStr))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = "Ngày bắt đầu không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(endDateStr))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(location))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Địa điểm", Message = "Địa điểm không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(organizer))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Đơn vị tổ chức", Message = "Đơn vị tổ chức không được để trống" });
+                    return null;
+                }
+
+                // Parse dates
+                if (!DateTime.TryParse(startDateStr, out var startDate))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = $"Định dạng ngày không hợp lệ: {startDateStr}" });
+                    return null;
+                }
+
+                if (!DateTime.TryParse(endDateStr, out var endDate))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = $"Định dạng ngày không hợp lệ: {endDateStr}" });
+                    return null;
+                }
+
+                // Parse times if provided
+                if (!string.IsNullOrWhiteSpace(startTimeStr))
+                {
+                    if (TimeSpan.TryParse(startTimeStr, out var startTime))
+                    {
+                        startDate = startDate.Date.Add(startTime);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(endTimeStr))
+                {
+                    if (TimeSpan.TryParse(endTimeStr, out var endTime))
+                    {
+                        endDate = endDate.Date.Add(endTime);
+                    }
+                }
+
+                // Validate date logic
+                if (endDate < startDate)
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc phải sau ngày bắt đầu" });
+                    return null;
+                }
+
+                // Parse MaxParticipants
+                int? maxParticipants = null;
+                if (!string.IsNullOrWhiteSpace(maxParticipantsStr))
+                {
+                    if (int.TryParse(maxParticipantsStr, out var max))
+                    {
+                        if (max > 0)
+                        {
+                            maxParticipants = max;
+                        }
+                    }
+                }
+
+                // Determine Category from SubType
+                var category = subType switch
+                {
+                    "SeminarWorkshop" => ActivityType.Activity,
+                    "CreativeContest" => ActivityType.Activity,
+                    "SportsFestival" => ActivityType.Event,
+                    _ => ActivityType.Activity
+                };
+
+                var activity = new CreateActivityDto
+                {
+                    Title = title,
+                    SubType = subType,
+                    Category = category,
+                    Description = description ?? $"{title} - {subType}",
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Location = location,
+                    Organizer = organizer,
+                    MaxParticipants = maxParticipants,
+                    RegisterDate = startDate.AddDays(-7), // Default: 7 days before start
+                    EndRegisterDate = startDate.AddDays(-1), // Default: 1 day before start
+                    ThumbnailUrl = "https://via.placeholder.com/400x300?text=Activity", // Default thumbnail
+                    Rules = new List<string>(),
+                    OnlyTeacherCanRegister = false
+                };
+
+                return activity;
+            }
+            catch (Exception ex)
+            {
+                errors.Add(new ImportErrorDto { Row = rowNumber, Message = $"Lỗi khi parse dòng: {ex.Message}" });
+                return null;
+            }
+        }
+
+        private CreateActivityDto? ParseActivityRowExcel(IXLRow row, int rowNumber, List<ImportErrorDto> errors)
+        {
+            try
+            {
+                var title = row.Cell(1).GetString()?.Trim();
+                var subType = row.Cell(2).GetString()?.Trim();
+                var startDateStr = row.Cell(3).GetString()?.Trim();
+                var startTimeStr = row.Cell(4).GetString()?.Trim();
+                var endDateStr = row.Cell(5).GetString()?.Trim();
+                var endTimeStr = row.Cell(6).GetString()?.Trim();
+                var location = row.Cell(7).GetString()?.Trim();
+                var organizer = row.Cell(8).GetString()?.Trim();
+                var description = row.Cell(9).GetString()?.Trim();
+                var maxParticipantsStr = row.Cell(10).GetString()?.Trim();
+
+                // Same validation logic as CSV
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Tên hoạt động", Message = "Tên hoạt động không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(subType))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = "Loại hoạt động không được để trống" });
+                    return null;
+                }
+
+                if (!new[] { "SeminarWorkshop", "CreativeContest", "SportsFestival" }.Contains(subType))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Loại hoạt động", Message = $"Loại hoạt động không hợp lệ. Chỉ chấp nhận: SeminarWorkshop, CreativeContest, SportsFestival" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(startDateStr))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = "Ngày bắt đầu không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(endDateStr))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(location))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Địa điểm", Message = "Địa điểm không được để trống" });
+                    return null;
+                }
+
+                if (string.IsNullOrWhiteSpace(organizer))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Đơn vị tổ chức", Message = "Đơn vị tổ chức không được để trống" });
+                    return null;
+                }
+
+                // Parse dates (Excel might return DateTime directly)
+                DateTime startDate;
+                if (row.Cell(3).DataType == XLDataType.DateTime)
+                {
+                    startDate = row.Cell(3).GetDateTime();
+                }
+                else if (!DateTime.TryParse(startDateStr, out startDate))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày bắt đầu", Message = $"Định dạng ngày không hợp lệ: {startDateStr}" });
+                    return null;
+                }
+
+                DateTime endDate;
+                if (row.Cell(5).DataType == XLDataType.DateTime)
+                {
+                    endDate = row.Cell(5).GetDateTime();
+                }
+                else if (!DateTime.TryParse(endDateStr, out endDate))
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = $"Định dạng ngày không hợp lệ: {endDateStr}" });
+                    return null;
+                }
+
+                // Parse times if provided
+                if (!string.IsNullOrWhiteSpace(startTimeStr))
+                {
+                    if (TimeSpan.TryParse(startTimeStr, out var startTime))
+                    {
+                        startDate = startDate.Date.Add(startTime);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(endTimeStr))
+                {
+                    if (TimeSpan.TryParse(endTimeStr, out var endTime))
+                    {
+                        endDate = endDate.Date.Add(endTime);
+                    }
+                }
+
+                // Validate date logic
+                if (endDate < startDate)
+                {
+                    errors.Add(new ImportErrorDto { Row = rowNumber, Field = "Ngày kết thúc", Message = "Ngày kết thúc phải sau ngày bắt đầu" });
+                    return null;
+                }
+
+                // Parse MaxParticipants
+                int? maxParticipants = null;
+                if (!string.IsNullOrWhiteSpace(maxParticipantsStr))
+                {
+                    if (int.TryParse(maxParticipantsStr, out var max))
+                    {
+                        if (max > 0)
+                        {
+                            maxParticipants = max;
+                        }
+                    }
+                }
+
+                // Determine Category from SubType
+                var category = subType switch
+                {
+                    "SeminarWorkshop" => ActivityType.Activity,
+                    "CreativeContest" => ActivityType.Activity,
+                    "SportsFestival" => ActivityType.Event,
+                    _ => ActivityType.Activity
+                };
+
+                var activity = new CreateActivityDto
+                {
+                    Title = title,
+                    SubType = subType,
+                    Category = category,
+                    Description = description ?? $"{title} - {subType}",
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Location = location,
+                    Organizer = organizer,
+                    MaxParticipants = maxParticipants,
+                    RegisterDate = startDate.AddDays(-7),
+                    EndRegisterDate = startDate.AddDays(-1),
+                    ThumbnailUrl = "https://via.placeholder.com/400x300?text=Activity",
+                    Rules = new List<string>(),
+                    OnlyTeacherCanRegister = false
+                };
+
+                return activity;
+            }
+            catch (Exception ex)
+            {
+                errors.Add(new ImportErrorDto { Row = rowNumber, Message = $"Lỗi khi parse dòng: {ex.Message}" });
+                return null;
+            }
+        }
+
+        public async Task<List<ActivityResponseDto>> BulkCreateActivitiesAsync(BulkCreateActivitiesDto dto)
+        {
+            var createdActivities = new List<ActivityResponseDto>();
+
+            foreach (var activityDto in dto.Activities)
+            {
+                try
+                {
+                    var createdActivity = await AddAsync(activityDto);
+                    createdActivities.Add(createdActivity);
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue with other activities
+                    // In production, you might want to collect these errors
+                    Console.WriteLine($"Error creating activity '{activityDto.Title}': {ex.Message}");
+                }
+            }
+
+            return createdActivities;
+        }
+
+        public async Task<ActivityResponseDto> DuplicateAsync(int activityId)
+        {
+            var originalActivity = await GetByIdAsync(activityId);
+            if (originalActivity == null)
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+
+            // Get full activity with all related data
+            var fullActivity = await _repo.GetByIdWithIncludesAsync(activityId);
+            if (fullActivity == null)
+                throw new NotFoundException(ErrorMessages.Activity.ActivityNotFound);
+
+            // Create new activity DTO from original
+            var duplicateDto = new CreateActivityDto
+            {
+                Title = $"{originalActivity.Title} (Bản sao)",
+                Description = originalActivity.Description,
+                Category = originalActivity.Category,
+                SubType = originalActivity.SubType,
+                Location = originalActivity.Location,
+                Organizer = originalActivity.Organizer,
+                ThumbnailUrl = originalActivity.ThumbnailUrl,
+                StartDate = originalActivity.StartDate ?? DateTime.UtcNow,
+                EndDate = originalActivity.EndDate ?? DateTime.UtcNow,
+                RegisterDate = originalActivity.RegisterDate,
+                EndRegisterDate = originalActivity.EndRegisterDate,
+                MaxParticipants = originalActivity.MaxParticipants,
+                OnlyTeacherCanRegister = originalActivity.OnlyTeacherCanRegister ?? false,
+                CompetitionType = fullActivity.ActivityDetail?.CompetitionType,
+                Theme = fullActivity.ActivityDetail?.Theme,
+                Genre = fullActivity.ActivityDetail?.Genre,
+                PaperSize = fullActivity.ActivityDetail?.PaperSize,
+                DrawingMedium = fullActivity.ActivityDetail?.DrawingMedium,
+                TimeLimit = fullActivity.ActivityDetail?.TimeLimit,
+                SubmissionFormat = fullActivity.ActivityDetail?.SubmissionFormat,
+                ProblemText = originalActivity.ProblemText,
+                ProblemFileUrl = originalActivity.ProblemFileUrl,
+                SubmissionDeadline = originalActivity.SubmissionDeadline,
+                Rules = fullActivity.Rules?.Where(r => !r.IsDeleted).Select(r => r.RuleText).ToList() ?? new List<string>(),
+                SportsCategories = fullActivity.Sports?.Where(s => !s.IsDeleted).Select(s => s.SportName).ToList() ?? new List<string>(),
+                SportsConfigurations = fullActivity.Sports?.Where(s => !s.IsDeleted).Select(s => new ActivitySportConfigDto
+                {
+                    SportName = s.SportName,
+                    MaxMembers = s.MaxMembers
+                }).ToList() ?? new List<ActivitySportConfigDto>(),
+                Speakers = fullActivity.Speakers?.Where(s => !s.IsDeleted).OrderBy(s => s.Order).Select(s => new ActivitySpeakerDto
+                {
+                    Name = s.Name,
+                    Title = s.Title,
+                    Bio = s.Bio,
+                    ImageUrl = s.ImageUrl
+                }).ToList() ?? new List<ActivitySpeakerDto>(),
+                ProgramItems = fullActivity.Programs?.Where(p => !p.IsDeleted).OrderBy(p => p.Order).Select(p => new ActivityProgramDto
+                {
+                    Title = p.Title,
+                    Time = p.Time,
+                    Description = p.Description
+                }).ToList() ?? new List<ActivityProgramDto>(),
+            };
+
+            // Copy grading settings
+            if (originalActivity.IsGrade == true && !string.IsNullOrEmpty(originalActivity.GradingSettings))
+            {
+                try
+                {
+                    duplicateDto.GradingSettings = JsonSerializer.Deserialize<GradingSettingsDto>(originalActivity.GradingSettings, RegistrationSettingsJsonOptions);
+                }
+                catch
+                {
+                    // Ignore if deserialization fails
+                }
+            }
+
+            // Copy registration settings
+            if (!string.IsNullOrEmpty(originalActivity.RegistrationSettings))
+            {
+                try
+                {
+                    duplicateDto.RegistrationSettings = JsonSerializer.Deserialize<ActivityRegistrationSettingsDto>(originalActivity.RegistrationSettings, RegistrationSettingsJsonOptions);
+                }
+                catch
+                {
+                    // Ignore if deserialization fails
+                }
+            }
+
+            // Copy star point rewards
+            if (originalActivity.RegistrationReward != null)
+            {
+                duplicateDto.RegistrationReward = new ActivityRegistrationRewardDto
+                {
+                    StarPoints = originalActivity.RegistrationReward.StarPoints
+                };
+            }
+
+            if (fullActivity.ActivityRewards != null && fullActivity.ActivityRewards.Any(r => !r.IsDeleted))
+            {
+                duplicateDto.Awards = fullActivity.ActivityRewards
+                    .Where(r => !r.IsDeleted)
+                    .Select(r => new ActivityAwardDto
+                    {
+                        Name = r.Rank ?? "Giải thưởng",
+                        Points = r.StarPoints
+                    })
+                    .ToList();
+            }
+
+            // Create the duplicate activity
+            return await AddAsync(duplicateDto);
         }
     }
 }
