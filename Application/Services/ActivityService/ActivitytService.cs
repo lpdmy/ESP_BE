@@ -606,23 +606,18 @@ namespace EduShpere.Application.Services
             {
                 Title = dto.Title,
                 Description = dto.Description,
-                StartDate = dto.StartDate.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(dto.StartDate, DateTimeKind.Utc) 
-                    : dto.StartDate.ToUniversalTime(),
-                EndDate = dto.EndDate.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(dto.EndDate, DateTimeKind.Utc) 
-                    : dto.EndDate.ToUniversalTime(),
+                // Normalize dates: Start dates → 00:00:00 UTC, End dates → 23:59:59 UTC
+                StartDate = NormalizeDateToUTC(dto.StartDate, isEndDate: false),
+                EndDate = NormalizeDateToUTC(dto.EndDate, isEndDate: true),
                 Location = dto.Location,
                 Category = dto.Category,
                 SubType = dto.SubType,
                 ThumbnailUrl = dto.ThumbnailUrl,
                     Organizer = dto.Organizer,
-                RegisterDate = dto.RegisterDate.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(dto.RegisterDate, DateTimeKind.Utc) 
-                    : dto.RegisterDate.ToUniversalTime(),
-                EndRegisterDate = dto.EndRegisterDate.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(dto.EndRegisterDate, DateTimeKind.Utc) 
-                    : dto.EndRegisterDate.ToUniversalTime(),
+                // Normalize dates: Start dates → 00:00:00 UTC, End dates → 23:59:59 UTC
+                // This ensures date-only values are stored correctly regardless of timezone
+                RegisterDate = NormalizeDateToUTC(dto.RegisterDate, isEndDate: false),
+                EndRegisterDate = NormalizeDateToUTC(dto.EndRegisterDate, isEndDate: true),
                     MaxParticipants = dto.MaxParticipants,
                     ClubId = dto.ClubId,
                 // Set IsGrade flag (nullable bool)
@@ -641,9 +636,7 @@ namespace EduShpere.Application.Services
                 ProblemText = dto.ProblemText,
                 ProblemFileUrl = dto.ProblemFileUrl,
                 SubmissionDeadline = dto.SubmissionDeadline.HasValue
-                    ? (dto.SubmissionDeadline.Value.Kind == DateTimeKind.Unspecified
-                        ? DateTime.SpecifyKind(dto.SubmissionDeadline.Value, DateTimeKind.Utc)
-                        : dto.SubmissionDeadline.Value.ToUniversalTime())
+                    ? NormalizeDateToUTC(dto.SubmissionDeadline.Value, isEndDate: true)
                     : null,
                 };
 
@@ -898,15 +891,11 @@ namespace EduShpere.Application.Services
                 if (dto.Description != null) existingActivity.Description = dto.Description;
                 if (dto.StartDate.HasValue)
                 {
-                    existingActivity.StartDate = dto.StartDate.Value.Kind == DateTimeKind.Unspecified 
-                        ? DateTime.SpecifyKind(dto.StartDate.Value, DateTimeKind.Utc) 
-                        : dto.StartDate.Value.ToUniversalTime();
+                    existingActivity.StartDate = NormalizeDateToUTC(dto.StartDate.Value, isEndDate: false);
                 }
                 if (dto.EndDate.HasValue)
                 {
-                    existingActivity.EndDate = dto.EndDate.Value.Kind == DateTimeKind.Unspecified 
-                        ? DateTime.SpecifyKind(dto.EndDate.Value, DateTimeKind.Utc) 
-                        : dto.EndDate.Value.ToUniversalTime();
+                    existingActivity.EndDate = NormalizeDateToUTC(dto.EndDate.Value, isEndDate: true);
                 }
                 if (dto.Location != null) existingActivity.Location = dto.Location;
                 if (dto.Category.HasValue) existingActivity.Category = dto.Category.Value;
@@ -926,15 +915,11 @@ namespace EduShpere.Application.Services
                 }
                 if (dto.RegisterDate.HasValue)
                 {
-                    existingActivity.RegisterDate = dto.RegisterDate.Value.Kind == DateTimeKind.Unspecified 
-                        ? DateTime.SpecifyKind(dto.RegisterDate.Value, DateTimeKind.Utc) 
-                        : dto.RegisterDate.Value.ToUniversalTime();
+                    existingActivity.RegisterDate = NormalizeDateToUTC(dto.RegisterDate.Value, isEndDate: false);
                 }
                 if (dto.EndRegisterDate.HasValue)
                 {
-                    existingActivity.EndRegisterDate = dto.EndRegisterDate.Value.Kind == DateTimeKind.Unspecified 
-                        ? DateTime.SpecifyKind(dto.EndRegisterDate.Value, DateTimeKind.Utc) 
-                        : dto.EndRegisterDate.Value.ToUniversalTime();
+                    existingActivity.EndRegisterDate = NormalizeDateToUTC(dto.EndRegisterDate.Value, isEndDate: true);
                 }
                 if (dto.ClubId.HasValue) existingActivity.ClubId = dto.ClubId;
                 
@@ -963,9 +948,7 @@ namespace EduShpere.Application.Services
                         }
                     }
                     
-                    existingActivity.SubmissionDeadline = dto.SubmissionDeadline.Value.Kind == DateTimeKind.Unspecified
-                        ? DateTime.SpecifyKind(dto.SubmissionDeadline.Value, DateTimeKind.Utc)
-                        : dto.SubmissionDeadline.Value.ToUniversalTime();
+                    existingActivity.SubmissionDeadline = NormalizeDateToUTC(dto.SubmissionDeadline.Value, isEndDate: true);
                 }
                 else if (dto.SubmissionDeadline == null && dto.SubType != null)
                 {
@@ -1546,6 +1529,47 @@ namespace EduShpere.Application.Services
             }
 
             return awardedCount > 0;
+        }
+
+        /// <summary>
+        /// Normalize date to UTC with default time:
+        /// - Start dates: 00:00:00 UTC
+        /// - End dates: 23:59:59 UTC
+        /// This ensures date-only values are stored correctly regardless of timezone
+        /// </summary>
+        private static DateTime NormalizeDateToUTC(DateTime date, bool isEndDate = false)
+        {
+            // If date is already UTC, use it directly
+            if (date.Kind == DateTimeKind.Utc)
+            {
+                if (isEndDate)
+                {
+                    // Set to end of day: 23:59:59.999
+                    return new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, 999, DateTimeKind.Utc);
+                }
+                else
+                {
+                    // Set to start of day: 00:00:00.000
+                    return new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, 0, DateTimeKind.Utc);
+                }
+            }
+
+            // Convert to UTC first
+            var utcDate = date.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(date, DateTimeKind.Utc)
+                : date.ToUniversalTime();
+
+            // Normalize to start or end of day
+            if (isEndDate)
+            {
+                // End date: 23:59:59.999 UTC
+                return new DateTime(utcDate.Year, utcDate.Month, utcDate.Day, 23, 59, 59, 999, DateTimeKind.Utc);
+            }
+            else
+            {
+                // Start date: 00:00:00.000 UTC
+                return new DateTime(utcDate.Year, utcDate.Month, utcDate.Day, 0, 0, 0, 0, DateTimeKind.Utc);
+            }
         }
     }
 }
