@@ -49,7 +49,7 @@ namespace EduShpere.Application.Services
 
                     _logger.LogInformation("Đã cập nhật {count} submissions.", submissions.Count);
                 }
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken); // chạy mỗi giờ
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken); // chạy mỗi giờ
 
             }
         }
