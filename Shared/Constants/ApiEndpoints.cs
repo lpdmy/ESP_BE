@@ -66,9 +66,6 @@ namespace EduShpere.Shared.Constants
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
             public const string MyActivities = "api/my-activities";
             public const string Statistics = "api/activity/statistics";
-            public const string Import = "api/activity/import";
-            public const string BulkCreate = "api/activity/bulk-create";
-            public const string Duplicate = "api/activity/{id}/duplicate";
 
         }
 
@@ -78,20 +75,12 @@ namespace EduShpere.Shared.Constants
             public const string GetById = "api/activity-template/{id}";
             public const string GetBySubType = "api/activity-template/subtype";
             public const string Create = "api/activity-template";
+            public const string SaveFromForm = "api/activity-template/save-from-form";
             public const string Update = "api/activity-template";
             public const string Delete = "api/activity-template/{id}";
             public const string IncrementUsage = "api/activity-template/{id}/increment-usage";
         }
 
-        public static class ActivityDraft
-        {
-            public const string Drafts = "api/activity-drafts";
-            public const string GetDraftById = "api/activity-drafts/{id}";
-            public const string CreateDraft = "api/activity-drafts";
-            public const string UpdateDraft = "api/activity-drafts/{id}";
-            public const string DeleteDraft = "api/activity-drafts/{id}";
-            public const string ConvertToActivity = "api/activity-drafts/{id}/convert-to-activity";
-        }
 
 
         public static class ActivityParticipant
@@ -208,6 +197,7 @@ namespace EduShpere.Shared.Constants
             public const string AssignHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
             public const string RemoveHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
             public const string GetHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string GetHomeroomTeachers = "api/classgroup/homeroom-teachers";
             
             // Academic Year endpoints
             public const string GetAcademicYears = "api/classgroup/academic-years";
@@ -277,7 +267,6 @@ namespace EduShpere.Shared.Constants
 
             public const string GradeSubmission = "api/jury/grade-submission";
             public const string IsAssigned = "api/jury/is-assigned/{userId}/{submissionId}";
-            public const string GetActivitiesWithoutJury = "api/jury/activities-without-jury";
             public const string ImprovedRandomAssign = "api/jury/improved-random-assign";
         }
         public static class Submission

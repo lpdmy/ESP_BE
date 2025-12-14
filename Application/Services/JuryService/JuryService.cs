@@ -723,64 +723,6 @@ namespace EduShpere.Application.Services
             }
         }
 
-        public async Task<List<ActivityWithoutJuryDto>> GetActivitiesWithoutJuryAsync()
-        {
-            // Load all data upfront to avoid N+1 queries
-            var allJuryActivities = await _juryActivityRepo.GetQueryable()
-                .AsNoTracking()
-                .Where(ja => !ja.IsDeleted)
-                .Select(ja => ja.ActivityId)
-                .Distinct()
-                .ToListAsync();
-
-            var allSubmissions = await _submissionRepository.GetQueryable()
-                .AsNoTracking()
-                .Where(s => !s.IsDeleted)
-                .GroupBy(s => s.ActivityId)
-                .Select(g => new
-                {
-                    ActivityId = g.Key,
-                    Count = g.Count(),
-                    HasSubmissions = g.Any()
-                })
-                .ToListAsync();
-
-            var submissionDict = allSubmissions.ToDictionary(s => s.ActivityId, s => new { s.Count, s.HasSubmissions });
-
-            // Get activities without jury using efficient filtering
-            var activities = await _activityRepo.GetQueryable()
-                .AsNoTracking()
-                .Where(a => !a.IsDeleted)
-                .Where(a => !allJuryActivities.Contains(a.Id))
-                .Select(a => new ActivityWithoutJuryDto
-                {
-                    Id = a.Id,
-                    Title = a.Title ?? string.Empty,
-                    Description = a.Description,
-                    StartDate = a.StartDate,
-                    EndDate = a.EndDate,
-                    SubmissionDeadline = a.SubmissionDeadline,
-                    CreatedAt = a.CreatedAt ?? DateTime.UtcNow
-                })
-                .ToListAsync();
-
-            // Map submission data in memory (much faster than subqueries)
-            foreach (var activity in activities)
-            {
-                if (submissionDict.TryGetValue(activity.Id, out var submissionData))
-                {
-                    activity.SubmissionCount = submissionData.Count;
-                    activity.HasSubmissions = submissionData.HasSubmissions;
-                }
-                else
-                {
-                    activity.SubmissionCount = 0;
-                    activity.HasSubmissions = false;
-                }
-            }
-
-            return activities;
-        }
 
         public async Task<bool> ImprovedRandomAssignAsync(int activityId, int juryPerSubmission)
         {
