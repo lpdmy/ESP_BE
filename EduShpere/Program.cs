@@ -61,6 +61,8 @@ namespace EduShpere
             builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.TeacherProfile.ITeacherProfileRepository, EduShpere.Infrastructure.Repositories.TeacherProfile.TeacherProfileRepository>();
             builder.Services.AddScoped<IOneTimeLoginRepository, OneTimeLoginRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityDraftRepository, ActivityDraftRepository>();
+            builder.Services.AddScoped<IActivityTemplateRepository, ActivityTemplateRepository>();
             builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
             builder.Services.AddScoped<IActivityMatchRepository, ActivityMatchRepository>();
             builder.Services.AddScoped<IActivityRuleRepository, ActivityRuleRepository>();
@@ -130,6 +132,8 @@ namespace EduShpere
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IActivityDraftService, ActivityDraftService>();
+            builder.Services.AddScoped<IActivityTemplateService, ActivityTemplateService>();
             builder.Services.AddScoped<ITournamentScheduleService, TournamentScheduleService>();
             builder.Services.AddScoped<IHttpContextService, HttpContextService>();
             builder.Services.AddScoped<IPostService, PostService>();
@@ -150,6 +154,7 @@ namespace EduShpere
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(ActivityProfile).Assembly);
+            builder.Services.AddAutoMapper(typeof(ActivityTemplateProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(TeacherProfileMapping).Assembly);
             builder.Services.AddAutoMapper(typeof(PostProfile).Assembly);
             builder.Services.AddAutoMapper(typeof(EduShpere.Application.Mappings.SearchProfile).Assembly);

@@ -52,6 +52,9 @@ public partial class User : BaseEntity
     [InverseProperty("CreatedByUser")]
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 
+    [InverseProperty("CreatedByUser")]
+    public virtual ICollection<ActivityDraft> ActivityDrafts { get; set; } = new List<ActivityDraft>();
+
     [InverseProperty("User")]
     public virtual ICollection<ActivityParticipant> ActivityParticipants { get; set; } = new List<ActivityParticipant>();
 
