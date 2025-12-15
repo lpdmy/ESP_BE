@@ -31,10 +31,8 @@ public class SystemAnnouncementProfile : Profile
             .ForMember(dest => dest.Comments, opt => opt.Ignore())
             .ForMember(dest => dest.PostInterests, opt => opt.Ignore())
             .ForMember(dest => dest.PostLikes, opt => opt.Ignore())
-            .ForMember(dest => dest.PostReports, opt => opt.Ignore())
             .ForMember(dest => dest.User, opt => opt.Ignore())
-            .ForMember(dest => dest.PostHashtags, opt => opt.Ignore())
-            .ForMember(dest => dest.PostMentions, opt => opt.Ignore());
+            .ForMember(dest => dest.PostHashtags, opt => opt.Ignore());
 
         // Update mapping
         CreateMap<UpdateSystemAnnouncementDto, Post>()
@@ -56,10 +54,8 @@ public class SystemAnnouncementProfile : Profile
             .ForMember(dest => dest.Comments, opt => opt.Ignore())
             .ForMember(dest => dest.PostInterests, opt => opt.Ignore())
             .ForMember(dest => dest.PostLikes, opt => opt.Ignore())
-            .ForMember(dest => dest.PostReports, opt => opt.Ignore())
             .ForMember(dest => dest.User, opt => opt.Ignore())
-            .ForMember(dest => dest.PostHashtags, opt => opt.Ignore())
-            .ForMember(dest => dest.PostMentions, opt => opt.Ignore());
+            .ForMember(dest => dest.PostHashtags, opt => opt.Ignore());
 
         // Response mappings
         CreateMap<Post, SystemAnnouncementDto>()

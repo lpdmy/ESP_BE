@@ -31,7 +31,7 @@ public partial class Submission
     public bool IsDeleted { get; set; }
     public byte[] RowVersion { get; set; } = null!;
     public string? Comment { get; set; }
-
+    
     public string? Title { get; set; }
 
     [ForeignKey("ActivityId")]

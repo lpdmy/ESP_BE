@@ -72,7 +72,6 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<PostLike> PostLikes { get; set; }
 
-    public virtual DbSet<PostReport> PostReports { get; set; }
 
     public virtual DbSet<Reward> Rewards { get; set; }
     public virtual DbSet<RewardRedemption> RewardRedemptions { get; set; }
@@ -94,7 +93,6 @@ public partial class EduShpereDbContext : DbContext
 
     public virtual DbSet<UserPoint> UserPoints { get; set; }
     public virtual DbSet<OneTimeLoginToken> OneTimeLoginTokens { get; set; }
-    public virtual DbSet<PostMention> PostMentions { get; set; }
     public virtual DbSet<PostHashtag> PostHashtags { get; set; }
     public virtual DbSet<Hashtag> Hashtags { get; set; }
     public virtual DbSet<ClubCategory> ClubCategory { get; set; }
@@ -535,24 +533,6 @@ public partial class EduShpereDbContext : DbContext
                 .HasConstraintName("FK__PostLikes__UserI__607251E5");
         });
 
-        modelBuilder.Entity<PostReport>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__PostRepo__3214EC07BC04AE86");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken();
-
-            entity.HasOne(d => d.Post).WithMany(p => p.PostReports)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PostRepor__PostI__793DFFAF");
-
-            entity.HasOne(d => d.Reporter).WithMany(p => p.PostReports)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PostRepor__Repor__7A3223E8");
-        });
-
         modelBuilder.Entity<Reward>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Rewards__3214EC07A02DC01E");
@@ -715,9 +695,6 @@ public partial class EduShpereDbContext : DbContext
 
         modelBuilder.Entity<PostHashtag>()
     .HasKey(ph => new { ph.PostId, ph.HashtagId });
-        modelBuilder.Entity<PostMention>()
-    .HasKey(pm => new { pm.PostId, pm.MentionedUserId });
-
         // SearchHistory configuration
         modelBuilder.Entity<SearchHistory>(entity =>
         {

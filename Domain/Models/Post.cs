@@ -52,13 +52,10 @@ public partial class Post : BaseEntity
     public virtual ICollection<PostInterest> PostInterests { get; set; } = new List<PostInterest>();
     [InverseProperty("Post")]
     public virtual ICollection<PostLike> PostLikes { get; set; } = new List<PostLike>();
-    [InverseProperty("Post")]
-    public virtual ICollection<PostReport> PostReports { get; set; } = new List<PostReport>();
     [ForeignKey("UserId")]
     [InverseProperty("Posts")]
     public virtual User User { get; set; } = null!;
     [InverseProperty("Post")]
     public virtual ICollection<PostHashtag> PostHashtags { get; set; } = new List<PostHashtag>();
-    [InverseProperty("Post")]
-    public virtual ICollection<PostMention> PostMentions { get; set; } = new List<PostMention>();
+    
 }

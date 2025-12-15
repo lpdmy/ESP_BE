@@ -40,9 +40,6 @@ namespace EduShpere.Application.Mappings
     .ForMember(dest => dest.Hashtags,
         opt => opt.MapFrom(src => src.PostHashtags.Select(ph => ph.Hashtag.Name)))
 
-    .ForMember(dest => dest.MentionUsernames,
-        opt => opt.MapFrom(src => src.PostMentions.Select(pm => pm.MentionedUser.Username)))
-
     .ForMember(dest => dest.Comments,
         opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted).Select(c => c.Content)))
 
@@ -55,8 +52,6 @@ namespace EduShpere.Application.Mappings
         Debug.WriteLine($"User.AvatarUrl = {src.User?.AvatarUrl}, Mapped dest.AvatarUrl = {dest.AvatarUrl}");
     })
 
-    .ForMember(dest => dest.ReportCount,
-        opt => opt.MapFrom(src => src.PostReports.Count))
     .ForMember(dest => dest.IsLikedByCurrentUser,
                 opt => opt.MapFrom((src, dest, destMember, ctx) =>
                     src.PostLikes.Any(l => l.UserId == (int)ctx.Items["currentUserId"])));
