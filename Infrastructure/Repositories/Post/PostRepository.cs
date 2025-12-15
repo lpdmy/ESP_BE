@@ -16,21 +16,17 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(p => p.User)
                 .Include(p => p.Attachments)
                 .Include(p => p.PostLikes)
-                .Include(p => p.PostReports)
                 .Include(p => p.Comments)
-                .Include(p => p.PostHashtags).ThenInclude(ph => ph.Hashtag)
-                .Include(p => p.PostMentions).ThenInclude(pm => pm.MentionedUser);
+                .Include(p => p.PostHashtags).ThenInclude(ph => ph.Hashtag);
         }public IQueryable<Post> GetAllPostIncludingByClubId(int clubid)
         {
-            return _dbSet.Where(p=>p.ClubId==clubid)
+            return _dbSet.Where(p => p.ClubId == clubid)
                 .Include(p => p.Club)
                 .Include(p => p.User)
                 .Include(p => p.Attachments)
                 .Include(p => p.PostLikes)
-                .Include(p => p.PostReports)
                 .Include(p => p.Comments.Where(c => !c.IsDeleted))
-                .Include(p => p.PostHashtags).ThenInclude(ph => ph.Hashtag)
-                .Include(p => p.PostMentions).ThenInclude(pm => pm.MentionedUser);
+                .Include(p => p.PostHashtags).ThenInclude(ph => ph.Hashtag);
         }
         public async Task DeleteSoft(int id)
         {
