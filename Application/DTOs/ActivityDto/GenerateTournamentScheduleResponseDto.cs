@@ -76,5 +76,19 @@ public class ApplyTournamentScheduleResponseDto
     public bool IsPublished { get; set; }
     public int TotalMatchesApplied { get; set; }
     public List<int> MatchIds { get; set; } = new();
+    public List<ScheduleConflictDto> Conflicts { get; set; } = new();
+}
+
+public class ScheduleConflictDto
+{
+    public int MatchNumber { get; set; }
+    public string ConflictType { get; set; } = string.Empty; // "ActivityConflict" | "ClassScheduleConflict"
+    public int? ActivityId { get; set; }
+    public int? UserId { get; set; }
+    public int? ClassGroupId { get; set; }
+    public DateTime MatchDate { get; set; }
+    public string? StartTime { get; set; } // "HH:mm"
+    public string? EndTime { get; set; }   // "HH:mm"
+    public string Message { get; set; } = string.Empty;
 }
 

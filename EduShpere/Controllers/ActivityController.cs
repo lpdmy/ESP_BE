@@ -298,6 +298,21 @@ namespace EduShpere.Controllers
             }
 
             var response = await _tournamentScheduleService.ApplyScheduleAsync(id, dto, _dbContext);
+
+            // Nếu ApplyScheduleAsync trả về trạng thái không thành công (ví dụ do xung đột lịch),
+            // phản hồi HTTP 409 để FE có thể hiển thị chi tiết conflicts từ payload.
+            if (response != null && !response.Success)
+            {
+                return StatusCode(
+                    (int)HttpStatusCode.Conflict,
+                    new ResponseDto<ApplyTournamentScheduleResponseDto>(
+                        response,
+                        "Phát hiện xung đột hoặc lỗi khi áp dụng lịch thi đấu",
+                        (int)HttpStatusCode.Conflict
+                    )
+                );
+            }
+
             return Ok(new ResponseDto<ApplyTournamentScheduleResponseDto>(
                 response,
                 "Áp dụng lịch thi đấu thành công",
