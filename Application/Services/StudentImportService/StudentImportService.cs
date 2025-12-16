@@ -169,6 +169,7 @@ namespace EduShpere.Application.Services
                 "Địa chỉ",
                 "Lớp",
                 "Khối",
+                "Năm nhập học",
                 "Tên phụ huynh",
                 "SĐT phụ huynh",
                 "Email phụ huynh",
@@ -177,8 +178,8 @@ namespace EduShpere.Application.Services
 
             var sampleData = new[]
             {
-                new[] { "HS001", "Nguyễn", "Văn A", "nguyenvana@example.com", "0123456789", "2010-01-15", "Nam", "123 Đường ABC, Quận 1", "10A1", "10", "Nguyễn Văn B", "0987654321", "nguyenvanb@example.com", "Học sinh giỏi" },
-                new[] { "HS002", "Trần", "Thị B", "tranthib@example.com", "0123456788", "2010-03-20", "Nữ", "456 Đường XYZ, Quận 2", "10A2", "10", "Trần Thị C", "0987654322", "tranthic@example.com", "Thích môn Toán" }
+                new[] { "HS001", "Nguyễn", "Văn A", "nguyenvana@example.com", "0123456789", "2010-01-15", "Nam", "123 Đường ABC, Quận 1", "10A1", "10", "2024", "Nguyễn Văn B", "0987654321", "nguyenvanb@example.com", "Học sinh giỏi" },
+                new[] { "HS002", "Trần", "Thị B", "tranthib@example.com", "0123456788", "2010-03-20", "Nữ", "456 Đường XYZ, Quận 2", "10A2", "10", "2024", "Trần Thị C", "0987654322", "tranthic@example.com", "Thích môn Toán" }
             };
 
             var csvContent = new List<string>
@@ -695,6 +696,7 @@ namespace EduShpere.Application.Services
                 "parentPhone" => "SĐT phụ huynh",
                 "parentEmail" => "Email phụ huynh",
                 "notes" => "Ghi chú",
+                "enrollmentYear" => "Năm nhập học",
                 _ => fieldId
             };
         }
