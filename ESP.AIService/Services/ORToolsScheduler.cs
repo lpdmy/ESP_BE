@@ -486,7 +486,7 @@ public class ORToolsScheduler
 
         // Lấy tất cả participants của các lớp tham gia để check conflict với activities khác
         Console.WriteLine($"\n🔍 Đang lấy participants từ DB cho {request.ClassGroupIds.Count} lớp...");
-        var participantsInClassGroups = GetParticipantsInClassGroups(request.ClassGroupIds, dbContext);
+        var participantsInClassGroups = GetParticipantsInClassGroups(request.ClassGroupIds, request.ActivityId, dbContext);
         Console.WriteLine($"   ✅ Đã load {participantsInClassGroups.Count} participants từ {request.ClassGroupIds.Count} lớp tham gia");
         
         // ========== LOG PARTICIPANTS TỪ DB ==========
@@ -774,14 +774,20 @@ public class ORToolsScheduler
     }
     
     /// <summary>
-    /// Lấy danh sách participants của các lớp tham gia
+        /// Lấy danh sách participants của các lớp tham gia
     /// </summary>
-    private List<ParticipantInfo> GetParticipantsInClassGroups(List<int> classGroupIds, EduShpereDbContext dbContext)
+        private List<ParticipantInfo> GetParticipantsInClassGroups(
+            List<int> classGroupIds,
+            int currentActivityId,
+            EduShpereDbContext dbContext)
     {
         try
         {
             var participants = dbContext.Set<EduShpere.Domain.Models.ActivityParticipant>()
-                .Where(ap => classGroupIds.Contains(ap.ClassGroupId ?? 0) && !ap.IsDeleted)
+                .Where(ap =>
+                    ap.ActivityId == currentActivityId &&             // Guard: chỉ lấy participants của activity hiện tại
+                    classGroupIds.Contains(ap.ClassGroupId ?? 0) &&
+                    !ap.IsDeleted)
                 .Select(ap => new ParticipantInfo
                 {
                     UserId = ap.UserId,

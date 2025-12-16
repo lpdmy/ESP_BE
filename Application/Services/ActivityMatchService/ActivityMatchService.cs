@@ -278,13 +278,19 @@ namespace EduShpere.Application.Services
                 throw new NotFoundException(ErrorMessages.ActivityMatch.BracketNotFound);
             }
 
-            var rounds = matches
+            var groupedRounds = matches
                 .GroupBy(m => m.Round)
                 .OrderBy(g => g.Key)
+                .ToList();
+
+            var totalRounds = groupedRounds.Count;
+
+            var rounds = groupedRounds
                 .Select(g => new RoundDto
                 {
                     RoundNumber = g.Key,
-                    RoundName = g.First().RoundName,
+                    // Ưu tiên chuẩn hóa tên vòng theo tổng số vòng để tránh nhãn sai (vd: bán kết khi chỉ có 2 vòng)
+                    RoundName = GetRoundName(g.Key, totalRounds),
                     Matches = g.OrderBy(m => m.MatchNumber)
                         .Select(m => _mapper.Map<MatchResponseDto>(m))
                         .ToList()
@@ -297,7 +303,7 @@ namespace EduShpere.Application.Services
                 SportId = sportId,
                 SportName = sport?.SportName,
                 Grade = grade ?? matches.First().Grade,
-                TotalRounds = rounds.Count,
+                TotalRounds = totalRounds,
                 TotalMatches = matches.Count(),
                 Rounds = rounds
             };
