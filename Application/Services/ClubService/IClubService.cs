@@ -24,5 +24,8 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<UserSearchResultDto>> GetAllAsync(int role,
     PaginationRequestDto paginationRequest,
     string? search = null);
+        Task<PaginationResponseDto<ClubResponseDto>> GetAllAdminAsync(User user,
+    PaginationRequestDto paginationRequest,
+    string? search = null);
     }
 }
