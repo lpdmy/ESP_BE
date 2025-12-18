@@ -278,11 +278,11 @@ namespace EduShpere.Application.Services
                 // T�nh status d?a tr�n ng�y th�ng (s? d?ng UTC �? �?m b?o consistency)
                 Status = a.StartDate.HasValue && a.EndDate.HasValue
                     ? (DateTime.UtcNow < a.StartDate.Value.ToUniversalTime()
-                        ? "S?p di?n ra"
+                        ? "Sắp diễn ra"
                         : DateTime.UtcNow >= a.StartDate.Value.ToUniversalTime() && DateTime.UtcNow <= a.EndDate.Value.ToUniversalTime()
-                        ? "�ang di?n ra"
-                        : "�? k?t th�c")
-                    : "�ang c?p nh?t"
+                        ? "Đang diễn ra"
+                        : "Đã kết thúc")
+                    : "Đang cập nhật"
             }).ToList();
 
             // T�nh s? l�?ng participants cho m?i activity (batch query �? t?i �u)
@@ -470,7 +470,7 @@ namespace EduShpere.Application.Services
                 // T�nh status d?a tr�n ng�y th�ng (s? d?ng UTC �? �?m b?o consistency)
                 Status = a.StartDate.HasValue && a.EndDate.HasValue
                     ? (DateTime.UtcNow < a.StartDate.Value.ToUniversalTime()
-                        ? "S?p di?n ra"
+                        ? "Sắp diễn ra"
                         : DateTime.UtcNow >= a.StartDate.Value.ToUniversalTime() && DateTime.UtcNow <= a.EndDate.Value.ToUniversalTime()
                         ? "�ang di?n ra"
                         : "�? k?t th�c")
