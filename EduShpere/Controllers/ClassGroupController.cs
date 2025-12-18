@@ -269,4 +269,23 @@ public class ClassGroupController : BaseController
         }
         return Ok(new ResponseDto<UserDto>(result, "Lấy thông tin giáo viên chủ nhiệm thành công"));
     }
+
+    [HttpPost(ApiEndpoints.ClassGroup.GetHomeroomTeachers)]
+    //[Authorize(Roles = "Admin,Teacher")]
+    public async Task<IActionResult> GetHomeroomTeachers([FromBody] List<int> classGroupIds)
+    {
+        if (classGroupIds == null || !classGroupIds.Any())
+        {
+            return BadRequest(new ResponseDto<string>(null, "Danh sách classGroupIds không được để trống", 400));
+        }
+
+        // Giới hạn số lượng để tránh query quá lớn
+        if (classGroupIds.Count > 100)
+        {
+            return BadRequest(new ResponseDto<string>(null, "Số lượng classGroupIds không được vượt quá 100", 400));
+        }
+
+        var result = await _classGroupService.GetHomeroomTeachersAsync(classGroupIds);
+        return Ok(new ResponseDto<Dictionary<int, UserDto?>>(result, "Lấy thông tin giáo viên chủ nhiệm thành công"));
+    }
 }

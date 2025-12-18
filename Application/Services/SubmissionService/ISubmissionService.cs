@@ -34,5 +34,6 @@ namespace EduShpere.Application.Services
         Task<SubmissionResponseDto?> GetMySubmissionByActivityId(int activityId, int userId);
         Task<SubmissionResponseDto> UpdateSubmission(UpdateSubmissionDto dto, int userId);
         Task<bool> DeleteSubmission(int id, int userId);
+        Task<int> UpdateSubmissionScoresAsync();
     }
 }

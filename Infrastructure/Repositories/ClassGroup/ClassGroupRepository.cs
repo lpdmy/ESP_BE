@@ -173,6 +173,63 @@ public class ClassGroupRepository : IClassGroupRepository
             .ToListAsync();
     }
 
+    public async Task<ClassGroupStatistics> GetStatisticsAsync(int? academicYearId = null)
+    {
+        var query = _dbSet.AsQueryable();
+        
+        if (academicYearId.HasValue)
+        {
+            query = query.Where(c => c.AcademicYearId == academicYearId.Value);
+        }
+
+        var activeClassesQuery = query.Where(c => !c.IsDeleted);
+        var allClassesQuery = query; // Bao gồm cả deleted
+
+        var totalClasses = await activeClassesQuery.CountAsync();
+        var totalTeachers = await activeClassesQuery.CountAsync(c => c.TeacherId.HasValue);
+        var deletedClasses = await allClassesQuery.CountAsync(c => c.IsDeleted);
+        
+        // Tính tổng số học sinh bằng cách join với ClassGroupMembers
+        var totalStudents = await _context.ClassGroupMembers
+            .Where(m => !m.IsDeleted && 
+                       m.ClassGroup != null && 
+                       !m.ClassGroup.IsDeleted &&
+                       (!academicYearId.HasValue || m.ClassGroup.AcademicYearId == academicYearId.Value))
+            .CountAsync();
+
+        return new ClassGroupStatistics
+        {
+            TotalClasses = totalClasses,
+            TotalStudents = totalStudents,
+            TotalTeachers = totalTeachers,
+            DeletedClasses = deletedClasses
+        };
+    }
+
+    public async Task<Dictionary<int, int>> GetStudentCountsByClassIdsAsync(IEnumerable<int> classIds)
+    {
+        var classIdsList = classIds.ToList();
+        if (!classIdsList.Any())
+            return new Dictionary<int, int>();
+
+        var counts = await _context.ClassGroupMembers
+            .Where(m => classIdsList.Contains(m.ClassGroupId) && !m.IsDeleted)
+            .GroupBy(m => m.ClassGroupId)
+            .Select(g => new { ClassGroupId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var result = counts.ToDictionary(x => x.ClassGroupId, x => x.Count);
+        
+        // Đảm bảo tất cả classIds đều có trong dictionary (với giá trị 0 nếu không có học sinh)
+        foreach (var id in classIdsList)
+        {
+            if (!result.ContainsKey(id))
+                result[id] = 0;
+        }
+
+        return result;
+    }
+
     // Student management operations
     public async Task<IEnumerable<User>> GetStudentsInClassAsync(int classGroupId)
     {
@@ -361,10 +418,36 @@ public class ClassGroupRepository : IClassGroupRepository
     public async Task<User?> GetHomeroomTeacherAsync(int classGroupId)
     {
         return await _context.ClassGroups
+            .AsNoTracking()
             .Where(cg => cg.Id == classGroupId && !cg.IsDeleted)
             .Include(cg => cg.Teacher)
             .Select(cg => cg.Teacher)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<Dictionary<int, User?>> GetHomeroomTeachersAsync(IEnumerable<int> classGroupIds)
+    {
+        var classGroupIdsList = classGroupIds.ToList();
+        if (!classGroupIdsList.Any())
+            return new Dictionary<int, User?>();
+
+        var result = await _context.ClassGroups
+            .AsNoTracking()
+            .Where(cg => classGroupIdsList.Contains(cg.Id) && !cg.IsDeleted)
+            .Include(cg => cg.Teacher)
+            .Select(cg => new { cg.Id, cg.Teacher })
+            .ToListAsync();
+
+        var dict = result.ToDictionary(x => x.Id, x => x.Teacher);
+        
+        // Đảm bảo tất cả classGroupIds đều có trong dictionary (với giá trị null nếu không tìm thấy)
+        foreach (var id in classGroupIdsList)
+        {
+            if (!dict.ContainsKey(id))
+                dict[id] = null;
+        }
+
+        return dict;
     }
 
     public async Task<ClassGroup?> GetTeacherCurrentHomeroomClassInSameAcademicYearAsync(int teacherId, int academicYearId)

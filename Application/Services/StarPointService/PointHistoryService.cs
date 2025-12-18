@@ -87,7 +87,7 @@ namespace EduShpere.Application.Services.StarPointService
             try
             {
                 // 1. Lấy hoặc tạo UserPoint record
-                var userPoint = await _context.UserPoint
+                var userPoint = await _context.UserPoints
                     .FirstOrDefaultAsync(up => up.UserId == userId);
 
                 if (userPoint == null)
@@ -101,7 +101,7 @@ namespace EduShpere.Application.Services.StarPointService
                         IsDeleted = false,
                         RowVersion = new byte[8] // Initialize RowVersion
                     };
-                    await _context.UserPoint.AddAsync(userPoint);
+                    await _context.UserPoints.AddAsync(userPoint);
                 }
 
                 // 2. Cập nhật Balance
