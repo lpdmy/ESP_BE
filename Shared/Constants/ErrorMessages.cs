@@ -7,6 +7,7 @@
             public const string InvalidCredentials = "Email hoặc Password không tồn tại";
             public const string InvalidToken = "Token không hợp lệ hoặc đã hết hạn.";
             public const string UserNotFound = "Người dùng không tồn tại.";
+            public const string Unauthorized = "Bạn không có quyền truy cập.";
             public const string EmailAlreadyExists = "Email đã tồn tại trong hệ thống.";
             public const string InvalidFile = "File không hợp lệ.";
             public const string InvalidPassword = "Mật khẩu không chính xác";

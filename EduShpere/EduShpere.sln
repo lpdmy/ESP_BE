@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113
@@ -14,6 +14,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Shared", "..\Shared\EduShpere.Shared.csproj", "{A7639FEE-B4FC-4078-9CFB-FC8703D33483}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ESP.AIService", "..\ESP.AIService\ESP.AIService.csproj", "{E0A17136-732F-49C3-9EB1-9036A5B447F6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduShpere.Tests", "..\EduShpere.Tests\EduShpere.Tests.csproj", "{F1B27247-8431-4D92-9C82-A1B2C3D4E5F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0A17136-732F-49C3-9EB1-9036A5B447F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1B27247-8431-4D92-9C82-A1B2C3D4E5F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1B27247-8431-4D92-9C82-A1B2C3D4E5F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1B27247-8431-4D92-9C82-A1B2C3D4E5F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1B27247-8431-4D92-9C82-A1B2C3D4E5F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

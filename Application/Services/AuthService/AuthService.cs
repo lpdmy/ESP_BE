@@ -59,8 +59,20 @@ namespace EduShpere.Application
 
         public async Task<UserDto> GetMe()
         {
-            var user = await _httpContextService.GetAppUserAndThrow();
-            var fullUser = await _userRepository.GetByIdIncludeAsync(user.Id);
+            // Lấy userId trực tiếp từ JWT claims để tránh 1 query dư thừa
+            var userId = _httpContextService.GetCurrentUserId();
+            if (userId == null)
+            {
+                throw new UnauthorizedException(ErrorMessages.Auth.Unauthorized);
+            }
+
+            // Dùng phương thức tối ưu riêng cho GetMe (AsNoTracking + include cần thiết)
+            var fullUser = await _userRepository.GetUserForMeAsync(userId.Value);
+            if (fullUser == null)
+            {
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+            }
+
             return _mapper.Map<UserDto>(fullUser);
         }
 
@@ -74,15 +86,22 @@ namespace EduShpere.Application
             }
         }
 
-        private TokenModel GenerateToken(User appUser)
+        /// <summary>
+        /// Tạo JWT access token + refresh token cho user.
+        /// Đã tối ưu để chỉ load quyền (UserRights) thay vì include toàn bộ navigation nặng.
+        /// </summary>
+        private async Task<TokenModel> GenerateTokenAsync(User appUser)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
             var secretKey = _configuration["AppSetting:SecretKey"];
             var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
-            var user = _userRepository.GetQueryable()
-                .Include(u => u.UserRights)
-                .ThenInclude(ur => ur.Right)
-                .FirstOrDefault(u => u.Id == appUser.Id);
+            
+            // Chỉ load user + quyền, tránh include StudentProfile, TeacherProfile, ClassGroup... nặng
+            var user = await _userRepository.GetByIdIncludeAsync(appUser.Id);
+            if (user == null)
+            {
+                throw new NotFoundException(ErrorMessages.Auth.UserNotFound);
+            }
             // Convert role number to role name
             var roleName = appUser.Role switch
             {
@@ -153,7 +172,8 @@ namespace EduShpere.Application
                 throw new UnauthorizedException(ErrorMessages.Auth.InvalidCredentials);
             }
 
-            return GenerateToken(user);
+            // Tạo token async, chỉ query đúng phần cần (user + quyền)
+            return await GenerateTokenAsync(user);
         }
 
         public async Task<object> ImportUsers(IFormFile request)
@@ -471,7 +491,7 @@ namespace EduShpere.Application
             }
 
             // Trả về token thay vì gửi email (chỉ dành cho development)
-            return GenerateToken(user);
+            return await GenerateTokenAsync(user);
         }
 
         public async Task<PaginationResponseDto<UserDto>> GetAllUsersAsync(UserPaginationRequestDto paginationRequest)
@@ -712,7 +732,7 @@ namespace EduShpere.Application
             await _userRepository.UpdateAsync(user);
             await _oneTimeLoginRepository.MarkAsUsedAsync(otl);
 
-            return GenerateToken(user);
+            return await GenerateTokenAsync(user);
         }
 
         public async Task<bool> ChangePassword(ChangePasswordDto dto)
@@ -782,7 +802,7 @@ namespace EduShpere.Application
                 true
             );
 
-            return GenerateToken(user);
+            return await GenerateTokenAsync(user);
         }
 
         public async Task<bool> DeleteUserAsync(int id)
