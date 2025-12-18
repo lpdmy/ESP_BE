@@ -22,7 +22,12 @@ public class GlobalExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogWarning($"Message from GlobalExceptionHandlerMiddleware: {ex.Message}");
+            // Log error với đầy đủ thông tin để debug trên AWS
+            _logger.LogError(ex, 
+                "Unhandled exception occurred. Path: {Path}, Method: {Method}, StatusCode: {StatusCode}",
+                context.Request.Path,
+                context.Request.Method,
+                context.Response?.StatusCode);
 
             await HandleExceptionAsync(context, ex);
         }
@@ -44,6 +49,15 @@ public class GlobalExceptionHandlerMiddleware
             ConflictException => (int)HttpStatusCode.Conflict,
             _ => (int)HttpStatusCode.InternalServerError,
         };
+
+        // Log critical errors để monitor trên AWS
+        if (response.StatusCode >= 500)
+        {
+            _logger.LogCritical(ex, 
+                "Critical error occurred. StatusCode: {StatusCode}, Path: {Path}",
+                response.StatusCode,
+                request.Path.Value);
+        }
 
         var result = new ErrorResponseDto
         {

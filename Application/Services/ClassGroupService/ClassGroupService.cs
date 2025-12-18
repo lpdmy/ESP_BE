@@ -78,28 +78,29 @@ public class ClassGroupService : IClassGroupService
 
     public async Task<ClassGroupDashboardDto> GetDashboardDataAsync(int? academicYearId = null)
     {
-        var allClasses = await _repository.GetAllAsync();
-        var allClassesIncludingDeleted = await _repository.GetByFilterAsync(isDeleted: null);
+        // Tối ưu: Tính statistics ở database thay vì load toàn bộ data
+        var statisticsDomain = await _repository.GetStatisticsAsync(academicYearId);
+        
+        // Chỉ load classes cần thiết cho ClassesByGrade (không load ClassGroupMembers nếu không cần)
+        var allClasses = await _repository.GetByFilterAsync(
+            grade: null,
+            academicYearId: academicYearId,
+            isDeleted: false
+        );
         
         Console.WriteLine($"GetDashboardDataAsync called with academicYearId: {academicYearId}");
-        Console.WriteLine($"Total classes before filter: {allClasses.Count()}");
-        
-        if (academicYearId.HasValue)
-        {
-            allClasses = allClasses.Where(c => c.AcademicYearId == academicYearId.Value);
-            allClassesIncludingDeleted = allClassesIncludingDeleted.Where(c => c.AcademicYearId == academicYearId.Value);
-            Console.WriteLine($"Total classes after filter by academicYearId {academicYearId}: {allClasses.Count()}");
-        }
+        Console.WriteLine($"Total classes: {allClasses.Count()}");
 
-        var statistics = new ClassGroupStatisticsDto
-        {
-            TotalClasses = allClasses.Count(),
-            TotalStudents = allClasses.Sum(c => c.ClassGroupMembers?.Count ?? 0),
-            TotalTeachers = allClasses.Count(c => c.TeacherId.HasValue),
-            DeletedClasses = allClassesIncludingDeleted.Count(c => c.IsDeleted)
-        };
+        // Tính student count cho mỗi class bằng cách query riêng (hiệu quả hơn)
+        var classIds = allClasses.Select(c => c.Id).ToList();
+        var studentCounts = new Dictionary<int, int>();
         
-        Console.WriteLine($"Statistics calculated: TotalClasses={statistics.TotalClasses}, TotalStudents={statistics.TotalStudents}, TotalTeachers={statistics.TotalTeachers}");
+        if (classIds.Any())
+        {
+            // Query student counts từ database thay vì load toàn bộ ClassGroupMembers
+            var counts = await _repository.GetStudentCountsByClassIdsAsync(classIds);
+            studentCounts = counts;
+        }
 
         var classesByGrade = allClasses
             .GroupBy(c => c.Grade)
@@ -108,7 +109,7 @@ public class ClassGroupService : IClassGroupService
                 Grade = g.Key,
                 GradeName = g.Key.HasValue ? $"Khối {g.Key}" : "Không xác định",
                 ClassCount = g.Count(),
-                StudentCount = g.Sum(c => c.ClassGroupMembers?.Count ?? 0),
+                StudentCount = g.Sum(c => studentCounts.GetValueOrDefault(c.Id, 0)),
                 Classes = g.Select(c => new ClassGroupDto
                 {
                     Id = c.Id,
@@ -117,7 +118,7 @@ public class ClassGroupService : IClassGroupService
                     Grade = c.Grade,
                     AcademicYearId = c.AcademicYearId,
                     AcademicYearName = c.AcademicYears?.Name,
-                    CurrentStudentCount = c.ClassGroupMembers?.Count ?? 0,
+                    CurrentStudentCount = studentCounts.GetValueOrDefault(c.Id, 0),
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt,
                     IsDeleted = c.IsDeleted
@@ -128,7 +129,13 @@ public class ClassGroupService : IClassGroupService
 
         return new ClassGroupDashboardDto
         {
-            Statistics = statistics,
+            Statistics = new ClassGroupStatisticsDto
+            {
+                TotalClasses = statisticsDomain.TotalClasses,
+                TotalStudents = statisticsDomain.TotalStudents,
+                TotalTeachers = statisticsDomain.TotalTeachers,
+                DeletedClasses = statisticsDomain.DeletedClasses
+            },
             ClassesByGrade = classesByGrade
         };
     }
@@ -588,5 +595,26 @@ public class ClassGroupService : IClassGroupService
             AvatarUrl = teacher.AvatarUrl,
             Status = teacher.Status
         };
+    }
+
+    public async Task<Dictionary<int, UserDto?>> GetHomeroomTeachersAsync(IEnumerable<int> classGroupIds)
+    {
+        var teachers = await _repository.GetHomeroomTeachersAsync(classGroupIds);
+        
+        return teachers.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value == null ? null : new UserDto
+            {
+                Id = kvp.Value.Id,
+                Username = kvp.Value.Username,
+                FirstName = kvp.Value.FirstName,
+                LastName = kvp.Value.LastName,
+                Email = kvp.Value.Email,
+                PhoneNumber = kvp.Value.PhoneNumber,
+                Role = kvp.Value.Role,
+                AvatarUrl = kvp.Value.AvatarUrl,
+                Status = kvp.Value.Status
+            }
+        );
     }
 }

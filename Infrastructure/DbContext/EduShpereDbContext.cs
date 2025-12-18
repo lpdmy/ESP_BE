@@ -77,7 +77,6 @@ public partial class EduShpereDbContext : DbContext
     public virtual DbSet<RewardRedemption> RewardRedemptions { get; set; }
     public virtual DbSet<RewardRule> RewardRules { get; set; }
     public virtual DbSet<PointHistory> PointHistory { get; set; }
-    public virtual DbSet<UserPoint> UserPoint { get; set; }
     public virtual DbSet<School> Schools { get; set; }
     public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
 
