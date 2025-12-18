@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading;
 using Microsoft.Data.SqlClient;
 using EduShpere.Application;
@@ -178,6 +179,8 @@ namespace EduShpere
                 // Ensure DateTime is always serialized as UTC ISO 8601 format with 'Z' suffix
                 // System.Text.Json by default serializes UTC DateTime with 'Z', but we ensure it explicitly
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                // Fix encoding for Vietnamese characters - use UnsafeRelaxedJsonEscaping to preserve Unicode characters
+                options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
             });
 
             // Register KidNet services
