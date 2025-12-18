@@ -19,5 +19,6 @@ namespace EduShpere.Infrastructure.Repositories
         IQueryable<Club> GetAllWithIncludes();
         Task<Club?> GetByIdWithIncludesAsync(int id);
         Task<bool> DeleteSoft(int id);
+        IQueryable<Club> GetAllWithAdminIncludes();
     }
 }

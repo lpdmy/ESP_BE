@@ -33,6 +33,17 @@ namespace EduShpere.Controllers
                        statusCode: 200
                    ));
         }
+        [HttpGet(ApiEndpoints.Club.ClubAdmins)]
+        public async Task<IActionResult> GetAllClubAdmin([FromQuery] PaginationRequestDto paginationRequest, [FromQuery] string? search = null)
+        {
+            var user = await _httpContextService.GetAppUserAndThrow();
+            var response = await _clubService.GetAllAdminAsync(user, paginationRequest, search);
+            return Ok(new ResponseDto<PaginationResponseDto<ClubResponseDto>>(
+                       response,
+                       message: "Lấy danh sách câu lạc bộ thành công",
+                       statusCode: 200
+                   ));
+        }
         [HttpGet(ApiEndpoints.Club.GetClubById)]
         public async Task<IActionResult> GetClubById( int id)
         {

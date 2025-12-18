@@ -56,6 +56,16 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(c => c.ClubMembers)
                     .ThenInclude(m => m.User);
         }
+        public IQueryable<Club> GetAllWithAdminIncludes()
+        {
+            return _context.Clubs
+                .Include(c => c.Category)
+                .Include(c => c.Mentor)
+                .Include(c => c.President)
+                .Include(c => c.Mentor)
+                .Include(c => c.ClubMembers)
+                    .ThenInclude(m => m.User);
+        }
         public async Task<bool> DeleteSoft(int id)
         {
 
