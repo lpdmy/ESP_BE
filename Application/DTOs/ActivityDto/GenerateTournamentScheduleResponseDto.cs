@@ -16,6 +16,82 @@ public class GenerateTournamentScheduleResponseDto
     public float ObjectiveValue { get; set; }
     public int TotalMatches { get; set; }
     public int TotalRounds { get; set; }
+    
+    /// <summary>
+    /// Danh sách lý do không đủ slots - hiển thị cho người dùng
+    /// </summary>
+    public List<SlotWarningReasonDto> SlotWarnings { get; set; } = new();
+    
+    /// <summary>
+    /// Danh sách chi tiết các conflicts khiến slots bị loại bỏ
+    /// </summary>
+    public List<SlotConflictDetailDto> SlotConflicts { get; set; } = new();
+}
+
+/// <summary>
+/// DTO cho SlotWarningReason
+/// </summary>
+public class SlotWarningReasonDto
+{
+    public string WarningType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string CurrentValue { get; set; } = string.Empty;
+    public string RecommendedValue { get; set; } = string.Empty;
+    public string Solution { get; set; } = string.Empty;
+    public string Severity { get; set; } = "Medium";
+    public string Field { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// DTO cho SlotConflictDetail
+/// </summary>
+public class SlotConflictDetailDto
+{
+    public SlotInfoDto Slot { get; set; } = new();
+    public string ConflictType { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public MatchConflictInfoDto? MatchConflict { get; set; }
+    public ActivityConflictInfoDto? ActivityConflict { get; set; }
+    public List<ParticipantConflictInfoDto> ParticipantConflicts { get; set; } = new();
+}
+
+public class SlotInfoDto
+{
+    public DateTime MatchDate { get; set; }
+    public string StartTime { get; set; } = string.Empty; // Format: "HH:mm"
+    public string EndTime { get; set; } = string.Empty; // Format: "HH:mm"
+    public string? Location { get; set; }
+}
+
+public class MatchConflictInfoDto
+{
+    public int MatchId { get; set; }
+    public int? MatchNumber { get; set; }
+    public int? ClassGroup1Id { get; set; }
+    public int? ClassGroup2Id { get; set; }
+    public DateTime MatchDate { get; set; }
+    public string StartTime { get; set; } = string.Empty; // Format: "HH:mm"
+    public string EndTime { get; set; } = string.Empty; // Format: "HH:mm"
+    public string? Location { get; set; }
+    public string? Description { get; set; }
+}
+
+public class ActivityConflictInfoDto
+{
+    public int ActivityId { get; set; }
+    public string? ActivityTitle { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public string? Description { get; set; }
+}
+
+public class ParticipantConflictInfoDto
+{
+    public int UserId { get; set; }
+    public string? UserName { get; set; }
+    public int ClassGroupId { get; set; }
+    public string? ClassGroupName { get; set; }
 }
 
 /// <summary>
@@ -91,4 +167,3 @@ public class ScheduleConflictDto
     public string? EndTime { get; set; }   // "HH:mm"
     public string Message { get; set; } = string.Empty;
 }
-

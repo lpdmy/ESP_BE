@@ -124,7 +124,59 @@ public class TournamentScheduleService : ITournamentScheduleService
             Explanation = aiResponse.Explanation,
             ObjectiveValue = aiResponse.ObjectiveValue,
             TotalMatches = aiResponse.TotalMatches,
-            TotalRounds = aiResponse.TotalRounds
+            TotalRounds = aiResponse.TotalRounds,
+            SlotWarnings = (aiResponse?.SlotWarnings ?? new List<SlotWarningReason>())
+                .Select(w => new SlotWarningReasonDto
+                {
+                    WarningType = w.WarningType,
+                    Title = w.Title,
+                    Description = w.Description,
+                    CurrentValue = w.CurrentValue,
+                    RecommendedValue = w.RecommendedValue,
+                    Solution = w.Solution,
+                    Severity = w.Severity,
+                    Field = w.Field ?? string.Empty
+                }).ToList(),
+            SlotConflicts = (aiResponse?.SlotConflicts ?? new List<ESP.AIService.Models.SlotConflictDetail>())
+                .Select(c => new SlotConflictDetailDto
+                {
+                    Slot = new SlotInfoDto
+                    {
+                        MatchDate = c.Slot.MatchDate,
+                        StartTime = c.Slot.StartTime.ToString(@"hh\:mm"),
+                        EndTime = c.Slot.EndTime.ToString(@"hh\:mm"),
+                        Location = c.Slot.Location
+                    },
+                    ConflictType = c.ConflictType,
+                    Reason = c.Reason,
+                    MatchConflict = c.MatchConflict != null ? new MatchConflictInfoDto
+                    {
+                        MatchId = c.MatchConflict.MatchId,
+                        MatchNumber = c.MatchConflict.MatchNumber,
+                        ClassGroup1Id = c.MatchConflict.ClassGroup1Id,
+                        ClassGroup2Id = c.MatchConflict.ClassGroup2Id,
+                        MatchDate = c.MatchConflict.MatchDate,
+                        StartTime = c.MatchConflict.StartTime.ToString(@"hh\:mm"),
+                        EndTime = c.MatchConflict.EndTime.ToString(@"hh\:mm"),
+                        Location = c.MatchConflict.Location,
+                        Description = c.MatchConflict.Description
+                    } : null,
+                    ActivityConflict = c.ActivityConflict != null ? new ActivityConflictInfoDto
+                    {
+                        ActivityId = c.ActivityConflict.ActivityId,
+                        ActivityTitle = c.ActivityConflict.ActivityTitle,
+                        StartDate = c.ActivityConflict.StartDate,
+                        EndDate = c.ActivityConflict.EndDate,
+                        Description = c.ActivityConflict.Description
+                    } : null,
+                    ParticipantConflicts = c.ParticipantConflicts.Select(p => new ParticipantConflictInfoDto
+                    {
+                        UserId = p.UserId,
+                        UserName = p.UserName,
+                        ClassGroupId = p.ClassGroupId,
+                        ClassGroupName = p.ClassGroupName
+                    }).ToList()
+                }).ToList()
         };
 
         // Chuẩn hóa RoundName cho vòng cuối: luôn là "Chung kết" nếu không còn NextMatch

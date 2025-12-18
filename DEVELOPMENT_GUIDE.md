@@ -700,6 +700,239 @@ Nếu có thắc mắc hoặc cần hỗ trợ, vui lòng liên hệ:
 - **Email**: [email]
 - **Slack**: #edushpere-backend
 
+## 🤖 AI Tournament Schedule Generation System
+
+### Tổng quan
+
+Hệ thống AI tạo lịch thi đấu sử dụng kết hợp Machine Learning (ML.NET) và OR-Tools để tối ưu hóa lịch thi đấu cho hội thao, tự động tránh conflicts với lịch học và các hoạt động khác.
+
+### Kiến trúc hệ thống
+
+```
+Frontend (AISchedule.jsx)
+    ↓
+ActivityController.GenerateTournamentSchedule()
+    ↓
+TournamentScheduleService.GenerateScheduleAsync()
+    ↓
+ESP.AIService.TournamentScheduleService.GenerateSchedule()
+    ├── TournamentScheduleMLService.GenerateSlotsWithScores()  // Tạo slots với ML scores
+    └── ORToolsScheduler.OptimizeSchedule()                    // Tối ưu hóa với OR-Tools
+```
+
+### Flow xử lý chính
+
+#### 1. Frontend Request (AISchedule.jsx)
+
+```jsx
+// User nhập thông tin:
+- sportId, classGroupIds (ít nhất 2 lớp)
+- startDate, endDate
+- matchDuration, preferredStartTime, preferredEndTime
+- availableLocations, maxMatchesPerDay
+- tournamentFormat (SingleElimination, RoundRobin, DoubleElimination)
+- userNotes (ghi chú cho AI)
+
+// Gọi API:
+POST /api/activity/{id}/generate-schedule
+```
+
+#### 2. Backend Validation (TournamentScheduleService.cs)
+
+**Validation quan trọng:**
+- ✅ StartDate >= Today (không cho phép ngày quá khứ)
+- ✅ StartDate <= EndDate
+- ✅ Chỉ lấy lớp thuộc niên khóa hiện tại (filter theo AcademicYearId)
+- ✅ Cần ít nhất 2 lớp để tạo lịch
+
+**Lưu ý:** Backend tự động filter `ClassGroupIds` để chỉ giữ các lớp thuộc niên khóa hiện tại. Nếu có lớp không thuộc niên khóa, sẽ throw BadRequestException.
+
+#### 3. ML Service - Generate Slots (TournamentScheduleMLService.cs)
+
+**Bước 1: Tạo slots từ khoảng thời gian**
+- Tạo tất cả slots có thể từ `StartDate` đến `EndDate`
+- Mỗi slot có: MatchDate, StartTime, EndTime, Location
+- Tính ML Score cho mỗi slot dựa trên:
+  - Historical data (nếu có model đã train)
+  - UserNotes (NLP analysis: ưu tiên buổi sáng/chiều, tránh giờ cao điểm, etc.)
+
+**Bước 2: Adjust ML Score theo UserNotes**
+- Phân tích UserNotes bằng NLP (tokenize, sentiment analysis)
+- Keywords: "sáng", "chiều", "cuối tuần", "tránh giờ cao điểm", etc.
+- Điều chỉnh score với weighted combination:
+  - Time preference: 40%
+  - Day preference: 30%
+  - Context score: 30%
+
+**Vấn đề hiện tại:**
+- ❌ ML model chưa được train đầy đủ (cần ít nhất 20 matches completed)
+- ❌ Default score = 0.5 nếu không có model
+- ⚠️ NLP analysis đơn giản, có thể miss các yêu cầu phức tạp
+
+#### 4. OR-Tools Optimization (ORToolsScheduler.cs)
+
+**Bước 1: Filter Available Slots**
+- Loại bỏ slots conflict với:
+  - Matches đã có (cùng ngày, overlap thời gian, cùng sân)
+  - Activities khác của participants (cross-activity conflict)
+  - Khung giờ cấm: 11:30 - 13:00 (nghỉ trưa)
+  - Location không có trong AvailableLocations
+
+**Lưu ý quan trọng:**
+- ✅ KHÔNG filter slots dựa trên lịch học của TẤT CẢ lớp ở bước này
+- ✅ Chỉ check conflict lịch học khi tạo match cụ thể (chỉ check 2 lớp tham gia match đó)
+- ✅ Điều này cho phép linh hoạt: nếu lịch thi eo hẹp, vẫn có thể tạo match miễn là 2 lớp tham gia rảnh
+
+**Bước 2: Heuristic Scoring**
+- Ưu tiên slot mà nhiều lớp đều rảnh (80%+ lớp rảnh: +10 điểm, 50-80%: +5 điểm)
+- Ưu tiên slot 11h-12h (giữa 2 buổi học): +15 điểm
+- Ưu tiên phân bổ đều các sân (nếu có nhiều sân)
+- Penalty cho cuối tuần (không cộng điểm)
+
+**Bước 3: OR-Tools Solver**
+- Variables: x[i] = 1 nếu slot i được chọn
+- Constraints:
+  1. Chọn ít nhất `actualMinSlots` slots (tối thiểu lý thuyết hoặc số slots có sẵn)
+  2. Tối đa `MaxMatchesPerDay` matches mỗi ngày
+  3. Không overlap thời gian (trừ khi có nhiều sân và slots ở sân khác nhau)
+- Objective: Tối đa hóa tổng ML Score
+
+**Vấn đề hiện tại:**
+- ⚠️ Nếu không đủ slots, constraint có thể INFEASIBLE
+- ⚠️ Logic thêm slots sau khi OR-Tools solve có thể không tối ưu
+- ⚠️ MatchNumber được đánh lại theo thời gian, có thể làm rối NextMatchId mapping
+
+#### 5. Generate Matches (ORToolsScheduler.GenerateMatches)
+
+**Single Elimination Logic:**
+- Tính số rounds: `ceil(log2(n))` với n = số lớp
+- Chia nhánh nếu số lớp > 8 (chia thành 2 nhánh A và B)
+- Tạo matches theo bracket tree:
+  - Round 1: n/2 matches (hoặc n/2 + 1 nếu n lẻ)
+  - Round 2: n/4 matches
+  - ...
+  - Chung kết: 1 match
+
+**Xếp lịch thông minh:**
+- Phân tích lịch học: xác định lớp nào học buổi sáng/chiều
+- Ưu tiên xếp lớp buổi sáng đấu với nhau vào buổi chiều
+- Ưu tiên xếp lớp buổi chiều đấu với nhau vào buổi sáng
+- Check conflict lịch học khi gán slot cho match (chỉ check 2 lớp tham gia)
+
+**Vấn đề hiện tại:**
+- ❌ Logic chia nhánh phức tạp, có thể tạo ra matches không hợp lý
+- ❌ Nếu không đủ slots cho tất cả rounds, matches sau sẽ không có slot
+- ⚠️ NextMatchId mapping có thể sai nếu MatchNumber bị đánh lại
+
+#### 6. Apply Schedule (TournamentScheduleService.ApplyScheduleAsync)
+
+**Validation:**
+- ✅ Tất cả matches phải có MatchDate, StartTime, EndTime
+- ✅ Không có duplicate MatchNumber
+- ✅ Không overlap thời gian (cùng ngày, cùng sân)
+- ✅ Check conflicts:
+  - Cross-activity conflicts (participants đã tham gia activity khác)
+  - Class schedule conflicts (trùng với lịch học)
+
+**Lưu ý:**
+- Nếu có conflicts, trả về HTTP 409 với danh sách conflicts chi tiết
+- Frontend cần hiển thị conflicts để user điều chỉnh
+
+### Các vấn đề và Logic chưa hợp lý
+
+#### 🔴 Vấn đề nghiêm trọng
+
+1. **ML Model chưa được train**
+   - Model cần ít nhất 20 matches completed để train
+   - Nếu không có model, tất cả slots có score = 0.5 (không phân biệt)
+   - **Giải pháp:** Cần train model định kỳ hoặc có default model tốt hơn
+
+2. **Conflict checking không đầy đủ**
+   - Chỉ check conflict lịch học khi tạo match, không check khi filter slots
+   - Có thể tạo ra matches conflict với lịch học của một số lớp
+   - **Giải pháp:** Cần check conflict lịch học sớm hơn trong quá trình filter slots
+
+3. **NextMatchId mapping sai**
+   - MatchNumber được đánh lại theo thời gian sau khi tạo matches
+   - NextMatchId vẫn dùng MatchNumber cũ → mapping sai
+   - **Giải pháp:** Cần map NextMatchId sau khi đánh lại MatchNumber
+
+#### ⚠️ Vấn đề cần cải thiện
+
+4. **Slot selection không tối ưu**
+   - OR-Tools có thể chọn quá ít slots, không đủ cho tất cả rounds
+   - Logic thêm slots sau khi solve không đảm bảo tối ưu
+   - **Giải pháp:** Cần tính toán số slots cần thiết chính xác hơn
+
+5. **Heuristic scoring chưa đủ thông minh**
+   - Chỉ dựa trên lịch học cơ bản, chưa xét đến:
+     - Sức khỏe học sinh (không nên xếp quá nhiều trận trong ngày)
+     - Khoảng cách giữa các trận của cùng một lớp
+     - Ưu tiên các slot có nhiều lớp rảnh
+   - **Giải pháp:** Cải thiện heuristic với nhiều yếu tố hơn
+
+6. **UserNotes parsing đơn giản**
+   - NLP analysis chỉ dựa trên keywords, không hiểu ngữ cảnh
+   - Có thể miss các yêu cầu phức tạp
+   - **Giải pháp:** Cải thiện NLP hoặc dùng AI model tốt hơn
+
+7. **Error handling chưa đầy đủ**
+   - Nếu OR-Tools không tìm được solution, chỉ trả về error message
+   - Không có fallback mechanism
+   - **Giải pháp:** Cần có fallback (ví dụ: greedy algorithm) khi OR-Tools fail
+
+### Best Practices
+
+#### 1. Train ML Model định kỳ
+
+```csharp
+// Gọi API train model sau khi có đủ dữ liệu
+POST /api/activity/train-schedule-model
+[Authorize(Roles = "Admin")]
+```
+
+#### 2. Validate input đầy đủ
+
+```csharp
+// Frontend: Validate trước khi gửi request
+- classGroupIds.length >= 2
+- startDate <= endDate
+- startDate >= today
+- availableLocations không rỗng (nếu có)
+```
+
+#### 3. Handle conflicts properly
+
+```csharp
+// Backend: Trả về conflicts chi tiết
+if (conflicts.Any())
+{
+    return StatusCode(409, new ResponseDto<ApplyTournamentScheduleResponseDto>
+    {
+        Data = response,
+        Conflicts = conflicts
+    });
+}
+```
+
+#### 4. Test với nhiều scenarios
+
+- Test với ít slots available
+- Test với nhiều conflicts
+- Test với lịch học phức tạp
+- Test với nhiều sân
+
+### Code Review Checklist
+
+- [ ] ML model đã được train (hoặc có default model)
+- [ ] Conflict checking đầy đủ (lịch học, activities khác)
+- [ ] NextMatchId mapping đúng sau khi đánh lại MatchNumber
+- [ ] Slot selection đủ cho tất cả rounds
+- [ ] Error handling có fallback mechanism
+- [ ] UserNotes được parse đúng
+- [ ] Heuristic scoring hợp lý
+- [ ] Test với edge cases
+
 ---
 
 **Lưu ý**: Tài liệu này sẽ được cập nhật thường xuyên. Vui lòng kiểm tra phiên bản mới nhất trước khi bắt đầu development.
