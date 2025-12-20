@@ -403,9 +403,12 @@ namespace EduShpere.Application.Services
 
             foreach (var s in completedSubmissions)
             {
-                s.Score = s.JuryAssignments
+                var scores = s.JuryAssignments?
                     .Where(j => j.TotalScore.HasValue)
-                    .Average(j => j.TotalScore.Value);
+                    .Select(j => j.TotalScore.Value);
+                s.Score = scores != null && scores.Any()
+                    ? scores.Average()
+                    : 0;
             }
             var ranked = completedSubmissions
                 .OrderByDescending(s => s.Score)
@@ -834,6 +837,65 @@ namespace EduShpere.Application.Services
 
             await _repo.UpdateAsync(submission);
             return true;
+        }
+
+        /// <summary>
+        /// Cập nhật điểm cho tất cả submissions dựa trên điểm trung bình từ JuryAssignments
+        /// Xử lý theo batch để tránh OutOfMemoryException
+        /// </summary>
+        public async Task<int> UpdateSubmissionScoresAsync()
+        {
+            const int batchSize = 100; // Xử lý 100 submissions mỗi lần
+            int totalUpdated = 0;
+
+            try
+            {
+                // Lấy tổng số submissions cần xử lý
+                var totalCount = await _context.Submissions
+                    .Where(s => !s.IsDeleted)
+                    .CountAsync();
+
+                if (totalCount == 0)
+                {
+                    return 0;
+                }
+
+                // Xử lý theo batch để tránh load tất cả vào memory
+                for (int skip = 0; skip < totalCount; skip += batchSize)
+                {
+                    // Load submissions theo batch với JuryAssignments
+                    var submissions = await _context.Submissions
+                        .Where(s => !s.IsDeleted)
+                        .Include(s => s.JuryAssignments)
+                        .OrderBy(s => s.Id)
+                        .Skip(skip)
+                        .Take(batchSize)
+                        .ToListAsync();
+
+                    foreach (var submission in submissions)
+                    {
+                        var validScores = submission.JuryAssignments
+                            .Where(j => j.TotalScore.HasValue)
+                            .Select(j => j.TotalScore.Value)
+                            .ToList();
+
+                        submission.Score = validScores.Any()
+                            ? validScores.Average()
+                            : null;
+                    }
+
+                    // Save changes cho batch này
+                    var updatedCount = await _context.SaveChangesAsync();
+                    totalUpdated += updatedCount;
+                }
+
+                return totalUpdated;
+            }
+            catch (Exception ex)
+            {
+                // Log error và rethrow để caller có thể handle
+                throw new Exception($"Error updating submission scores: {ex.Message}", ex);
+            }
         }
     }
 }

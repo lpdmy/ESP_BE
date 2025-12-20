@@ -47,11 +47,6 @@ namespace EduShpere.Application.Services
         Task<bool> IsAssignedToGrade(int userId, int submissionId);
         
         /// <summary>
-        /// Get list of activities that don't have any assigned jurors (for Admin & Staff)
-        /// </summary>
-        Task<List<ActivityWithoutJuryDto>> GetActivitiesWithoutJuryAsync();
-        
-        /// <summary>
         /// Improved random assignment with rules:
         /// Rule A: Don't remove jurors who have already graded
         /// Rule B: Distribute evenly (prioritize jurors with fewer activities)

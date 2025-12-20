@@ -15,6 +15,7 @@ namespace EduShpere.Application.DTOs
         public int? ReporterId { get; set; }
         public int? ReviewerId { get; set; }
         public string? Status { get; set; }
+        public ClassGroupModerationDto Class { get; set; }
         public DateTime? ReviewedAt { get; set; }
         public DateTime ReportedAt { get; set; }
         public string? AuthorName { get; set; }

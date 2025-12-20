@@ -36,4 +36,5 @@ public interface IClassGroupService
     Task<AssignHomeroomTeacherResponseDto> AssignHomeroomTeacherAsync(int classGroupId, AssignHomeroomTeacherDto dto);
     Task<bool> RemoveHomeroomTeacherAsync(int classGroupId);
     Task<UserDto?> GetHomeroomTeacherAsync(int classGroupId);
+    Task<Dictionary<int, UserDto?>> GetHomeroomTeachersAsync(IEnumerable<int> classGroupIds);
 }

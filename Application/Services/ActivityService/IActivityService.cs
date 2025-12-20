@@ -2,12 +2,17 @@
 using EduShpere.Application.DTOs.ActivityDto;
 using EduShpere.Application.DTOs.CommonDto;
 using EduShpere.Domain.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace EduShpere.Application.Services
 {
     public interface IActivityService
     {
         Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null);
+        /// <summary>
+        /// Get paginated list of activities with optimized DTO (for list view)
+        /// </summary>
+        Task<PaginationResponseDto<ActivityListItemDto>> GetAllOptimizedAsync(int pageNumber, int pageSize, string? search = null);
         Task<IEnumerable<ActivityListItemDto>> GetListItemsAsync();
         Task<PaginationResponseDto<ActivityListItemDto>> GetListItemsWithFilterAsync(ActivityListFilterDto filter, int? userId = null);
         Task<Activity?> GetByIdAsync(int id);
@@ -15,5 +20,14 @@ namespace EduShpere.Application.Services
         Task<ActivityResponseDto> UpdateAsync(UpdateActivityDto dto);
         Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null);
         Task<ActivityStatisticsDto> GetStatisticsAsync();
+        Task<RecentActivityInputsDto> GetRecentInputsAsync(int userId, int take = 5);
+        /// <summary>
+        /// Quét danh sách participants đã hoàn thành hoạt động và cộng điểm tham gia
+        /// </summary>
+        Task<int> AwardParticipationPointsAsync(int activityId);
+        /// <summary>
+        /// Trao điểm thưởng cho participants dựa trên rank (ActivityReward)
+        /// </summary>
+        Task<bool> AwardRankRewardsAsync(int activityId, Dictionary<int, string> participantRanks);
     }
 }

@@ -3,6 +3,7 @@ using AutoMapper;
 using DocumentFormat.OpenXml.Bibliography;
 using EduShpere.Application.DTOs;
 using EduShpere.Application.DTOs.CommonDto;
+using EduShpere.Application.Services.NotificationService;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
@@ -18,12 +19,14 @@ namespace EduShpere.Application.Services
         private readonly IMapper _mapper;
         private readonly IClubRepository _clubRepo;
         private readonly IClubMemberRepository _clubMemberRepo;
-        public ClubCreationRequestService(IClubCreationRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo)
+        private readonly INotificationService _notificationService;
+        public ClubCreationRequestService(IClubCreationRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo, INotificationService notificationService)
         {
             _repo = repo;
             _mapper = mapper;
             _clubRepo = clubRepo;
             _clubMemberRepo = clubMemberRepo;
+            _notificationService = notificationService;
         }
 
         public async Task<ClubCreationResponseDto> createClubRequest(CreateClubRequestDto dto,User user)
@@ -66,7 +69,6 @@ namespace EduShpere.Application.Services
     string? search = null,int ? status = null)
         {
             var query = _repo.GetAllWithIncludes();
-
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(c =>
@@ -166,6 +168,14 @@ namespace EduShpere.Application.Services
                 CreatedBy = request.RequestedByUserId,
                 IsDeleted = false,
             };
+            await _notificationService.AddAsync(new Notification
+            {
+                Title = $"Câu lạc bộ {club.Name} đã được duyệt",
+                CreatedAt = DateTime.Now,
+                Read = false,
+                Type = "system",
+                UserId = request.RequestedByUserId,
+            });
             await _clubMemberRepo.AddAsync(ClubMember);
             request.Status = "Approved";
             await _repo.UpdateAsync(request);
@@ -193,6 +203,14 @@ namespace EduShpere.Application.Services
             var dto = _mapper.Map<ClubCreationResponseDto>(request);
             dto.RequestedByName = $"{request.RequestedByUser?.LastName} {request.RequestedByUser?.FirstName}";
             dto.RequestedByEmail = request.RequestedByUser?.Email;
+            await _notificationService.AddAsync(new Notification
+            {
+                Title = $"Yêu cầu tạo câu lạc bộ cảu bạn đã bị từ chối",
+                CreatedAt = DateTime.Now,
+                Read = false,
+                Type = "system",
+                UserId = request.RequestedByUserId,
+            });
             return dto;
         }
 

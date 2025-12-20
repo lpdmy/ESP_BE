@@ -288,25 +288,6 @@ namespace EduShpere.Controllers
             }
         }
 
-        [HttpGet(ApiEndpoints.Jury.GetActivitiesWithoutJury)]
-        [Authorize(Roles = "Admin,Staff")]
-        public async Task<IActionResult> GetActivitiesWithoutJury()
-        {
-            try
-            {
-                var result = await _juryService.GetActivitiesWithoutJuryAsync();
-                return Ok(new ResponseDto<List<ActivityWithoutJuryDto>>(result, "Lấy danh sách sự kiện chưa có giám khảo thành công"));
-            }
-            catch (BadRequestException ex)
-            {
-                throw new BadRequestException(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-
         [HttpPost(ApiEndpoints.Jury.ImprovedRandomAssign)]
         [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> ImprovedRandomAssign([FromBody] RamdomAssignJuryDto dto)

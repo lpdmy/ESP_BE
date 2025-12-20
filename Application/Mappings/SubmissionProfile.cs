@@ -20,7 +20,7 @@ namespace EduShpere.Application
                .ForMember(dest => dest.Class, opt => opt.MapFrom(p =>
                    p.User.ClassGroupMembers.Select(cgm => cgm.ClassGroup).OrderByDescending(cg => cg.CreatedAt).FirstOrDefault()
                ))
-               .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => 
+               .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src =>
                    src.Attachments.Where(a => !a.IsDeleted).Select(a => new SubmissionAttachmentDto
                    {
                        Url = a.FileUrl ?? string.Empty,
@@ -32,7 +32,8 @@ namespace EduShpere.Application
                 p.JuryAssignments.Select(j => j.UserId).ToList()
                 ))
                .ForMember(dest => dest.Score, opt => opt.MapFrom(p => p.Score))
-               .ForMember(dest => dest.ActivityName, opt => opt.MapFrom(p => p.Activity.Title));
+               .ForMember(dest => dest.ActivityName,
+                opt => opt.MapFrom(p => p.Activity != null ? p.Activity.Title : string.Empty));
             CreateMap<ClassGroup, ClassGroupDtoAlias>();
             CreateMap<Attachment, SubmissionAttachmentDto>()
                 .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.FileUrl ?? string.Empty))

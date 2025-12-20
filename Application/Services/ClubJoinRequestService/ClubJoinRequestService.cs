@@ -73,7 +73,7 @@ namespace EduShpere.Application.Services
      string? search = null)
         {
             var result = _repo.GetAllWithIncludes();
-            var query = result.Where(c => c.ClubId == clubId && c.Status.Contains("Pending"));
+            var query = result.Where(c => c.ClubId == clubId && c.Status.Contains("Pending") && c.IsMentor != true);
 
             if (!string.IsNullOrWhiteSpace(search))
             {

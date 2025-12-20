@@ -12,6 +12,8 @@ using System.Linq;
 using EduShpere.Infrastructure;
 using System.Security.Claims;
 using EduShpere.Domain.Models;
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 
 namespace EduShpere.Controllers
 {
@@ -38,25 +40,10 @@ namespace EduShpere.Controllers
         [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetAllActivitys(int pageNumber, int pageSize, string? search = null)
         {
-            var (Activity, totalCount) = await _Service.GetAllAsync(pageNumber, pageSize, search);
+            // Use optimized method that only selects necessary fields and calculates NumberOfParticipants in query
+            var result = await _Service.GetAllOptimizedAsync(pageNumber, pageSize, search);
             
-            // Map each item individually to avoid AfterMap issues with collections
-            var ActivityDtos = new List<ActivityResponseDto>();
-            foreach (var activity in Activity)
-            {
-                var dto = _mapper.Map<ActivityResponseDto>(activity);
-                dto.NumberOfParticipants = await _APservice.CountNumberParticipantInActivity(dto.Id);
-                ActivityDtos.Add(dto);
-            }
-
-            var result = new PaginationResponseDto<ActivityResponseDto>
-            {
-                Data = ActivityDtos,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-            return Ok(new ResponseDto<PaginationResponseDto<ActivityResponseDto>>(
+            return Ok(new ResponseDto<PaginationResponseDto<ActivityListItemDto>>(
                 result,
                 "Lấy danh sách thành công",
                 (int)HttpStatusCode.OK
@@ -189,6 +176,31 @@ namespace EduShpere.Controllers
             ));
         }
 
+        [HttpGet(ApiEndpoints.Activity.RecentInputs)]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GetRecentInputs([FromQuery] int take = 5)
+        {
+            var userId = _HttpContextService.GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new ResponseDto<string>(
+                    null,
+                    "Không thể xác định người dùng",
+                    (int)HttpStatusCode.Unauthorized
+                ));
+            }
+
+            if (take < 1) take = 1;
+            if (take > 20) take = 20; // giới hạn để tránh trả về quá nhiều
+
+            var result = await _Service.GetRecentInputsAsync(userId.Value, take);
+            return Ok(new ResponseDto<RecentActivityInputsDto>(
+                result,
+                "Lấy dữ liệu nhập gần đây thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
         [HttpGet(ApiEndpoints.Activity.GetActivityById)]
         [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<IActionResult> GetActivitys(int id)
@@ -286,12 +298,28 @@ namespace EduShpere.Controllers
             }
 
             var response = await _tournamentScheduleService.ApplyScheduleAsync(id, dto, _dbContext);
+
+            // Nếu ApplyScheduleAsync trả về trạng thái không thành công (ví dụ do xung đột lịch),
+            // phản hồi HTTP 409 để FE có thể hiển thị chi tiết conflicts từ payload.
+            if (response != null && !response.Success)
+            {
+                return StatusCode(
+                    (int)HttpStatusCode.Conflict,
+                    new ResponseDto<ApplyTournamentScheduleResponseDto>(
+                        response,
+                        "Phát hiện xung đột hoặc lỗi khi áp dụng lịch thi đấu",
+                        (int)HttpStatusCode.Conflict
+                    )
+                );
+            }
+
             return Ok(new ResponseDto<ApplyTournamentScheduleResponseDto>(
                 response,
                 "Áp dụng lịch thi đấu thành công",
                 (int)HttpStatusCode.OK
             ));
         }
+
 
         [HttpPost(ApiEndpoints.Activity.TrainScheduleModel)]
         [Authorize(Roles = "Admin")]
@@ -315,6 +343,88 @@ namespace EduShpere.Controllers
                 "Lấy thống kê hoạt động thành công",
                 (int)HttpStatusCode.OK
             ));
+        }
+
+        /// <summary>
+        /// Quét danh sách participants đã hoàn thành hoạt động và cộng điểm tham gia
+        /// Chỉ Admin/Staff mới có quyền
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.AwardParticipationPoints)]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> AwardParticipationPoints(int id)
+        {
+            try
+            {
+                var awardedCount = await _Service.AwardParticipationPointsAsync(id);
+                return Ok(new ResponseDto<int>(
+                    awardedCount,
+                    $"Đã cộng điểm tham gia cho {awardedCount} người tham gia thành công",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<int>(
+                    0,
+                    $"Lỗi khi cộng điểm tham gia: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+
+        /// <summary>
+        /// Trao điểm thưởng cho participants dựa trên rank (ActivityReward)
+        /// Chỉ Admin/Staff mới có quyền
+        /// Body: { "participantRanks": { "1": "Giải Nhất", "2": "Giải Nhì", "3": "Giải Ba" } }
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.AwardRankRewards)]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> AwardRankRewards(int id, [FromBody] AwardRankRewardsRequestDto request)
+        {
+            try
+            {
+                if (request?.ParticipantRanks == null || !request.ParticipantRanks.Any())
+                {
+                    return BadRequest(new ResponseDto<bool>(
+                        false,
+                        "Participant ranks không được để trống",
+                        (int)HttpStatusCode.BadRequest
+                    ));
+                }
+
+                // Convert Dictionary<string, string> to Dictionary<int, string>
+                var participantRanks = new Dictionary<int, string>();
+                foreach (var kvp in request.ParticipantRanks)
+                {
+                    if (int.TryParse(kvp.Key, out int participantId))
+                    {
+                        participantRanks[participantId] = kvp.Value;
+                    }
+                    else
+                    {
+                        return BadRequest(new ResponseDto<bool>(
+                            false,
+                            $"Participant ID không hợp lệ: {kvp.Key}",
+                            (int)HttpStatusCode.BadRequest
+                        ));
+                    }
+                }
+
+                var success = await _Service.AwardRankRewardsAsync(id, participantRanks);
+                return Ok(new ResponseDto<bool>(
+                    success,
+                    success ? "Đã trao giải thưởng thành công" : "Không có giải thưởng nào được trao",
+                    (int)HttpStatusCode.OK
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<bool>(
+                    false,
+                    $"Lỗi khi trao giải thưởng: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
         }
     }
 }

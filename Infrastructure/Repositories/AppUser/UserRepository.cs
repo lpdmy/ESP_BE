@@ -23,7 +23,30 @@ namespace EduShpere.Infrastructure
         }
         public virtual async Task<User?> GetByIdIncludeAsync(int id)
         {
-            return await _dbSet.Include(p=>p.UserRights).ThenInclude(p=>p.Right).FirstOrDefaultAsync(p=>p.Id==id);
+            // Dùng cho các chỗ cần full user (profile, quản lý user)
+            return await _dbSet
+                .Include(u => u.StudentProfile)
+                .Include(u => u.TeacherProfile)
+                .Include(u => u.ClassGroupMembers)
+                    .ThenInclude(cgm => cgm.ClassGroup)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        }
+
+        /// <summary>
+        /// Tối ưu riêng cho GetMe: đọc nhanh, chỉ lấy user + profile + rights cần thiết, không tracking.
+        /// </summary>
+        public async Task<User?> GetUserForMeAsync(int id)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Where(u => u.Id == id && !u.IsDeleted)
+                .Include(u => u.StudentProfile)
+                .Include(u => u.TeacherProfile)
+                .Include(u => u.ClassGroupMembers)
+                    .ThenInclude(cgm => cgm.ClassGroup)
+                .Include(u => u.UserRights)
+                    .ThenInclude(ur => ur.Right)
+                .FirstOrDefaultAsync();
         }
         public IQueryable<User> GetAllByStaffIncluding()
         {
@@ -59,7 +82,16 @@ namespace EduShpere.Infrastructure
         }
         public async Task<User?> GetUserByUserName(string userName)
         {
-            return await _dbSet.FirstOrDefaultAsync(p => p.Username == userName || p.Email.Equals(userName));
+            // Chuẩn hóa về lowercase để dùng index hiệu quả, tránh so sánh case-sensitive chậm
+            var normalized = userName.Trim().ToLower();
+
+            return await _dbSet
+                .AsNoTracking()
+                .Where(u => !u.IsDeleted)
+                .FirstOrDefaultAsync(p =>
+                    p.Username.ToLower() == normalized ||
+                    p.Email.ToLower() == normalized
+                );
         }
         public async Task<bool> FindUserByEmail(string email)
         {

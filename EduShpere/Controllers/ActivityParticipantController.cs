@@ -13,9 +13,11 @@ namespace EduShpere.Controllers
     public class ActivityParticipantController : BaseController
     {
         private readonly IActivityParticipantService _service;
-        public ActivityParticipantController(IActivityParticipantService service)
+        private readonly IHttpContextService _httpContextService;
+        public ActivityParticipantController(IActivityParticipantService service, IHttpContextService httpContextService)
         {
             _service = service;
+            _httpContextService = httpContextService;
         }
         [HttpPost(ApiEndpoints.ActivityParticipant.ActivityParticipantRoute)]
         [Authorize(Roles = "Student,Teacher,Admin")]
@@ -64,19 +66,19 @@ namespace EduShpere.Controllers
 
         [HttpDelete(ApiEndpoints.ActivityParticipant.CancelRegistration)]
         [Authorize(Roles = "Student,Teacher,Admin")]
-        public async Task<IActionResult> CancelRegistration(int activityId)
+        public async Task<IActionResult> CancelRegistration([FromRoute] int activityId)
         {
             if (activityId <= 0)
                 return BadRequest(new ResponseDto<string>(null, ErrorMessages.Generic.UnknownError, 400));
             
-            var user = HttpContext.User;
-            var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            var userId = _httpContextService.GetCurrentUserId();
+            if (userId == null)
             {
-                return Unauthorized(new ResponseDto<string>(null, ErrorMessages.Auth.InvalidToken, 401));
+                // Trả về 400 thay vì 401 để tránh frontend tự động xóa token và redirect
+                return BadRequest(new ResponseDto<string>(null, "Không thể xác định người dùng. Vui lòng đăng nhập lại.", 400));
             }
 
-            var result = await _service.CancelRegistrationAsync(activityId, userId);
+            var result = await _service.CancelRegistrationAsync(activityId, userId.Value);
             return Ok(new ResponseDto<bool>(result, "Hủy đăng ký tham gia hoạt động thành công", 200));
         }
 

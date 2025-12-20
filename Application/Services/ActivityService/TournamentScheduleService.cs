@@ -98,7 +98,7 @@ public class TournamentScheduleService : ITournamentScheduleService
         var aiResponse = _aiService.GenerateSchedule(aiRequest, dbContext);
 
         // Convert AI response sang DTO
-        return new GenerateTournamentScheduleResponseDto
+        var dto = new GenerateTournamentScheduleResponseDto
         {
             Success = aiResponse.Success,
             IsOptimal = aiResponse.IsOptimal,
@@ -124,8 +124,72 @@ public class TournamentScheduleService : ITournamentScheduleService
             Explanation = aiResponse.Explanation,
             ObjectiveValue = aiResponse.ObjectiveValue,
             TotalMatches = aiResponse.TotalMatches,
-            TotalRounds = aiResponse.TotalRounds
+            TotalRounds = aiResponse.TotalRounds,
+            SlotWarnings = (aiResponse?.SlotWarnings ?? new List<SlotWarningReason>())
+                .Select(w => new SlotWarningReasonDto
+                {
+                    WarningType = w.WarningType,
+                    Title = w.Title,
+                    Description = w.Description,
+                    CurrentValue = w.CurrentValue,
+                    RecommendedValue = w.RecommendedValue,
+                    Solution = w.Solution,
+                    Severity = w.Severity,
+                    Field = w.Field ?? string.Empty
+                }).ToList(),
+            SlotConflicts = (aiResponse?.SlotConflicts ?? new List<ESP.AIService.Models.SlotConflictDetail>())
+                .Select(c => new SlotConflictDetailDto
+                {
+                    Slot = new SlotInfoDto
+                    {
+                        MatchDate = c.Slot.MatchDate,
+                        StartTime = c.Slot.StartTime.ToString(@"hh\:mm"),
+                        EndTime = c.Slot.EndTime.ToString(@"hh\:mm"),
+                        Location = c.Slot.Location
+                    },
+                    ConflictType = c.ConflictType,
+                    Reason = c.Reason,
+                    MatchConflict = c.MatchConflict != null ? new MatchConflictInfoDto
+                    {
+                        MatchId = c.MatchConflict.MatchId,
+                        MatchNumber = c.MatchConflict.MatchNumber,
+                        ClassGroup1Id = c.MatchConflict.ClassGroup1Id,
+                        ClassGroup2Id = c.MatchConflict.ClassGroup2Id,
+                        MatchDate = c.MatchConflict.MatchDate,
+                        StartTime = c.MatchConflict.StartTime.ToString(@"hh\:mm"),
+                        EndTime = c.MatchConflict.EndTime.ToString(@"hh\:mm"),
+                        Location = c.MatchConflict.Location,
+                        Description = c.MatchConflict.Description
+                    } : null,
+                    ActivityConflict = c.ActivityConflict != null ? new ActivityConflictInfoDto
+                    {
+                        ActivityId = c.ActivityConflict.ActivityId,
+                        ActivityTitle = c.ActivityConflict.ActivityTitle,
+                        StartDate = c.ActivityConflict.StartDate,
+                        EndDate = c.ActivityConflict.EndDate,
+                        Description = c.ActivityConflict.Description
+                    } : null,
+                    ParticipantConflicts = c.ParticipantConflicts.Select(p => new ParticipantConflictInfoDto
+                    {
+                        UserId = p.UserId,
+                        UserName = p.UserName,
+                        ClassGroupId = p.ClassGroupId,
+                        ClassGroupName = p.ClassGroupName
+                    }).ToList()
+                }).ToList()
         };
+
+        // Chuẩn hóa RoundName cho vòng cuối: luôn là "Chung kết" nếu không còn NextMatch
+        if (dto.GeneratedMatches.Any())
+        {
+            var maxRound = dto.GeneratedMatches.Max(m => m.Round);
+            foreach (var match in dto.GeneratedMatches.Where(m => m.Round == maxRound && !m.NextMatchId.HasValue))
+            {
+                match.RoundName = "Chung kết";
+            }
+        }
+
+        return dto;
     }
 
     public async Task TrainModelAsync(EduShpereDbContext dbContext)
@@ -225,6 +289,169 @@ public class TournamentScheduleService : ITournamentScheduleService
                         $"tại sân {(matchA.Location ?? "N/A")} ngày {matchA.MatchDate:dd/MM}.");
                 }
             }
+        }
+
+        // ========================
+        // Conflict checking (cross-activity & class schedules)
+        // ========================
+        var conflicts = new List<ScheduleConflictDto>();
+
+        // Lấy danh sách ClassGroupId duy nhất trong matches
+        var matchClassGroupIds = normalizedMatches
+            .SelectMany(m => new[] { m.Dto.ClassGroup1Id, m.Dto.ClassGroup2Id })
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+        // Guard: nếu không có class groups, bỏ qua conflict check nâng cao
+        if (matchClassGroupIds.Any())
+        {
+            // Lấy participants của activity hiện tại (guard quan trọng: chỉ check cho người thực sự tham gia activity này)
+            var activityParticipants = await dbContext.ActivityParticipants
+                .Where(ap => ap.ActivityId == activityId && !ap.IsDeleted)
+                .ToListAsync();
+
+            var participantsByClassGroup = activityParticipants
+                .Where(ap => ap.ClassGroupId.HasValue)
+                .GroupBy(ap => ap.ClassGroupId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(ap => ap.UserId).ToList());
+
+            // Chỉ lấy schedules cho các lớp có participants trong activity này
+            var classGroupsWithParticipants = participantsByClassGroup.Keys.ToList();
+
+            if (classGroupsWithParticipants.Any())
+            {
+                // Lịch học chính khóa cho các lớp tham gia
+                var classSchedules = await dbContext.ClassGroupSchedules
+                    .Where(s => classGroupsWithParticipants.Contains(s.ClassGroupId))
+                    .ToListAsync();
+
+                var schedulesByClassGroup = classSchedules
+                    .GroupBy(s => s.ClassGroupId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                // Các hoạt động khác mà participants đã tham gia (cross-activity conflict)
+                var participantUserIds = activityParticipants
+                    .Select(ap => ap.UserId)
+                    .Distinct()
+                    .ToList();
+
+                if (participantUserIds.Any())
+                {
+                    var otherActivities = await dbContext.Activities
+                        .Include(a => a.ActivityParticipants)
+                        .Where(a =>
+                            a.Id != activityId &&
+                            !a.IsDeleted &&
+                            a.StartDate.HasValue &&
+                            a.EndDate.HasValue &&
+                            a.ActivityParticipants.Any(ap =>
+                                !ap.IsDeleted &&
+                                participantUserIds.Contains(ap.UserId)))
+                        .ToListAsync();
+
+                    // Duyệt từng match để kiểm tra conflict chi tiết
+                    foreach (var nm in normalizedMatches)
+                    {
+                        var dto = nm.Dto;
+                        var matchStart = nm.MatchDate.Add(nm.StartTime);
+                        var matchEnd = nm.MatchDate.Add(nm.EndTime);
+
+                        // Cross-activity conflicts (A)
+                        foreach (var classGroupId in new[] { dto.ClassGroup1Id, dto.ClassGroup2Id }.Where(id => id.HasValue).Select(id => id!.Value))
+                        {
+                            if (!participantsByClassGroup.TryGetValue(classGroupId, out var userIdsForClass) ||
+                                !userIdsForClass.Any())
+                            {
+                                // Lớp không có học sinh tham gia activity này → bỏ qua theo guard clause
+                                continue;
+                            }
+
+                            foreach (var otherActivity in otherActivities)
+                            {
+                                var otherStart = otherActivity.StartDate!.Value;
+                                var otherEnd = otherActivity.EndDate!.Value;
+
+                                if (matchStart < otherEnd && matchEnd > otherStart)
+                                {
+                                    // Tìm các học sinh thực sự bị conflict
+                            var conflictedUserIds = otherActivity.ActivityParticipants
+                                        .Where(ap =>
+                                            !ap.IsDeleted &&
+                                            userIdsForClass.Contains(ap.UserId))
+                                        .Select(ap => ap.UserId)
+                                        .Distinct()
+                                        .ToList();
+
+                                    foreach (var userId in conflictedUserIds)
+                                    {
+                                        conflicts.Add(new ScheduleConflictDto
+                                        {
+                                            ConflictType = "ActivityConflict",
+                                            ActivityId = otherActivity.Id,
+                                            UserId = userId,
+                                            ClassGroupId = classGroupId,
+                                            MatchNumber = dto.MatchNumber,
+                                            MatchDate = nm.MatchDate,
+                                            StartTime = nm.StartTime.ToString(@"hh\:mm"),
+                                            EndTime = nm.EndTime.ToString(@"hh\:mm"),
+                                            Message = $"Người dùng {userId} (lớp {classGroupId}) đã tham gia hoạt động #{otherActivity.Id} trong cùng khoảng thời gian."
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        // Class schedule conflicts (B)
+                        foreach (var classGroupId in new[] { dto.ClassGroup1Id, dto.ClassGroup2Id }.Where(id => id.HasValue).Select(id => id!.Value))
+                        {
+                            if (!schedulesByClassGroup.TryGetValue(classGroupId, out var schedulesForClass) ||
+                                !schedulesForClass.Any())
+                            {
+                                continue;
+                            }
+
+                            var dayOfWeek = nm.MatchDate.DayOfWeek;
+                            var dayOfWeekNormalized = dayOfWeek == DayOfWeek.Sunday ? 7 : (int)dayOfWeek;
+
+                            foreach (var schedule in schedulesForClass.Where(s => s.DayOfWeek == dayOfWeekNormalized))
+                            {
+                                var scheduleStart = nm.MatchDate.Date.Add(schedule.StartTime);
+                                var scheduleEnd = nm.MatchDate.Date.Add(schedule.EndTime);
+
+                                if (matchStart < scheduleEnd && matchEnd > scheduleStart)
+                                {
+                                    conflicts.Add(new ScheduleConflictDto
+                                    {
+                                        ConflictType = "ClassScheduleConflict",
+                                        ActivityId = activityId,
+                                        ClassGroupId = classGroupId,
+                                        MatchNumber = dto.MatchNumber,
+                                        MatchDate = nm.MatchDate,
+                                        StartTime = nm.StartTime.ToString(@"hh\:mm"),
+                                        EndTime = nm.EndTime.ToString(@"hh\:mm"),
+                                        Message = $"Trận #{dto.MatchNumber} trùng với lịch học của lớp {classGroupId} (tiết {schedule.StartTime:hh\\:mm} - {schedule.EndTime:hh\\:mm})."
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Nếu có conflict chi tiết → trả về response với HTTP 409 (được controller map)
+        if (conflicts.Any())
+        {
+            return new ApplyTournamentScheduleResponseDto
+            {
+                Success = false,
+                IsPublished = false,
+                TotalMatchesApplied = 0,
+                MatchIds = new List<int>(),
+                Conflicts = conflicts
+            };
         }
 
         // Remove old matches (ghi đè)

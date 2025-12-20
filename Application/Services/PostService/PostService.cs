@@ -73,7 +73,6 @@ namespace EduShpere.Application.Services
                 CallToAction = p.CallToAction,
                 IsDeleted = p.IsDeleted,
                 Hashtags = p.PostHashtags.Select(ph => ph.Hashtag.Name).ToList(),
-                MentionUsernames = p.PostMentions.Select(m => m.MentionedUser.Username).ToList(),
                 Comments = p.Comments.Select(c => c.Content).ToList(),
                 Attachments = p.Attachments.Select(a => new PostAttachmentDto
                 {
@@ -83,7 +82,6 @@ namespace EduShpere.Application.Services
                 }).ToList(),
                 AttachmentUrls = p.Attachments.Select(a => a.FileUrl).ToList(),
                 LikeCount = p.PostLikes.Count,
-                ReportCount = p.PostReports.Count,
                 CreatedAt = p.CreatedAt ?? DateTime.Now,
                 AvatarUrl = p.User.AvatarUrl,
                 IsLikedByCurrentUser = p.PostLikes.Any(l => l.UserId == currentUserId) 
@@ -130,18 +128,7 @@ namespace EduShpere.Application.Services
                     Post = post
                 });
             }
-            foreach (var id in (dto.MentionUsernames ?? new List<int>()).Distinct())
-            {
-                var userId = await _userRepo.GetByIdAsync(id);
-                if (userId != null)
-                {
-                    post.PostMentions.Add(new PostMention
-                    {
-                        MentionedUserId = userId.Id,
-                        Post = post
-                    });
-                }
-            }
+            
             foreach (var attachment in (dto.AttachmentUrls ?? new List<PostAttachmentDto>()))
             {
                 if (!string.IsNullOrWhiteSpace(attachment.Url))

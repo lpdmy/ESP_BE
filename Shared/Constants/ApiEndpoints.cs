@@ -60,13 +60,29 @@ namespace EduShpere.Shared.Constants
             public const string Activities = "api/activity";
             public const string GetActivityById = "api/activity/{id}";
             public const string GetListItems = "api/activity/list-items";
+            public const string RecentInputs = "api/activity/recent-inputs";
             public const string GenerateTournamentSchedule = "api/activity/{id}/generate-schedule";
             public const string ApplyTournamentSchedule = "api/activity/{id}/apply-schedule";
             public const string TrainScheduleModel = "api/activity/train-schedule-model";
             public const string MyActivities = "api/my-activities";
             public const string Statistics = "api/activity/statistics";
+            public const string AwardParticipationPoints = "api/activity/{id}/award-participation-points";
+            public const string AwardRankRewards = "api/activity/{id}/award-rank-rewards";
 
         }
+
+        public static class ActivityTemplate
+        {
+            public const string GetAll = "api/activity-template";
+            public const string GetById = "api/activity-template/{id}";
+            public const string GetBySubType = "api/activity-template/subtype";
+            public const string Create = "api/activity-template";
+            public const string SaveFromForm = "api/activity-template/save-from-form";
+            public const string Update = "api/activity-template";
+            public const string Delete = "api/activity-template/{id}";
+            public const string IncrementUsage = "api/activity-template/{id}/increment-usage";
+        }
+
 
 
         public static class ActivityParticipant
@@ -124,6 +140,7 @@ namespace EduShpere.Shared.Constants
         public static class Club
         {
             public const string Clubs = "api/club";
+            public const string ClubAdmins = "api/club/admin";
             public const string GetClubById = "api/club/{id}";
             public const string GetClubByUser = "api/club/user";
             public const string Categories = "api/club/categories";
@@ -183,6 +200,7 @@ namespace EduShpere.Shared.Constants
             public const string AssignHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
             public const string RemoveHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
             public const string GetHomeroomTeacher = "api/classgroup/{id}/homeroom-teacher";
+            public const string GetHomeroomTeachers = "api/classgroup/homeroom-teachers";
             
             // Academic Year endpoints
             public const string GetAcademicYears = "api/classgroup/academic-years";
@@ -252,7 +270,6 @@ namespace EduShpere.Shared.Constants
 
             public const string GradeSubmission = "api/jury/grade-submission";
             public const string IsAssigned = "api/jury/is-assigned/{userId}/{submissionId}";
-            public const string GetActivitiesWithoutJury = "api/jury/activities-without-jury";
             public const string ImprovedRandomAssign = "api/jury/improved-random-assign";
         }
         public static class Submission

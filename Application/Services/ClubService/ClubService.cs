@@ -15,6 +15,7 @@ using EduShpere.Domain;
 using EduShpere.Infrastructure;
 using EduShpere.Application.DTOs.SearchDto;
 using Microsoft.IdentityModel.Tokens;
+using EduShpere.Application.Services.NotificationService;
 
 namespace EduShpere.Application.Services
 {
@@ -26,19 +27,57 @@ namespace EduShpere.Application.Services
         private readonly IClubCategoryRepository _clubCategoryRepo;
         private readonly IClubMemberRepository _clubMemberRepo;
         private readonly IUserRepository _userRepository;
-        public ClubService(IClubRepository repo, IMapper mapper, IClubJoinRequestRepository clubJoinRequestRepo, IClubCategoryRepository clubCategoryRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepository) {
+        private readonly INotificationService _notificationService;
+        public ClubService(IClubRepository repo, IMapper mapper, IClubJoinRequestRepository clubJoinRequestRepo, INotificationService notificationService, IClubCategoryRepository clubCategoryRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepository) {
             _repo = repo;
             _mapper = mapper;
             _clubJoinRequestRepo = clubJoinRequestRepo;
             _clubCategoryRepo = clubCategoryRepo;
             _clubMemberRepo = clubMemberRepo;
             _userRepository = userRepository;
+            _notificationService = notificationService;
         }
         public async Task<PaginationResponseDto<ClubResponseDto>> GetAllAsync(User user,
     PaginationRequestDto paginationRequest,
     string? search = null)
         {
             var query = _repo.GetAllWithIncludes();
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(c =>
+                    c.Description.Contains(search) ||
+                    c.Name.Contains(search));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var data = await query
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<ClubResponseDto>>(data);
+            foreach (var dto in mapped)
+            {
+                var club = data.First(c => c.Id == dto.Id);
+                dto.IsMember = club.ClubMembers.Any(m => m.UserId == user.Id);
+                dto.IsPresident = club.PresidentUserId == user.Id;
+            }
+            var sql = query.ToQueryString();
+            return new PaginationResponseDto<ClubResponseDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
+        }
+        public async Task<PaginationResponseDto<ClubResponseDto>> GetAllAdminAsync(User user,
+    PaginationRequestDto paginationRequest,
+    string? search = null)
+        {
+            var query = _repo.GetAllWithAdminIncludes();
 
             if (!string.IsNullOrEmpty(search))
             {
@@ -124,6 +163,14 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
             }
+            await _notificationService.AddAsync(new Notification
+            {
+                Title = $"Câu lạc bộ {club.Name} của bạn đã bị tạm ngừng ",
+                CreatedAt = DateTime.Now,
+                Read = false,
+                Type = "system",
+                UserId = club.ClubMembers.Where(p=>p.Role.Equals("President")).Select(p=>p.UserId).FirstOrDefault(),
+            });
             await _repo.DeleteSoft(club.Id);
             return true;
         }

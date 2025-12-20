@@ -106,8 +106,6 @@ public partial class User : BaseEntity
     [InverseProperty("User")]
     public virtual ICollection<PostLike> PostLikes { get; set; } = new List<PostLike>();
 
-    [InverseProperty("Reporter")]
-    public virtual ICollection<PostReport> PostReports { get; set; } = new List<PostReport>();
 
     [InverseProperty("User")]
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
@@ -139,8 +137,6 @@ public partial class User : BaseEntity
 
     [InverseProperty("User")]
     public virtual UserPoint? UserPoint { get; set; }
-    [InverseProperty("MentionedUser")]
-    public virtual ICollection<PostMention> MentionsInPosts { get; set; } = new List<PostMention>();
     [InverseProperty("Teacher")]
     public virtual ICollection<ClassGroup> ClassGroups { get; set; } = new List<ClassGroup>();
     [InverseProperty("Mentor")]

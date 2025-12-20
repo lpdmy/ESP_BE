@@ -21,6 +21,8 @@ public interface IClassGroupRepository
     Task<IEnumerable<ClassGroup>> GetByFilterAsync(string? name = null, int? grade = null, int? academicYearId = null, bool? isDeleted = null);
     Task<IEnumerable<ClassGroup>> GetWithoutAcademicYearAsync();
     Task<IEnumerable<ClassGroup>> GetWithoutGradeAsync();
+    Task<ClassGroupStatistics> GetStatisticsAsync(int? academicYearId = null);
+    Task<Dictionary<int, int>> GetStudentCountsByClassIdsAsync(IEnumerable<int> classIds);
     
     // Student management operations
     Task<IEnumerable<User>> GetStudentsInClassAsync(int classGroupId);
@@ -29,6 +31,7 @@ public interface IClassGroupRepository
     Task<bool> RemoveStudentFromClassAsync(int classGroupId, int studentId);
     Task<bool> IsStudentInClassAsync(int classGroupId, int studentId);
     Task<User?> GetHomeroomTeacherAsync(int classGroupId);
+    Task<Dictionary<int, User?>> GetHomeroomTeachersAsync(IEnumerable<int> classGroupIds);
     Task<User?> GetStudentByEmailAsync(string email);
     Task<ClassGroup?> GetStudentCurrentClassAsync(int studentId);
     Task<ClassGroup?> GetStudentCurrentClassInAcademicYearAsync(int studentId, int academicStartYear);

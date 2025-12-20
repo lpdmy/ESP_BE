@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using EduShpere.Domain.Enum;
 
 namespace EduShpere.Application.DTOs.ActivityDto
@@ -13,6 +14,8 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public DateTime? RegisterDate { get; set; }
+        public DateTime? EndRegisterDate { get; set; }
         public string? Location { get; set; }
         public string Organizer { get; set; } = null!;
         public int? MaxParticipants { get; set; }
@@ -20,12 +23,15 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public string SubType { get; set; } = null!;
         public string ThumbnailUrl { get; set; } = null!;
         public int NumberOfParticipants { get; set; }
-        public DateTime RegisterDate { get; set; }
-        public DateTime EndRegisterDate { get; set; }
         public string? Status { get; set; }
         
-        // Registration Settings - chỉ cần cho CreativeContest
+        // Additional fields for admin list view
+        public bool OnlyTeacherCanRegister { get; set; }
+        public string? GradingSettings { get; set; }
         public ActivityRegistrationSettingsDto? RegistrationSettings { get; set; }
+        public List<ActivitySportDto> Sports { get; set; } = new();
+        public List<ActivityParticipantDto> Participants { get; set; } = new();
+        public bool IsDeleted { get; set; }
         
         // Check if current user is registered for this activity
         public bool IsRegistered { get; set; } = false;
