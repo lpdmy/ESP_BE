@@ -34,6 +34,14 @@ public class RewardRedemptionService : IRewardRedemptionService
         var userId = _currentUserService.GetCurrentUserId() ?? 0;
         int totalPoints = reward.PointCost * dto.Quantity;
 
+        // Kiểm tra balance và trừ điểm với transaction (tự động kiểm tra balance trong AddPointsWithTransactionAsync)
+        await _pointHistoryService.AddPointsWithTransactionAsync(
+            userId,
+            totalPoints,
+            $"Đổi {dto.Quantity} x {reward.Name}",
+            PointActionType.Redeem
+        );
+
         // Tạo bản ghi đổi thưởng
         var redemption = new RewardRedemption
         {
@@ -50,14 +58,6 @@ public class RewardRedemptionService : IRewardRedemptionService
 
         // Trừ stock phần thưởng
         reward.Stock -= dto.Quantity;
-
-        // Ghi vào PointHistory
-        await _pointHistoryService.CreateHistoryAsync(new CreatePointHistoryDto
-        {
-            Points = totalPoints,
-            ActionType = PointActionType.Redeem,
-            Description = $"Đổi {dto.Quantity} x {reward.Name}"
-        });
 
         await _repository.SaveChangesAsync();
 

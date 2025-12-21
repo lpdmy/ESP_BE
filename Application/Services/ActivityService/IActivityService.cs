@@ -29,5 +29,19 @@ namespace EduShpere.Application.Services
         /// Trao điểm thưởng cho participants dựa trên rank (ActivityReward)
         /// </summary>
         Task<bool> AwardRankRewardsAsync(int activityId, Dictionary<int, string> participantRanks);
+        /// <summary>
+        /// Tự động cộng điểm tham gia cho activity (dùng cho Power Automate)
+        /// Trả về thông tin chi tiết về kết quả
+        /// </summary>
+        Task<AutoAwardPointsResponseDto> AutoAwardParticipationPointsAsync(int activityId);
+        /// <summary>
+        /// Batch cộng điểm cho nhiều activities đã kết thúc (dùng cho Power Automate)
+        /// </summary>
+        Task<BatchAutoAwardPointsResponseDto> BatchAutoAwardParticipationPointsAsync(List<int> activityIds);
+        /// <summary>
+        /// Tự động cộng điểm cho tất cả activities đã kết thúc nhưng chưa được cộng điểm (dùng cho Power Automate daily job)
+        /// Optimized query để performance tốt
+        /// </summary>
+        Task<BatchAutoAwardPointsResponseDto> AutoAwardAllEndedActivitiesAsync();
     }
 }

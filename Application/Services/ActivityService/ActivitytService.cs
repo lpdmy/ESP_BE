@@ -8,6 +8,7 @@ using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using EduShpere.Application.Services.StarPointService;
+using EduShpere.Application.Services.NotificationService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -34,6 +35,7 @@ namespace EduShpere.Application.Services
         private readonly IAuditService _auditService;
         private readonly EduShpereDbContext _context;
         private readonly IPointHistoryService _pointHistoryService;
+        private readonly INotificationService _notificationService;
         private static readonly JsonSerializerOptions RegistrationSettingsJsonOptions = new()
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -52,7 +54,8 @@ namespace EduShpere.Application.Services
             IMapper mapper,
             IAuditService auditService,
             EduShpereDbContext context,
-            IPointHistoryService pointHistoryService)
+            IPointHistoryService pointHistoryService,
+            INotificationService notificationService)
         {
             _repo = repo;
             _ruleRepo = ruleRepo;
@@ -66,6 +69,7 @@ namespace EduShpere.Application.Services
             _auditService = auditService;
             _context = context;
             _pointHistoryService = pointHistoryService;
+            _notificationService = notificationService;
         }
         public async Task<(IEnumerable<Activity> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize, string? search = null)
         {
@@ -1382,8 +1386,17 @@ namespace EduShpere.Application.Services
                 throw new NotFoundException($"Activity with ID {activityId} not found");
             }
 
+            // QUAN TRỌNG: Kiểm tra đã cộng điểm chưa
+            if (activity.HasAwardedParticipationPoints)
+            {
+                // Đã cộng điểm rồi, không cần cộng lại
+                return 0;
+            }
+
             // Kiểm tra activity đã kết thúc chưa
-            if (activity.EndDate == null || activity.EndDate.Value.ToUniversalTime() > DateTime.UtcNow)
+            // Lưu ý: StartDate/EndDate đã được NormalizeDateToUTC khi lưu,
+            // nên ở đây so sánh trực tiếp với DateTime.UtcNow (không dùng ToUniversalTime trong LINQ)
+            if (activity.EndDate == null || activity.EndDate.Value > DateTime.UtcNow)
             {
                 throw new BadRequestException("Activity has not ended yet. Cannot award participation points.");
             }
@@ -1392,7 +1405,9 @@ namespace EduShpere.Application.Services
             var registrationReward = await _registrationRewardRepo.GetByActivityIdAsync(activityId);
             if (registrationReward == null || registrationReward.StarPoints <= 0)
             {
-                // Không có điểm thưởng đăng ký, không cần cộng điểm
+                // Không có điểm thưởng đăng ký, đánh dấu đã xử lý để không check lại
+                activity.HasAwardedParticipationPoints = true;
+                await _repo.UpdateAsync(activity);
                 return 0;
             }
 
@@ -1405,6 +1420,9 @@ namespace EduShpere.Application.Services
 
             if (!participants.Any())
             {
+                // Không có participants, đánh dấu đã xử lý
+                activity.HasAwardedParticipationPoints = true;
+                await _repo.UpdateAsync(activity);
                 return 0;
             }
 
@@ -1423,6 +1441,26 @@ namespace EduShpere.Application.Services
                         description,
                         PointActionType.Earn
                     );
+                    
+                    // Gửi notification cho user
+                    try
+                    {
+                        await _notificationService.AddAsync(new Notification
+                        {
+                            UserId = participant.UserId,
+                            Title = $"Bạn đã nhận được {registrationReward.StarPoints} điểm tham gia từ hoạt động \"{activity.Title}\"",
+                            Type = "starpoint",
+                            CreatedAt = DateTime.UtcNow,
+                            Read = false,
+                            Link = $"/activities/{activityId}"
+                        });
+                    }
+                    catch (Exception notifEx)
+                    {
+                        // Log notification error nhưng không fail việc cộng điểm
+                        // Có thể log vào hệ thống logging nếu cần
+                    }
+                    
                     awardedCount++;
                 }
                 catch (Exception ex)
@@ -1435,6 +1473,14 @@ namespace EduShpere.Application.Services
             if (errors.Any() && awardedCount == 0)
             {
                 throw new Exception($"Failed to award points to all participants. Errors: {string.Join("; ", errors)}");
+            }
+
+            // QUAN TRỌNG: Đánh dấu đã cộng điểm sau khi thành công
+            // Chỉ đánh dấu nếu có ít nhất 1 người được cộng điểm hoặc không có lỗi nghiêm trọng
+            if (awardedCount > 0 || errors.Count == 0)
+            {
+                activity.HasAwardedParticipationPoints = true;
+                await _repo.UpdateAsync(activity);
             }
 
             return awardedCount;
@@ -1515,6 +1561,26 @@ namespace EduShpere.Application.Services
                         description,
                         PointActionType.Earn
                     );
+                    
+                    // Gửi notification cho user
+                    try
+                    {
+                        await _notificationService.AddAsync(new Notification
+                        {
+                            UserId = participant.UserId,
+                            Title = $"Chúc mừng! Bạn đã nhận được {points} điểm từ giải thưởng \"{rank}\" - Hoạt động \"{activity.Title}\"",
+                            Type = "starpoint",
+                            CreatedAt = DateTime.UtcNow,
+                            Read = false,
+                            Link = $"/activities/{activityId}"
+                        });
+                    }
+                    catch (Exception notifEx)
+                    {
+                        // Log notification error nhưng không fail việc cộng điểm
+                        // Có thể log vào hệ thống logging nếu cần
+                    }
+                    
                     awardedCount++;
                 }
                 catch (Exception ex)
@@ -1529,6 +1595,194 @@ namespace EduShpere.Application.Services
             }
 
             return awardedCount > 0;
+        }
+
+        /// <summary>
+        /// Tự động cộng điểm tham gia cho activity (dùng cho Power Automate)
+        /// Trả về thông tin chi tiết về kết quả
+        /// </summary>
+        public async Task<AutoAwardPointsResponseDto> AutoAwardParticipationPointsAsync(int activityId)
+        {
+            var response = new AutoAwardPointsResponseDto
+            {
+                ActivityId = activityId,
+                Success = false,
+                AwardedCount = 0
+            };
+
+            try
+            {
+                var activity = await _repo.GetByIdAsync(activityId);
+                if (activity == null)
+                {
+                    response.ErrorMessage = $"Activity with ID {activityId} not found";
+                    return response;
+                }
+
+                response.ActivityTitle = activity.Title;
+
+                // QUAN TRỌNG: Kiểm tra đã cộng điểm chưa
+                if (activity.HasAwardedParticipationPoints)
+                {
+                    response.Success = true;
+                    response.AwardedCount = 0;
+                    response.Message = "Activity đã được cộng điểm trước đó";
+                    return response;
+                }
+
+                // Kiểm tra activity đã kết thúc chưa
+                if (activity.EndDate == null || activity.EndDate.Value.ToUniversalTime() > DateTime.UtcNow)
+                {
+                    response.ErrorMessage = "Activity has not ended yet. Cannot award participation points.";
+                    return response;
+                }
+
+                // Gọi method hiện có để cộng điểm (method này sẽ tự động set flag HasAwardedParticipationPoints = true)
+                var awardedCount = await AwardParticipationPointsAsync(activityId);
+
+                response.Success = true;
+                response.AwardedCount = awardedCount;
+                response.Message = awardedCount > 0 
+                    ? $"Đã cộng điểm tham gia cho {awardedCount} người tham gia thành công"
+                    : "Không có người tham gia nào để cộng điểm hoặc không có cấu hình điểm thưởng";
+
+                return response;
+            }
+            catch (BadRequestException ex)
+            {
+                // BadRequestException là lỗi hợp lệ (chưa kết thúc, đã cộng điểm, etc.)
+                response.Success = false;
+                response.ErrorMessage = ex.Message;
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.ErrorMessage = ex.Message;
+                return response;
+            }
+        }
+
+        /// <summary>
+        /// Batch cộng điểm cho nhiều activities đã kết thúc (dùng cho Power Automate)
+        /// </summary>
+        public async Task<BatchAutoAwardPointsResponseDto> BatchAutoAwardParticipationPointsAsync(List<int> activityIds)
+        {
+            var response = new BatchAutoAwardPointsResponseDto
+            {
+                Success = true,
+                TotalProcessed = 0,
+                TotalAwarded = 0,
+                TotalErrors = 0,
+                Results = new List<AutoAwardPointsResponseDto>()
+            };
+
+            if (activityIds == null || !activityIds.Any())
+            {
+                response.Success = false;
+                return response;
+            }
+
+            foreach (var activityId in activityIds)
+            {
+                var result = await AutoAwardParticipationPointsAsync(activityId);
+                response.Results.Add(result);
+                response.TotalProcessed++;
+
+                if (result.Success && result.AwardedCount > 0)
+                {
+                    response.TotalAwarded += result.AwardedCount;
+                }
+                else if (!result.Success)
+                {
+                    response.TotalErrors++;
+                }
+            }
+
+            response.Success = response.TotalErrors == 0;
+            return response;
+        }
+
+        /// <summary>
+        /// Tự động cộng điểm cho tất cả activities đã kết thúc nhưng chưa được cộng điểm (dùng cho Power Automate daily job)
+        /// Optimized query để performance tốt - chỉ query các fields cần thiết
+        /// </summary>
+        public async Task<BatchAutoAwardPointsResponseDto> AutoAwardAllEndedActivitiesAsync()
+        {
+            var response = new BatchAutoAwardPointsResponseDto
+            {
+                Success = true,
+                TotalProcessed = 0,
+                TotalAwarded = 0,
+                TotalErrors = 0,
+                Results = new List<AutoAwardPointsResponseDto>()
+            };
+
+            var now = DateTime.UtcNow;
+
+            // OPTIMIZED QUERY: Chỉ query các fields cần thiết và filter ngay trong database
+            // Query activities đã kết thúc nhưng chưa được cộng điểm và có cấu hình điểm thưởng
+            var activitiesToProcess = await _context.Activities
+                .Where(a => !a.IsDeleted
+                    && a.EndDate.HasValue
+                    && a.EndDate.Value < now
+                    && !a.HasAwardedParticipationPoints
+                    && a.RegistrationReward != null
+                    && a.RegistrationReward.StarPoints > 0
+                    && !a.RegistrationReward.IsDeleted)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.Title,
+                    a.EndDate
+                })
+                .OrderBy(a => a.EndDate) // Xử lý activities cũ nhất trước
+                .ToListAsync();
+
+            if (!activitiesToProcess.Any())
+            {
+                response.Message = "Không có activity nào cần cộng điểm";
+                return response;
+            }
+
+            // Process từng activity
+            foreach (var activityInfo in activitiesToProcess)
+            {
+                try
+                {
+                    var result = await AutoAwardParticipationPointsAsync(activityInfo.Id);
+                    response.Results.Add(result);
+                    response.TotalProcessed++;
+
+                    if (result.Success && result.AwardedCount > 0)
+                    {
+                        response.TotalAwarded += result.AwardedCount;
+                    }
+                    else if (!result.Success)
+                    {
+                        response.TotalErrors++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log error nhưng tiếp tục xử lý các activities khác
+                    response.Results.Add(new AutoAwardPointsResponseDto
+                    {
+                        Success = false,
+                        ActivityId = activityInfo.Id,
+                        ActivityTitle = activityInfo.Title,
+                        AwardedCount = 0,
+                        ErrorMessage = ex.Message
+                    });
+                    response.TotalProcessed++;
+                    response.TotalErrors++;
+                }
+            }
+
+            response.Success = response.TotalErrors == 0;
+            response.Message = $"Đã xử lý {response.TotalProcessed} activities: {response.TotalAwarded} người được cộng điểm, {response.TotalErrors} lỗi";
+
+            return response;
         }
 
         /// <summary>

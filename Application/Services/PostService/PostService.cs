@@ -13,6 +13,7 @@ using EduShpere.Infrastructure.AIService;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
+using EduShpere.Application.Services.StarPointService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -29,16 +30,18 @@ namespace EduShpere.Application.Services
         private readonly IPostHashTagRepository _hashTagRepository;
         private readonly IPostLikeRepository _postLikeRepository;
         private readonly IClubMemberRepository _clubMemberRepository;
-        public PostService(IPostRepository repo, IMapper mapper, IUserRepository userRepo, IHashTagRepository hashTagRepo, Moderation moderation, IAttachmentRepository attachmentRepository, IPostHashTagRepository hashTagRepository, IPostLikeRepository postLikeRepository, IClubMemberRepository clubMemberRepository) {
+        private readonly IUserActionRewardService _userActionRewardService;
+        public PostService(IPostRepository repo, IMapper mapper, IUserRepository userRepo, IHashTagRepository hashTagRepo, Moderation moderation, IAttachmentRepository attachmentRepository, IPostHashTagRepository hashTagRepository, IPostLikeRepository postLikeRepository, IClubMemberRepository clubMemberRepository, IUserActionRewardService userActionRewardService) {
             _repo = repo;
             _mapper = mapper;
             _userRepo = userRepo;
             _hashTagRepo = hashTagRepo;
             //_moderation = moderation;
             _attachmentRepository = attachmentRepository;
-             _hashTagRepository = hashTagRepository;
+            _hashTagRepository = hashTagRepository;
             _postLikeRepository = postLikeRepository;
             _clubMemberRepository = clubMemberRepository;
+            _userActionRewardService = userActionRewardService;
         }
         private async Task<IEnumerable<PostResponseDto>> GetPostsCore(
     Func<IQueryable<Post>, IQueryable<Post>> filter,
@@ -157,6 +160,10 @@ namespace EduShpere.Application.Services
             //}    
 
             await _repo.AddAsync(post);
+
+            // Cộng điểm cho hành động tạo bài viết
+            await _userActionRewardService.AwardForActionAsync(user.Id, RewardActionType.CreatePost);
+
             var postDto = _mapper.Map<PostResponseDto>(post);
             return postDto;
         }
@@ -281,6 +288,15 @@ namespace EduShpere.Application.Services
                     CreatedBy = user.Id,
                 };
                 await _postLikeRepository.AddAsync(postLike);
+
+                // Người sở hữu bài viết nhận điểm khi bài viết được like
+                if (post.UserId != user.Id)
+                {
+                    await _userActionRewardService.AwardForActionAsync(
+                        post.UserId,
+                        RewardActionType.ReceiveLike
+                    );
+                }
             }
 
             var updatedPost = await _repo.GetAllPostIncluding()

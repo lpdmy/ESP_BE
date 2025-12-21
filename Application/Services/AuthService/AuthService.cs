@@ -13,6 +13,7 @@ using EduShpere.Application.DTOs.UserDto;
 using EduShpere.Application.Services;
 using EduShpere.Domain;
 using EduShpere.Domain.Enum;
+using EduShpere.Application.Services.StarPointService;
 using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
@@ -41,8 +42,9 @@ namespace EduShpere.Application
         private readonly IAuditService _auditService;
         private readonly IPaginationService _paginationService;
         private readonly IUserRightRepository _userRightRepository;
+        private readonly IUserActionRewardService _userActionRewardService;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, ITeacherProfileRepository teacherProfileRepository, IAuditService auditService, IPaginationService paginationService, IUserRightRepository userRightRepository)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration, IHttpContextService httpContextService, IMapper mapper, IOneTimeLoginRepository oneTimeLoginRepository, IEmailService emailService, IStudentProfileRepository studentProfileRepository, ITeacherProfileRepository teacherProfileRepository, IAuditService auditService, IPaginationService paginationService, IUserRightRepository userRightRepository, IUserActionRewardService userActionRewardService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -55,6 +57,7 @@ namespace EduShpere.Application
             _auditService = auditService;
             _paginationService = paginationService;
             _userRightRepository = userRightRepository;
+            _userActionRewardService = userActionRewardService;
         }
 
         public async Task<UserDto> GetMe()
@@ -173,7 +176,12 @@ namespace EduShpere.Application
             }
 
             // Tạo token async, chỉ query đúng phần cần (user + quyền)
-            return await GenerateTokenAsync(user);
+            var token = await GenerateTokenAsync(user);
+
+            // Cộng điểm cho hành động đăng nhập nếu có rule cấu hình
+            await _userActionRewardService.AwardForActionAsync(user.Id, RewardActionType.Login);
+
+            return token;
         }
 
         public async Task<object> ImportUsers(IFormFile request)

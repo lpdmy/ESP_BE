@@ -14,7 +14,8 @@ using EduShpere.Infrastructure;
 using EduShpere.Domain;
 using EduShpere.Shared;
 using EduShpere.Application.Services.NotificationService;
-using DocumentFormat.OpenXml.Wordprocessing;
+using EduShpere.Application.Services.StarPointService;
+using EduShpere.Domain.Enum;
 
 namespace EduShpere.Application.Services
 {
@@ -26,7 +27,8 @@ namespace EduShpere.Application.Services
         private readonly IClubMemberRepository _clubMemberRepo;
         private readonly IUserRepository _userRepository;
         private readonly INotificationService _notificationService;
-        public ClubJoinRequestService(IClubJoinRequestRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepositor, INotificationService notificationService)
+        private readonly IUserActionRewardService _userActionRewardService;
+        public ClubJoinRequestService(IClubJoinRequestRepository repo, IMapper mapper, IClubRepository clubRepo, IClubMemberRepository clubMemberRepo, IUserRepository userRepositor, INotificationService notificationService, IUserActionRewardService userActionRewardService)
         {
             _repo = repo;
             _mapper = mapper;
@@ -34,6 +36,7 @@ namespace EduShpere.Application.Services
             _clubMemberRepo = clubMemberRepo;
             _userRepository = userRepositor;
             _notificationService = notificationService;
+            _userActionRewardService = userActionRewardService;
         }
         public async Task<PaginationResponseDto<ClubJoinRequestDto>> GetAllClubJoinRequestAsync(
      PaginationRequestDto paginationRequest,
@@ -142,6 +145,9 @@ namespace EduShpere.Application.Services
 
             await _repo.UpdateAsync(request);
             await _clubMemberRepo.AddAsync(clubMember);
+
+            // Cộng điểm cho hành động tham gia CLB
+            await _userActionRewardService.AwardForActionAsync(request.UserId, RewardActionType.JoinClub);
             var mapped = _mapper.Map<ClubJoinRequestDto>(request);
             return mapped;
         }
@@ -226,6 +232,9 @@ namespace EduShpere.Application.Services
             };
             
             await _clubMemberRepo.AddAsync(clubMember);
+
+            // Mentor tham gia CLB cũng được tính là tham gia CLB
+            await _userActionRewardService.AwardForActionAsync(request.UserId, RewardActionType.JoinClub);
             var mapped = _mapper.Map<ClubJoinRequestDto>(request);
             return mapped;
         }

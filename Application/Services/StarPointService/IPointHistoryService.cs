@@ -14,7 +14,9 @@ namespace EduShpere.Application.Services.StarPointService
         Task<PointHistoryDto> CreateHistoryAsync(CreatePointHistoryDto dto);
         Task<UserPointsDto> GetCurrentUserPoints(int userId);
         /// <summary>
-        /// Cộng điểm cho user với transaction (cập nhật UserPoint.Balance + tạo PointHistory)
+        /// Cộng điểm cho user với transaction (chỉ tạo PointHistory record)
+        /// PointHistory là nguồn dữ liệu chính để lưu trữ point, balance được tính từ tổng PointHistory
+        /// Tự động kiểm tra balance khi actionType là Redeem
         /// </summary>
         Task<bool> AddPointsWithTransactionAsync(int userId, int points, string description, PointActionType actionType = PointActionType.Earn);
     }

@@ -161,7 +161,7 @@ public class ORToolsScheduler
                                   $"Tổng số slots ban đầu: {slots.Count}. " +
                                   $"Lý do: {reasonText}. " +
                                   $"Đề xuất: Mở rộng khoảng thời gian (StartDate - EndDate), " +
-                                  $"thêm sân thi đấu (AvailableLocations), hoặc kiểm tra lại conflicts với matches/activities đã có.";
+                                  $"thêm sân thi đấu (AvailableLocations), hoặc kiểm tra lại conflicts với matches đã có (cùng sân).";
             
             // Tạo warnings chi tiết
             response.SlotWarnings = GenerateSlotWarnings(
@@ -595,7 +595,7 @@ public class ORToolsScheduler
         return response;
     }
 
-    private (List<ScheduleSlot> availableSlots, (int conflictWithMatches, int conflictWithLocation, int conflictWithParticipantActivities) conflictCounts, List<SlotConflictDetail> conflictDetails) FilterAvailableSlots(
+    private (List<ScheduleSlot> availableSlots, (int conflictWithMatches, int conflictWithLocation) conflictCounts, List<SlotConflictDetail> conflictDetails) FilterAvailableSlots(
         List<ScheduleSlot> slots,
         List<AiActivityMatch> existingMatches,
         TournamentScheduleRequest request,
@@ -609,8 +609,7 @@ public class ORToolsScheduler
         var classGroupSchedules = GetClassGroupSchedules(request.ClassGroupIds, dbContext);
         Console.WriteLine($"   ✅ Đã load {classGroupSchedules.Count} lịch học từ {request.ClassGroupIds.Count} lớp tham gia");
 
-        // Đã gỡ bỏ logic check conflict với participant activities khác
-        // Chỉ kiểm tra conflict với matches đã có và lịch học
+        // Chỉ kiểm tra conflict với matches đã có (cùng sân) và lịch học
 
         // Tạo dictionary để lookup nhanh lịch học theo ClassGroupId
         var schedulesByClassGroup = classGroupSchedules
@@ -640,15 +639,21 @@ public class ORToolsScheduler
                     var existingStart = existingMatch.StartTime.Value;
                     var existingEnd = existingMatch.EndTime.Value;
 
-                    // Check cùng ngày và overlap thời gian
+                    // Check cùng ngày, overlap thời gian và cùng sân
                     if (slot.MatchDate.Date == existingDate)
                     {
                         if (slot.StartTime < existingEnd && slot.EndTime > existingStart)
                         {
-                            // Check cùng location
-                            if (string.IsNullOrEmpty(slot.Location) || 
-                                string.IsNullOrEmpty(existingMatch.Location) ||
-                                slot.Location == existingMatch.Location)
+                            // QUAN TRỌNG: Chỉ check conflict nếu cùng sân
+                            // Nếu khác sân, cho phép overlap thời gian
+                            bool sameLocation = !string.IsNullOrEmpty(slot.Location) && 
+                                              !string.IsNullOrEmpty(existingMatch.Location) && 
+                                              slot.Location == existingMatch.Location;
+                            
+                            // Nếu không có location info, coi như cùng sân (an toàn)
+                            bool noLocationInfo = string.IsNullOrEmpty(slot.Location) && string.IsNullOrEmpty(existingMatch.Location);
+                            
+                            if (sameLocation || noLocationInfo)
                             {
                                 isAvailable = false;
                                 conflictWithMatches++;
@@ -865,97 +870,11 @@ public class ORToolsScheduler
             }
         }
 
-        Console.WriteLine($"   ⚠️ Conflicts: {conflictWithMatches} với matches cũ, {conflictWithLocation} với location");
+        Console.WriteLine($"   ⚠️ Conflicts: {conflictWithMatches} với matches cũ (cùng sân), {conflictWithLocation} với location");
         Console.WriteLine($"   ℹ️ Lưu ý: Không filter slots dựa trên lịch học của tất cả lớp. Sẽ check conflict lịch học khi tạo match cụ thể.");
         Console.WriteLine($"   ✅ Slots available: {availableSlots.Count}/{slots.Count}");
 
-        return (availableSlots, (conflictWithMatches, conflictWithLocation, 0), conflictDetails);
-    }
-    
-    /// <summary>
-        /// Lấy danh sách participants của các lớp tham gia
-    /// </summary>
-        private List<ParticipantInfo> GetParticipantsInClassGroups(
-            List<int> classGroupIds,
-            int currentActivityId,
-            EduShpereDbContext dbContext)
-    {
-        try
-        {
-            var participants = dbContext.Set<EduShpere.Domain.Models.ActivityParticipant>()
-                .Where(ap =>
-                    ap.ActivityId == currentActivityId &&             // Guard: chỉ lấy participants của activity hiện tại
-                    classGroupIds.Contains(ap.ClassGroupId ?? 0) &&
-                    !ap.IsDeleted)
-                .Select(ap => new ParticipantInfo
-                {
-                    UserId = ap.UserId,
-                    ClassGroupId = ap.ClassGroupId ?? 0
-                })
-                .Distinct()
-                .ToList();
-            
-            return participants;
-        }
-        catch
-        {
-            return new List<ParticipantInfo>();
-        }
-    }
-    
-    /// <summary>
-    /// Lấy danh sách activities khác mà participants đã tham gia (để check conflict)
-    /// </summary>
-    private List<ParticipantActivityConflict> GetParticipantActivityConflicts(
-        List<ParticipantInfo> participants,
-        int currentActivityId,
-        DateTime startDate,
-        DateTime endDate,
-        EduShpereDbContext dbContext)
-    {
-        try
-        {
-            var participantIds = participants.Select(p => p.UserId).ToList();
-            if (!participantIds.Any())
-                return new List<ParticipantActivityConflict>();
-            
-            // Lấy tất cả activities khác (không phải activity hiện tại) mà participants đã tham gia
-            // và có thời gian overlap với khoảng thời gian của tournament
-            var conflicts = dbContext.Set<EduShpere.Domain.Models.Activity>()
-                .Where(a => a.Id != currentActivityId && 
-                           !a.IsDeleted &&
-                           a.StartDate.HasValue && 
-                           a.EndDate.HasValue &&
-                           a.StartDate.Value <= endDate &&
-                           a.EndDate.Value >= startDate)
-                .Select(a => new
-                {
-                    ActivityId = a.Id,
-                    StartDate = a.StartDate,
-                    EndDate = a.EndDate,
-                    Participants = a.ActivityParticipants
-                        .Where(ap => participantIds.Contains(ap.UserId) && !ap.IsDeleted)
-                        .Select(ap => ap.UserId)
-                        .ToList()
-                })
-                .Where(x => x.Participants.Any())
-                .ToList()
-                .Select(x => new ParticipantActivityConflict
-                {
-                    ActivityId = x.ActivityId,
-                    StartDate = x.StartDate,
-                    EndDate = x.EndDate,
-                    ParticipantIds = x.Participants.ToHashSet()
-                })
-                .ToList();
-            
-            return conflicts;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠️ Lỗi khi lấy participant activity conflicts: {ex.Message}");
-            return new List<ParticipantActivityConflict>();
-        }
+        return (availableSlots, (conflictWithMatches, conflictWithLocation), conflictDetails);
     }
     
     /// <summary>
@@ -2875,7 +2794,7 @@ public class ORToolsScheduler
         int recommendedSlots,
         int actualMatchesCreated,
         int expectedMatches,
-        (int conflictWithMatches, int conflictWithLocation, int conflictWithParticipantActivities) conflictCounts,
+        (int conflictWithMatches, int conflictWithLocation) conflictCounts,
         TournamentScheduleRequest request,
         bool isComplete,
         EduShpereDbContext? dbContext = null)
@@ -3132,20 +3051,6 @@ public class ORToolsScheduler
     }
     
     // Helper classes cho conflict detection
-    private class ParticipantInfo
-    {
-        public int UserId { get; set; }
-        public int ClassGroupId { get; set; }
-    }
-    
-    private class ParticipantActivityConflict
-    {
-        public int ActivityId { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public HashSet<int> ParticipantIds { get; set; } = new();
-    }
-    
     /// <summary>
     /// Kiểm tra xem hai lớp có lịch học tương đồng không (cùng thứ, overlapping time ranges)
     /// </summary>
