@@ -691,6 +691,16 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Assignment.UnauthorizedGrading);
             }
+            var submission = await _submissionRepository.GetSubmissionById(assignment.SubmissionId);
+            await _notificationService.AddAsync(new Notification
+            {
+                Link = $"/submission/my-submission/detail/{assignment.SubmissionId}",
+                Title = "Bài nộp của bạn đã được chấm",
+                CreatedAt = DateTime.Now,
+                Read = false,
+                Type = "system",
+                UserId = submission.UserId,
+            });
             var gradingCriteria = JsonSerializer.Deserialize<List<string>>(assignment.Submission.Activity.GradingSettings ?? "[]");
             foreach (var key in scores.Keys)
             {
