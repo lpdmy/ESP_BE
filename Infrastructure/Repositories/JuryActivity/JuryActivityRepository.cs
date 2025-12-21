@@ -17,14 +17,16 @@ namespace EduShpere.Infrastructure.Repositories
         {
             return _dbSet
                 .Include(ja => ja.User)
-                .Include(ja => ja.Activity);
+                .Include(ja => ja.Activity)
+                .OrderByDescending(ja => ja.CreatedAt);
         }
         public IQueryable<JuryActivity> GetAllJuryActivityByActivityIdIncluding(int activityId)
         {
             return _dbSet
                 .Where(ja => ja.ActivityId == activityId)
                 .Include(ja => ja.User)
-                .Include(ja => ja.Activity);
+                .Include(ja => ja.Activity)
+                .OrderByDescending(ja => ja.CreatedAt);
         }
         public async Task<bool> IsExisting(int userId,int activityId)
         {
@@ -36,7 +38,8 @@ namespace EduShpere.Infrastructure.Repositories
                 .Where(ja => ja.UserId == id)
                 .Include(ja => ja.User)
                 .Include(ja => ja.Activity)
-                .ThenInclude(a => a.Submissions);
+                .ThenInclude(a => a.Submissions)
+                .OrderByDescending(ja => ja.CreatedAt);
         }
         
         public IQueryable<JuryActivity> GetQueryable()

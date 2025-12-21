@@ -56,7 +56,8 @@ namespace EduShpere.Infrastructure.Repositories
                     && ja.Submission.ActivityId == activityId 
                     && ja.UserId == userId
                     && !ja.Submission.IsDeleted
-                    && !ja.Submission.Activity.IsDeleted);
+                    && !ja.Submission.Activity.IsDeleted)
+                .OrderByDescending(ja=>ja.CreatedAt);
         }
         public IQueryable<JuryAssignment> GetAllByActivityIdUserIdGrading(int activityId, int userId)
         {
@@ -72,7 +73,8 @@ namespace EduShpere.Infrastructure.Repositories
                     && ja.UserId == userId 
                     && ja.ScoreTemp != null
                     && !ja.Submission.IsDeleted
-                    && !ja.Submission.Activity.IsDeleted);
+                    && !ja.Submission.Activity.IsDeleted)
+                .OrderByDescending(ja => ja.CreatedAt);
         }
 
         public IQueryable<JuryAssignment> GetAllByActivityIdUserIdNotGrading(int activityId, int userId)
@@ -89,7 +91,8 @@ namespace EduShpere.Infrastructure.Repositories
                     && ja.UserId == userId 
                     && ja.ScoreTemp == null
                     && !ja.Submission.IsDeleted
-                    && !ja.Submission.Activity.IsDeleted);
+                    && !ja.Submission.Activity.IsDeleted)
+                .OrderByDescending(ja => ja.CreatedAt);
         }
         public async Task DeleteAllByActivityIdAsync(int activityId)
         {
