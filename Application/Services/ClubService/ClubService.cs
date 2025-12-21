@@ -194,6 +194,14 @@ namespace EduShpere.Application.Services
                 CreatedAt = DateTime.UtcNow,
                 IsDeleted = false,
             };
+            await _notificationService.AddAsync(new Notification
+            {
+                Title = "Một đơn đăng ký thành lập câu lạc bộ mới cần được duyệt",
+                CreatedAt = DateTime.Now,
+                Read = false,
+                Type = "system",
+                UserId = 21,
+            });
             await _repo.AddAsync(club);
             var mapped = _mapper.Map<ClubResponseDto>(club);
             return mapped;

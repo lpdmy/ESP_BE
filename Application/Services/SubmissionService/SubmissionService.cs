@@ -30,16 +30,20 @@ namespace EduShpere.Application.Services
         private readonly IActivityParticipantRepository _activityParticipantRepository;
         private readonly EduShpereDbContext _context;
         private readonly IAuditService _auditService;
-        
+        private readonly IModerationService _moderationService;
+        private readonly ContentModerationService _contentModerationService;
         public SubmissionService(
-            ISubmissionReposiory repo, 
-            IMapper mapper, 
-            IActivityRepository activityRepository, 
+            ISubmissionReposiory repo,
+            IMapper mapper,
+            IActivityRepository activityRepository,
             IJuryAssignRepository juryAssign,
             IActivityParticipantRepository activityParticipantRepository,
             EduShpereDbContext context,
             IAuditService auditService
-            ,IAttachmentRepository attachmentRepository)
+            , IAttachmentRepository attachmentRepository
+            , IModerationService moderationService,
+             ContentModerationService contentModerationService
+            )
         {
             _repo = repo;
             _mapper = mapper;
@@ -49,6 +53,8 @@ namespace EduShpere.Application.Services
             _activityParticipantRepository = activityParticipantRepository;
             _context = context;
             _auditService = auditService;
+            _moderationService = moderationService;
+            _contentModerationService = contentModerationService;
         }
 
         public async Task<PaginationResponseDto<SubmissionResponseDto>> GetAllSubmissionByActivityId(
@@ -666,6 +672,18 @@ namespace EduShpere.Application.Services
             if (activity == null)
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
+            }
+            var moderationResult = _contentModerationService.Check(dto.Title);
+            if (moderationResult.Decision == "block")
+            {
+                await _moderationService.CreateReport(new DTOs.ModerationDto.AddModerationDto
+                {
+                    ContentText = dto.Title,
+                    AuthorId = userId,
+                    ReporterId = 0,
+                    Status = "Approved"
+                });
+                throw new BadRequestException(ErrorMessages.Moderation.ContentViolation);
             }
 
             // Create submission
