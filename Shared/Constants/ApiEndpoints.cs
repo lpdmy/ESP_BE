@@ -68,6 +68,9 @@ namespace EduShpere.Shared.Constants
             public const string Statistics = "api/activity/statistics";
             public const string AwardParticipationPoints = "api/activity/{id}/award-participation-points";
             public const string AwardRankRewards = "api/activity/{id}/award-rank-rewards";
+            public const string AutoAwardParticipationPoints = "api/activity/{id}/auto-award-participation-points";
+            public const string BatchAutoAwardParticipationPoints = "api/activity/batch-auto-award-participation-points";
+            public const string AutoAwardAllEndedActivities = "api/activity/auto-award-all-ended-activities";
 
         }
 
@@ -296,6 +299,15 @@ namespace EduShpere.Shared.Constants
             public const string UserViolations = "api/moderation/user-violations";
             public const string CreateAlert = "api/moderation/alert";
             public const string UpdateStatus = "api/moderation/update-status";
+        }
+
+        public static class Statistics
+        {
+            public const string ActivityOverview = "api/statistics/activities/overview";
+            public const string ActivityDetail = "api/statistics/activities/{activityId}";
+            public const string AcademicYear = "api/statistics/academic-years/{academicYearId}";
+            public const string ClassGroup = "api/statistics/classgroups/{classGroupId}";
+            public const string Dashboard = "api/statistics/dashboard";
         }
     }
 }

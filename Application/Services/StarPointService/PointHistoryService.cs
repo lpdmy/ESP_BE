@@ -73,8 +73,9 @@ namespace EduShpere.Application.Services.StarPointService
         }
 
         /// <summary>
-        /// Cộng điểm cho user với transaction (cập nhật UserPoint.Balance + tạo PointHistory)
-        /// Đảm bảo tính toàn vẹn dữ liệu giữa việc cập nhật số dư và lưu lịch sử
+        /// Cộng điểm cho user với transaction (chỉ tạo PointHistory record)
+        /// PointHistory là nguồn dữ liệu chính để lưu trữ point, balance được tính từ tổng PointHistory
+        /// Sử dụng execution strategy để tương thích với SqlServerRetryingExecutionStrategy
         /// </summary>
         public async Task<bool> AddPointsWithTransactionAsync(int userId, int points, string description, PointActionType actionType = PointActionType.Earn)
         {
@@ -83,48 +84,24 @@ namespace EduShpere.Application.Services.StarPointService
                 throw new ArgumentException("Points must be greater than 0", nameof(points));
             }
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                // 1. Lấy hoặc tạo UserPoint record
-                var userPoint = await _context.UserPoints
-                    .FirstOrDefaultAsync(up => up.UserId == userId);
-
-                if (userPoint == null)
+            // Kiểm tra balance nếu là Redeem
+            if (actionType == PointActionType.Redeem)
                 {
-                    // Tạo mới UserPoint nếu chưa có
-                    userPoint = new UserPoint
+                var currentBalance = await GetCurrentUserPoints(userId);
+                if (currentBalance.Points < points)
                     {
-                        UserId = userId,
-                        Balance = 0,
-                        CreatedAt = DateTime.UtcNow,
-                        IsDeleted = false,
-                        RowVersion = new byte[8] // Initialize RowVersion
-                    };
-                    await _context.UserPoints.AddAsync(userPoint);
-                }
-
-                // 2. Cập nhật Balance
-                if (actionType == PointActionType.Earn)
-                {
-                    userPoint.Balance += points;
-                }
-                else if (actionType == PointActionType.Redeem)
-                {
-                    if (userPoint.Balance < points)
-                    {
-                        throw new InvalidOperationException($"Insufficient balance. Current: {userPoint.Balance}, Required: {points}");
+                    throw new InvalidOperationException($"Insufficient balance. Current: {currentBalance.Points}, Required: {points}");
                     }
-                    userPoint.Balance -= points;
-                }
-                else // Adjustment
+            }
+
+            // Sử dụng execution strategy để tương thích với retry policy
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            return await executionStrategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    userPoint.Balance = points; // Set directly for adjustment
-                }
-
-                userPoint.UpdatedAt = DateTime.UtcNow;
-
-                // 3. Tạo PointHistory record
+                    // Chỉ tạo PointHistory record - đây là nguồn dữ liệu chính
                 var pointHistory = new PointHistory
                 {
                     UserId = userId,
@@ -135,10 +112,10 @@ namespace EduShpere.Application.Services.StarPointService
                 };
                 await _context.PointHistory.AddAsync(pointHistory);
 
-                // 4. Save changes
+                    // Save changes
                 await _context.SaveChangesAsync();
 
-                // 5. Commit transaction
+                    // Commit transaction
                 await transaction.CommitAsync();
 
                 return true;
@@ -149,6 +126,7 @@ namespace EduShpere.Application.Services.StarPointService
                 await transaction.RollbackAsync();
                 throw;
             }
+            });
         }
     }
 }

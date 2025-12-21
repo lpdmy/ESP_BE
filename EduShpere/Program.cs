@@ -9,6 +9,8 @@ using EduShpere.Application.Services.ChatService;
 using EduShpere.Application.Services.ClassGroupService;
 using EduShpere.Application.Services.NotificationService;
 using EduShpere.Application.Services.StarPointService;
+using EduShpere.Application.Services.WeeklyQuizService;
+using EduShpere.Application.Services.StatisticsService;
 using EduShpere.Domain.Models;
 using EduShpere.Hubs;
 using EduShpere.Infrastructure;
@@ -18,6 +20,7 @@ using EduShpere.Infrastructure.Repositories.Chat;
 using EduShpere.Infrastructure.Repositories.Notifications;
 using EduShpere.Infrastructure.Repositories.OneTimeLogin;
 using EduShpere.Infrastructure.Repositories.StarPoint;
+using EduShpere.Infrastructure.Repositories.WeeklyQuizRepo;
 using EduShpere.Infrastructure.Services;
 using KidNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -99,6 +102,8 @@ namespace EduShpere
             builder.Services.AddSingleton<AppMongoDbContext>();
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<IWeeklyQuizRepository, WeeklyQuizRepository>();
+            builder.Services.AddScoped<IQuizSubmissionRepository, QuizSubmissionRepository>();
             // Đã xóa BackgroundService - sử dụng method UpdateSubmissionScoresAsync() trong ISubmissionService thay thế
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
@@ -205,6 +210,8 @@ namespace EduShpere
             builder.Services.AddScoped<IRewardService, RewardService>();
             builder.Services.AddScoped<IRewardRedemptionService, RewardRedemptionService>();
             builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
+            builder.Services.AddScoped<IUserActionRewardService, UserActionRewardService>();
+            builder.Services.AddScoped<IStatisticsService, StatisticsService>();
             builder.Services.AddScoped<IStaffService, StaffService>();
             builder.Services.AddScoped<ISubmissionService, SubmissionService>();
             builder.Services.AddScoped<Moderation>();
@@ -224,6 +231,7 @@ namespace EduShpere
             
             builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IWeeklyQuizService, WeeklyQuizService>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

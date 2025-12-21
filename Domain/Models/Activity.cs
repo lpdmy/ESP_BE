@@ -38,6 +38,7 @@ public partial class Activity : BaseEntity
     public string? GradingSettings { get; set; } // JSON string for grading criteria (only criteria, not enabled flag)
     public string? RegistrationSettings { get; set; } // JSON string for registration-specific settings (group sizes, etc.)
     public bool? OnlyTeacherCanRegister { get; set; } = false; // Only teachers can register for this activity (nullable to handle NULL in database)
+    public bool HasAwardedParticipationPoints { get; set; } = false; // Flag để track xem đã cộng điểm tham gia chưa
     
     // Problem/Submission fields - chỉ áp dụng cho Activity có nộp bài (CreativeContest hoặc SubType có submission)
     public string? ProblemText { get; set; } // Đề bài (text) - chỉ hiển thị sau StartDate

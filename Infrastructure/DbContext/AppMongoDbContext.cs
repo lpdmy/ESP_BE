@@ -47,5 +47,11 @@ namespace EduShpere.Infrastructure
 
         public IMongoCollection<ChatRoom> ChatRooms
             => _database.GetCollection<ChatRoom>("ChatRooms");
+
+        public IMongoCollection<WeeklyQuiz> WeeklyQuizzes
+            => _database.GetCollection<WeeklyQuiz>("WeeklyQuizzes");
+
+        public IMongoCollection<QuizSubmission> QuizSubmissions
+            => _database.GetCollection<QuizSubmission>("QuizSubmissions");
     }
 }

@@ -10,6 +10,8 @@ using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
+using EduShpere.Application.Services.StarPointService;
+using EduShpere.Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduShpere.Application.Services
@@ -20,12 +22,14 @@ namespace EduShpere.Application.Services
         private readonly IMapper _mapper;
         private readonly ContentModerationService _contentModerationService;
         private readonly IModerationService _moderationService;
-        public CommentService(ICommentRepository commentRepository, IMapper mapper, ContentModerationService contentModerationService, IModerationService moderationService)
+        private readonly IUserActionRewardService _userActionRewardService;
+        public CommentService(ICommentRepository commentRepository, IMapper mapper, ContentModerationService contentModerationService, IModerationService moderationService, IUserActionRewardService userActionRewardService)
         {
             _commentRepository = commentRepository;
             _mapper = mapper;
             _contentModerationService = contentModerationService;
             _moderationService = moderationService;
+            _userActionRewardService = userActionRewardService;
         }
 
         public async Task<CommentResponseDto> CreateComment(CreateCommentDto dto,int userId)
@@ -52,6 +56,10 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Moderation.ContentViolation);
             }
             await _commentRepository.AddAsync(comment);
+
+            // Cộng điểm cho hành động bình luận bài viết
+            await _userActionRewardService.AwardForActionAsync(userId, RewardActionType.CommentPost);
+
             return _mapper.Map<CommentResponseDto>(comment);
         }
         public async Task<PaginationResponseDto<CommentResponseDto>> GetCommentByPostId(int id,int userId,

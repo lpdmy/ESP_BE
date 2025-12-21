@@ -426,5 +426,145 @@ namespace EduShpere.Controllers
                 ));
             }
         }
+
+        /// <summary>
+        /// API tự động cộng điểm tham gia cho activity (dùng cho Power Automate)
+        /// Không cần authentication để Power Automate có thể gọi dễ dàng
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.AutoAwardParticipationPoints)]
+        public async Task<IActionResult> AutoAwardParticipationPoints(int id)
+        {
+            try
+            {
+                var result = await _Service.AutoAwardParticipationPointsAsync(id);
+                
+                if (result.Success)
+                {
+                    return Ok(new ResponseDto<AutoAwardPointsResponseDto>(
+                        result,
+                        result.Message ?? "Đã cộng điểm thành công",
+                        (int)HttpStatusCode.OK
+                    ));
+                }
+                else
+                {
+                    return BadRequest(new ResponseDto<AutoAwardPointsResponseDto>(
+                        result,
+                        result.ErrorMessage ?? "Không thể cộng điểm",
+                        (int)HttpStatusCode.BadRequest
+                    ));
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<AutoAwardPointsResponseDto>(
+                    null,
+                    $"Lỗi khi cộng điểm tự động: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+
+        /// <summary>
+        /// API batch tự động cộng điểm tham gia cho nhiều activities (dùng cho Power Automate)
+        /// Body: { "activityIds": [1, 2, 3] }
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.BatchAutoAwardParticipationPoints)]
+        public async Task<IActionResult> BatchAutoAwardParticipationPoints([FromBody] BatchAutoAwardRequestDto request)
+        {
+            try
+            {
+                if (request?.ActivityIds == null || !request.ActivityIds.Any())
+                {
+                    return BadRequest(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                        null,
+                        "ActivityIds không được để trống",
+                        (int)HttpStatusCode.BadRequest
+                    ));
+                }
+
+                var result = await _Service.BatchAutoAwardParticipationPointsAsync(request.ActivityIds);
+                
+                var message = $"Đã xử lý {result.TotalProcessed} activities: " +
+                             $"{result.TotalAwarded} người được cộng điểm, " +
+                             $"{result.TotalErrors} lỗi";
+
+                if (result.Success)
+                {
+                    return Ok(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                        result,
+                        message,
+                        (int)HttpStatusCode.OK
+                    ));
+                }
+                else
+                {
+                    return BadRequest(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                        result,
+                        message,
+                        (int)HttpStatusCode.BadRequest
+                    ));
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                    null,
+                    $"Lỗi khi cộng điểm batch: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+
+        /// <summary>
+        /// API tự động cộng điểm cho tất cả activities đã kết thúc nhưng chưa được cộng điểm (dùng cho Power Automate daily job)
+        /// API này sẽ chạy hàng ngày để cộng điểm cho tất cả hoạt động đã kết thúc
+        /// </summary>
+        [HttpPost(ApiEndpoints.Activity.AutoAwardAllEndedActivities)]
+        public async Task<IActionResult> AutoAwardAllEndedActivities()
+        {
+            try
+            {
+                var result = await _Service.AutoAwardAllEndedActivitiesAsync();
+                
+                var message = result.Message ?? 
+                    $"Đã xử lý {result.TotalProcessed} activities: " +
+                    $"{result.TotalAwarded} người được cộng điểm, " +
+                    $"{result.TotalErrors} lỗi";
+
+                if (result.Success)
+                {
+                    return Ok(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                        result,
+                        message,
+                        (int)HttpStatusCode.OK
+                    ));
+                }
+                else
+                {
+                    return BadRequest(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                        result,
+                        message,
+                        (int)HttpStatusCode.BadRequest
+                    ));
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDto<BatchAutoAwardPointsResponseDto>(
+                    null,
+                    $"Lỗi khi cộng điểm tự động cho tất cả activities: {ex.Message}",
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Request DTO cho batch auto award API
+    /// </summary>
+    public class BatchAutoAwardRequestDto
+    {
+        public List<int> ActivityIds { get; set; } = new();
     }
 }
