@@ -66,7 +66,7 @@ namespace EduShpere.Application.Services
 
             // Load all assignment counts in one query using GroupBy
             var assignmentCounts = await _juryAssignRepo.GetQueryable()
-                .Where(ja => userIds.Contains(ja.UserId))
+                .Where(ja => userIds.Contains(ja.UserId) && ja.Submission.ActivityId == activityId)
                 .GroupBy(ja => ja.UserId)
                 .Select(g => new { UserId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.UserId, x => x.Count);

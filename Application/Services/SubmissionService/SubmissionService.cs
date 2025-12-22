@@ -673,19 +673,18 @@ namespace EduShpere.Application.Services
             {
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
-            var moderationResult = _contentModerationService.Check(dto.Title);
-            if (moderationResult.Decision == "block")
-            {
-                await _moderationService.CreateReport(new DTOs.ModerationDto.AddModerationDto
-                {
-                    ContentText = dto.Title,
-                    AuthorId = userId,
-                    ReporterId = 0,
-                    Status = "Approved"
-                });
-                throw new BadRequestException(ErrorMessages.Moderation.ContentViolation);
-            }
-
+            //var moderationResult = _contentModerationService.Check(dto.Title);
+            //if (moderationResult.Decision == "block")
+            //{
+            //    await _moderationService.CreateReport(new DTOs.ModerationDto.AddModerationDto
+            //    {
+            //        ContentText = dto.Title,
+            //        AuthorId = userId,
+            //        ReporterId = 0,
+            //        Status = "Approved"
+            //    });
+            //    throw new BadRequestException(ErrorMessages.Moderation.ContentViolation);
+            //}
             // Create submission
             var submission = new Submission
             {
