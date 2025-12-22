@@ -58,6 +58,8 @@ namespace EduShpere
             });
 
             // Add services to the container.
+            builder.Services.AddMemoryCache();
+            
             builder.Services.AddDbContext<EduShpereDbContext>(options =>
             {
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnectionString");
@@ -212,6 +214,9 @@ namespace EduShpere
             builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
             builder.Services.AddScoped<IUserActionRewardService, UserActionRewardService>();
             builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+            builder.Services.AddScoped<EduShpere.Infrastructure.Repositories.StatisticsAggregation.IStatisticsAggregationRepository, EduShpere.Infrastructure.Repositories.StatisticsAggregation.StatisticsAggregationRepository>();
+            builder.Services.AddScoped<EduShpere.Application.Services.StatisticsReportService.IStatisticsReportService, EduShpere.Application.Services.StatisticsReportService.StatisticsReportService>();
+            builder.Services.AddScoped<EduShpere.Application.Services.StatisticsReportService.IStatisticsReportExportService, EduShpere.Application.Services.StatisticsReportService.StatisticsReportExportService>();
             builder.Services.AddScoped<IStaffService, StaffService>();
             builder.Services.AddScoped<ISubmissionService, SubmissionService>();
             builder.Services.AddScoped<Moderation>();

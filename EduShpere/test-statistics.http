@@ -1,0 +1,120 @@
+### Test Statistics Report API
+### File này dùng với VS Code REST Client extension hoặc IntelliJ HTTP Client
+
+@baseUrl = https://localhost:7084
+@token = YOUR_TOKEN_HERE
+
+### 1. Login để lấy token (thay email và password)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "your_password"
+}
+
+### 2. Test Preview Report - Full options
+POST {{baseUrl}}/api/statistics/academic-year-report
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "2024-2025",
+  "includeClassRewardTable": true,
+  "includeStudentRewardTable": true,
+  "includeWeeklyTrendCharts": true,
+  "includeDistributionCharts": true,
+  "includeAllClasses": true,
+  "includeAllStudents": true
+}
+
+### 3. Test Preview Report - Chỉ overview
+POST {{baseUrl}}/api/statistics/academic-year-report
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "2024-2025",
+  "includeClassRewardTable": false,
+  "includeStudentRewardTable": false,
+  "includeWeeklyTrendCharts": false,
+  "includeDistributionCharts": false,
+  "includeAllClasses": false,
+  "includeAllStudents": false
+}
+
+### 4. Test Preview Report - Chỉ charts
+POST {{baseUrl}}/api/statistics/academic-year-report
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "2024-2025",
+  "includeClassRewardTable": false,
+  "includeStudentRewardTable": false,
+  "includeWeeklyTrendCharts": true,
+  "includeDistributionCharts": true,
+  "includeAllClasses": false,
+  "includeAllStudents": false
+}
+
+### 5. Test Export PDF
+POST {{baseUrl}}/api/statistics/academic-year-report/export?format=pdf
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "2024-2025",
+  "includeClassRewardTable": true,
+  "includeStudentRewardTable": true,
+  "includeWeeklyTrendCharts": true,
+  "includeDistributionCharts": true,
+  "includeAllClasses": true,
+  "includeAllStudents": true
+}
+
+### 6. Test Export Excel
+POST {{baseUrl}}/api/statistics/academic-year-report/export?format=excel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "2024-2024",
+  "includeClassRewardTable": true,
+  "includeStudentRewardTable": true,
+  "includeWeeklyTrendCharts": true,
+  "includeDistributionCharts": true,
+  "includeAllClasses": true,
+  "includeAllStudents": true
+}
+
+### 7. Test Error - Năm học không tồn tại
+POST {{baseUrl}}/api/statistics/academic-year-report
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "9999-9999",
+  "includeClassRewardTable": true,
+  "includeStudentRewardTable": true,
+  "includeWeeklyTrendCharts": true,
+  "includeDistributionCharts": true,
+  "includeAllClasses": true,
+  "includeAllStudents": true
+}
+
+### 8. Test Error - Thiếu năm học
+POST {{baseUrl}}/api/statistics/academic-year-report
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "academicYear": "",
+  "includeClassRewardTable": true,
+  "includeStudentRewardTable": true,
+  "includeWeeklyTrendCharts": true,
+  "includeDistributionCharts": true,
+  "includeAllClasses": true,
+  "includeAllStudents": true
+}
+

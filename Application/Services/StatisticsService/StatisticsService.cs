@@ -146,13 +146,14 @@ public class StatisticsService : IStatisticsService
         var actualParticipants = participants.Count(p => p.Status == ParticipantStatus.Joined);
         var participationRate = totalRegistered > 0 ? (double)actualParticipants / totalRegistered * 100 : 0;
 
-        // Tính tổng điểm đã trao từ PointHistory
+        // Tính tổng điểm đã trao từ PointHistory (chỉ tính điểm Earn và loại trừ điểm âm)
         var participantUserIds = participants.Where(p => p.Status == ParticipantStatus.Joined).Select(p => p.UserId).ToList();
         var totalPointsAwarded = await _context.PointHistory
             .Where(ph => participantUserIds.Contains(ph.UserId) &&
                         ph.Description != null &&
                         (ph.Description.Contains($"Activity {activityId}") || ph.Description.Contains(activity.Title ?? "")) &&
-                        ph.ActionType == PointActionType.Earn)
+                        ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0) // Chỉ tính điểm dương
             .SumAsync(ph => ph.Points);
 
         var averagePointsPerParticipant = actualParticipants > 0 ? (double)totalPointsAwarded / actualParticipants : 0;
@@ -271,7 +272,8 @@ public class StatisticsService : IStatisticsService
                             ph.CreatedAt.Month == month &&
                             ph.CreatedAt >= academicYear.StartDate &&
                             ph.CreatedAt <= academicYear.EndDate &&
-                            ph.ActionType == PointActionType.Earn)
+                            ph.ActionType == PointActionType.Earn &&
+                            ph.Points > 0) // Chỉ tính điểm dương
                 .Sum(ph => ph.Points);
 
             return new MonthlyActivityDto
@@ -310,7 +312,8 @@ public class StatisticsService : IStatisticsService
                     .Where(ph => cac.ParticipantUserIds.Contains(ph.UserId) &&
                                 ph.CreatedAt >= academicYear.StartDate &&
                                 ph.CreatedAt <= academicYear.EndDate &&
-                                ph.ActionType == PointActionType.Earn)
+                                ph.ActionType == PointActionType.Earn &&
+                                ph.Points > 0) // Chỉ tính điểm dương
                     .Sum(ph => ph.Points);
 
                 return new TopClassGroupDto
@@ -350,7 +353,8 @@ public class StatisticsService : IStatisticsService
                     .Where(ph => ph.UserId == sac.UserId &&
                                 ph.CreatedAt >= academicYear.StartDate &&
                                 ph.CreatedAt <= academicYear.EndDate &&
-                                ph.ActionType == PointActionType.Earn)
+                                ph.ActionType == PointActionType.Earn &&
+                                ph.Points > 0) // Chỉ tính điểm dương
                     .Sum(ph => ph.Points);
 
                 return new TopStudentDto
@@ -462,10 +466,11 @@ public class StatisticsService : IStatisticsService
 
         var totalActivitiesParticipated = activities.Count;
 
-        // Tính tổng điểm lớp đã nhận
+        // Tính tổng điểm lớp đã nhận (chỉ tính điểm Earn và loại trừ điểm âm)
         var totalPointsAwarded = await _context.PointHistory
             .Where(ph => studentIds.Contains(ph.UserId) &&
                         ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0 && // Chỉ tính điểm dương
                         (academicYear == null || (ph.CreatedAt >= academicYear.StartDate && ph.CreatedAt <= academicYear.EndDate)))
             .SumAsync(ph => ph.Points);
 
@@ -498,16 +503,51 @@ public class StatisticsService : IStatisticsService
             TotalRewardsWon = totalRewardsWon
         };
 
-        // Top sự kiện lớp đạt giải
+        // Top sự kiện lớp đạt giải - Tính điểm từ PointHistory thay vì từ ActivityRewards để tránh đúp
+        var rewardActivityIds = rewards.Select(r => r.ActivityId).Distinct().ToList();
+        var rewardActivityTitles = activities
+            .Where(a => rewardActivityIds.Contains(a.Id) && !string.IsNullOrEmpty(a.Title))
+            .Select(a => a.Title)
+            .Distinct()
+            .ToList();
+        
+        // Lấy tất cả điểm từ PointHistory cho các activities có giải thưởng
+        var allRewardPoints = await _context.PointHistory
+            .Where(ph => studentIds.Contains(ph.UserId) &&
+                        ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0 &&
+                        ph.Description != null &&
+                        (rewardActivityIds.Any(id => ph.Description.Contains($"Activity {id}")) ||
+                         rewardActivityTitles.Any(title => ph.Description.Contains(title!))) &&
+                        (academicYear == null || (ph.CreatedAt >= academicYear.StartDate && ph.CreatedAt <= academicYear.EndDate)))
+            .ToListAsync();
+
+        // Group điểm theo activity trong memory
+        var rewardPointsByActivity = rewardActivityIds.ToDictionary(
+            activityId => activityId,
+            activityId =>
+            {
+                var activity = activities.FirstOrDefault(a => a.Id == activityId);
+                var activityTitle = activity?.Title;
+                
+                return allRewardPoints
+                    .Where(ph => ph.Description != null &&
+                                (ph.Description.Contains($"Activity {activityId}") ||
+                                 (!string.IsNullOrEmpty(activityTitle) && ph.Description.Contains(activityTitle))))
+                    .Sum(ph => ph.Points);
+            }
+        );
+
         result.TopRewardActivities = rewards
             .Join(activities, r => r.ActivityId, a => a.Id, (r, a) => new ClassGroupRewardActivityDto
             {
                 ActivityId = a.Id,
                 ActivityTitle = a.Title ?? "N/A",
                 Rank = r.Rank,
-                PointsAwarded = r.StarPoints,
+                PointsAwarded = rewardPointsByActivity.ContainsKey(a.Id) ? rewardPointsByActivity[a.Id] : 0, // Lấy từ PointHistory
                 ActivityEndDate = a.EndDate
             })
+            .Where(x => x.PointsAwarded > 0) // Chỉ lấy những activity có điểm thực tế
             .OrderByDescending(x => x.PointsAwarded)
             .Take(10)
             .ToList();
@@ -519,22 +559,36 @@ public class StatisticsService : IStatisticsService
                 .Where(cg => cg.AcademicYearId == academicYear.Id && !cg.IsDeleted)
                 .ToListAsync();
 
-            var classRankings = await Task.WhenAll(allClassesInYear.Select(async cg =>
+            // Load tất cả student IDs của các lớp trong năm học trước
+            var allClassGroupIds = allClassesInYear.Select(cg => cg.Id).ToList();
+            var allClassGroupMembers = await _context.ClassGroupMembers
+                .Where(m => allClassGroupIds.Contains(m.ClassGroupId))
+                .ToListAsync();
+
+            // Load tất cả points trong năm học trước (chỉ điểm Earn và dương)
+            var allStudentIdsInYear = allClassGroupMembers.Select(m => m.UserId).Distinct().ToList();
+            var allPointsInYear = await _context.PointHistory
+                .Where(ph => allStudentIdsInYear.Contains(ph.UserId) &&
+                            ph.CreatedAt >= academicYear.StartDate &&
+                            ph.CreatedAt <= academicYear.EndDate &&
+                            ph.ActionType == PointActionType.Earn &&
+                            ph.Points > 0) // Chỉ tính điểm dương
+                .ToListAsync();
+
+            // Tính điểm cho từng lớp trong memory (tránh concurrent DbContext access)
+            var classRankings = allClassesInYear.Select(cg =>
             {
-                var cgStudentIds = await _context.ClassGroupMembers
+                var cgStudentIds = allClassGroupMembers
                     .Where(m => m.ClassGroupId == cg.Id)
                     .Select(m => m.UserId)
-                    .ToListAsync();
+                    .ToList();
 
-                var cgPoints = await _context.PointHistory
-                    .Where(ph => cgStudentIds.Contains(ph.UserId) &&
-                                ph.CreatedAt >= academicYear.StartDate &&
-                                ph.CreatedAt <= academicYear.EndDate &&
-                                ph.ActionType == PointActionType.Earn)
-                    .SumAsync(ph => ph.Points);
+                var cgPoints = allPointsInYear
+                    .Where(ph => cgStudentIds.Contains(ph.UserId))
+                    .Sum(ph => ph.Points);
 
                 return new { ClassGroupId = cg.Id, TotalPoints = cgPoints };
-            }));
+            }).ToList();
 
             var ranking = classRankings
                 .OrderByDescending(x => x.TotalPoints)
@@ -546,14 +600,25 @@ public class StatisticsService : IStatisticsService
         }
 
         // Phân bổ điểm theo học sinh
-        var studentPointsList = await Task.WhenAll(studentIds.Select(async userId =>
+        // Load tất cả users và points trước để tránh concurrent DbContext access
+        var allUsers = await _context.Users
+            .Where(u => studentIds.Contains(u.Id))
+            .ToListAsync();
+
+        var allStudentPoints = await _context.PointHistory
+            .Where(ph => studentIds.Contains(ph.UserId) &&
+                        ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0 && // Chỉ tính điểm dương
+                        (academicYear == null || (ph.CreatedAt >= academicYear.StartDate && ph.CreatedAt <= academicYear.EndDate)))
+            .ToListAsync();
+
+        // Tính điểm cho từng học sinh trong memory (tránh concurrent DbContext access)
+        var studentPointsList = studentIds.Select(userId =>
         {
-            var user = await _context.Users.FindAsync(userId);
-            var points = await _context.PointHistory
-                .Where(ph => ph.UserId == userId &&
-                            ph.ActionType == PointActionType.Earn &&
-                            (academicYear == null || (ph.CreatedAt >= academicYear.StartDate && ph.CreatedAt <= academicYear.EndDate)))
-                .SumAsync(ph => ph.Points);
+            var user = allUsers.FirstOrDefault(u => u.Id == userId);
+            var points = allStudentPoints
+                .Where(ph => ph.UserId == userId)
+                .Sum(ph => ph.Points);
 
             var activityCount = activityParticipants.Count(ap => ap.UserId == userId);
 
@@ -565,7 +630,8 @@ public class StatisticsService : IStatisticsService
                 TotalPoints = points,
                 ActivityCount = activityCount
             };
-        }));
+        }).ToList();
+
         result.StudentPointsDistribution = studentPointsList.OrderByDescending(s => s.TotalPoints).ToList();
 
         // Phân bổ tham gia theo loại sự kiện
@@ -628,9 +694,10 @@ public class StatisticsService : IStatisticsService
             Completed = activities.Count(a => a.EndDate.HasValue && a.EndDate < now)
         };
 
-        // Total points awarded
+        // Total points awarded (chỉ tính điểm Earn và dương)
         var totalPointsAwarded = await _context.PointHistory
             .Where(ph => ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0 && // Chỉ tính điểm dương
                         (academicYearId == null || 
                          (academicYearId.HasValue && _context.AcademicYears.Any(ay => 
                             ay.Id == academicYearId.Value &&
@@ -651,15 +718,27 @@ public class StatisticsService : IStatisticsService
             })
             .ToListAsync();
 
+        // Load tất cả participants và points trước để tránh concurrent DbContext access
+        var timelineActivityIds = timelineData.SelectMany(td => td.ActivityIds).Distinct().ToList();
+        var timelineParticipants = await _context.ActivityParticipants
+            .Where(ap => timelineActivityIds.Contains(ap.ActivityId) && ap.Status == ParticipantStatus.Joined)
+            .ToListAsync();
+
+        var timelinePoints = await _context.PointHistory
+            .Where(ph => ph.CreatedAt >= timelineStart &&
+                        ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0) // Chỉ tính điểm dương
+            .ToListAsync();
+
+        // Tính toán trong memory (tránh concurrent DbContext access)
         var activityTimeline = timelineData.Select(td =>
         {
-            var participantCount = _context.ActivityParticipants
-                .Count(ap => td.ActivityIds.Contains(ap.ActivityId) && ap.Status == ParticipantStatus.Joined);
+            var participantCount = timelineParticipants
+                .Count(ap => td.ActivityIds.Contains(ap.ActivityId));
 
-            var pointsAwarded = _context.PointHistory
+            var pointsAwarded = timelinePoints
                 .Where(ph => ph.CreatedAt.Year == td.Date.Year &&
-                            ph.CreatedAt.Month == td.Date.Month &&
-                            ph.ActionType == PointActionType.Earn)
+                            ph.CreatedAt.Month == td.Date.Month)
                 .Sum(ph => ph.Points);
 
             return new ActivityTimelineDto
@@ -691,11 +770,19 @@ public class StatisticsService : IStatisticsService
             .Take(10)
             .ToListAsync();
 
+        // Load tất cả points trước để tránh concurrent DbContext access (chỉ điểm Earn và dương)
+        var topClassParticipantIds = topClasses.SelectMany(tc => tc.ParticipantUserIds).Distinct().ToList();
+        var topClassPoints = await _context.PointHistory
+            .Where(ph => topClassParticipantIds.Contains(ph.UserId) &&
+                        ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0) // Chỉ tính điểm dương
+            .ToListAsync();
+
+        // Tính toán trong memory (tránh concurrent DbContext access)
         var topActiveClasses = topClasses.Select(tc =>
         {
-            var pointsAwarded = _context.PointHistory
-                .Where(ph => tc.ParticipantUserIds.Contains(ph.UserId) &&
-                            ph.ActionType == PointActionType.Earn)
+            var pointsAwarded = topClassPoints
+                .Where(ph => tc.ParticipantUserIds.Contains(ph.UserId))
                 .Sum(ph => ph.Points);
 
             return new TopClassGroupDto
@@ -725,11 +812,19 @@ public class StatisticsService : IStatisticsService
             .Take(10)
             .ToListAsync();
 
+        // Load tất cả points trước để tránh concurrent DbContext access (chỉ điểm Earn và dương)
+        var topStudentIds = topStudents.Select(ts => ts.UserId).Distinct().ToList();
+        var topStudentPoints = await _context.PointHistory
+            .Where(ph => topStudentIds.Contains(ph.UserId) &&
+                        ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0) // Chỉ tính điểm dương
+            .ToListAsync();
+
+        // Tính toán trong memory (tránh concurrent DbContext access)
         var topActiveStudents = topStudents.Select(ts =>
         {
-            var pointsAwarded = _context.PointHistory
-                .Where(ph => ph.UserId == ts.UserId &&
-                            ph.ActionType == PointActionType.Earn)
+            var pointsAwarded = topStudentPoints
+                .Where(ph => ph.UserId == ts.UserId)
                 .Sum(ph => ph.Points);
 
             return new TopStudentDto
@@ -744,27 +839,41 @@ public class StatisticsService : IStatisticsService
 
         // Phân bổ điểm theo năm học
         var academicYears = await _context.AcademicYears.ToListAsync();
-        var pointsByAcademicYear = academicYears.Select(async ay =>
-        {
-            var activityIds = await _context.Activities
-                .Where(a => !a.IsDeleted &&
-                           ((a.StartDate.HasValue && a.StartDate >= ay.StartDate && a.StartDate <= ay.EndDate) ||
-                            (a.EndDate.HasValue && a.EndDate >= ay.StartDate && a.EndDate <= ay.EndDate)))
-                .Select(a => a.Id)
-                .ToListAsync();
+        
+        // Load tất cả dữ liệu cần thiết trước để tránh concurrent DbContext access
+        var allActivities = await _context.Activities
+            .Where(a => !a.IsDeleted)
+            .ToListAsync();
 
-            var participantIds = await _context.ActivityParticipants
-                .Where(ap => activityIds.Contains(ap.ActivityId) && ap.Status == ParticipantStatus.Joined)
+        var allActivityParticipants = await _context.ActivityParticipants
+            .Where(ap => ap.Status == ParticipantStatus.Joined)
+            .ToListAsync();
+
+        var allPointHistory = await _context.PointHistory
+            .Where(ph => ph.ActionType == PointActionType.Earn &&
+                        ph.Points > 0) // Chỉ tính điểm dương
+            .ToListAsync();
+
+        // Tính toán trong memory (tránh concurrent DbContext access)
+        var pointsByAcademicYear = academicYears.Select(ay =>
+        {
+            var activityIds = allActivities
+                .Where(a => (a.StartDate.HasValue && a.StartDate >= ay.StartDate && a.StartDate <= ay.EndDate) ||
+                           (a.EndDate.HasValue && a.EndDate >= ay.StartDate && a.EndDate <= ay.EndDate))
+                .Select(a => a.Id)
+                .ToList();
+
+            var participantIds = allActivityParticipants
+                .Where(ap => activityIds.Contains(ap.ActivityId))
                 .Select(ap => ap.UserId)
                 .Distinct()
-                .ToListAsync();
+                .ToList();
 
-            var totalPoints = await _context.PointHistory
+            var totalPoints = allPointHistory
                 .Where(ph => participantIds.Contains(ph.UserId) &&
                             ph.CreatedAt >= ay.StartDate &&
-                            ph.CreatedAt <= ay.EndDate &&
-                            ph.ActionType == PointActionType.Earn)
-                .SumAsync(ph => ph.Points);
+                            ph.CreatedAt <= ay.EndDate)
+                .Sum(ph => ph.Points);
 
             return new PointsByAcademicYearDto
             {
@@ -774,7 +883,7 @@ public class StatisticsService : IStatisticsService
                 ActivityCount = activityIds.Count,
                 ParticipantCount = participantIds.Count
             };
-        }).Select(t => t.Result).ToList();
+        }).ToList();
 
         return new DashboardStatisticsDto
         {

@@ -3,6 +3,7 @@ using EduShpere.Domain.Models;
 using EduShpere.Infrastructure.Repositories.StarPoint;
 using EduShpere.Application.Services.NotificationService;
 using EduShpere.Infrastructure;
+using EduShpere.Domain;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -41,9 +42,24 @@ namespace EduShpere.Application.Services.StarPointService
                 return; // Không có rule hoặc rule không hợp lệ -> không cộng điểm
             }
 
-            // Business rule: Login chỉ tính 1 lần/ngày
+            // Business rule: Login chỉ tính cho Student, không cộng cho Admin và Teacher
             if (actionType == RewardActionType.Login)
             {
+                // Lấy user từ context để check role
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+                
+                if (user == null)
+                {
+                    return; // User không tồn tại
+                }
+
+                // Chỉ cộng điểm cho Student (role = 4), không cộng cho Admin (0) và Teacher (2)
+                if (user.Role != UserRole.Student)
+                {
+                    return; // Admin và Teacher không được cộng điểm đăng nhập
+                }
                 var today = DateTime.UtcNow.Date;
                 var baseDescription = !string.IsNullOrWhiteSpace(rule.Description)
                     ? rule.Description
@@ -79,18 +95,27 @@ namespace EduShpere.Application.Services.StarPointService
                 PointActionType.Earn
             );
 
-            // Gửi notification realtime
+            // Gửi notification realtime - CHỈ GỬI CHO STUDENT, KHÔNG GỬI CHO ADMIN VÀ TEACHER
             try
             {
-                await _notificationService.AddAsync(new Notification
+                // Lấy user để check role trước khi gửi notification
+                var userForNotification = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+                
+                // Chỉ gửi notification cho Student, không gửi cho Admin và Teacher
+                if (userForNotification != null && userForNotification.Role == UserRole.Student)
                 {
-                    UserId = userId,
-                    Type = "starpoint",
-                    Title = $"Bạn đã nhận được {rule.Points} điểm: {description}",
-                    Link = link,
-                    CreatedAt = DateTime.UtcNow,
-                    Read = false
-                });
+                    await _notificationService.AddAsync(new Notification
+                    {
+                        UserId = userId,
+                        Type = "starpoint",
+                        Title = $"Bạn đã nhận được {rule.Points} điểm: {description}",
+                        Link = link,
+                        CreatedAt = DateTime.UtcNow,
+                        Read = false
+                    });
+                }
             }
             catch
             {

@@ -308,6 +308,10 @@ namespace EduShpere.Shared.Constants
             public const string AcademicYear = "api/statistics/academic-years/{academicYearId}";
             public const string ClassGroup = "api/statistics/classgroups/{classGroupId}";
             public const string Dashboard = "api/statistics/dashboard";
+            
+            // New Statistics Report endpoints
+            public const string AcademicYearReport = "academic-year-report";
+            public const string AcademicYearReportExport = "academic-year-report/export";
         }
     }
 }
