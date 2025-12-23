@@ -132,7 +132,6 @@ namespace EduShpere
             // Search services
             builder.Services.AddScoped<EduShpere.Application.Services.RankingService.IRankingService, EduShpere.Application.Services.RankingService.RankingService>();
             // Background service for trending updates
-            builder.Services.AddHostedService<EduShpere.Infrastructure.Services.TrendingUpdateService>();
             builder.Services.AddScoped<ISubmissionReposiory, SubmissionRepository>();
 
             builder.Services.AddScoped<IClassGroupRepository, ClassGroupRepository>();

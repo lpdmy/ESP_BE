@@ -2,6 +2,7 @@
 
 using System.Net.Http.Headers;
 using System.Net.Http;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text;
 using EduShpere.Shared;
@@ -65,7 +66,10 @@ Kết quả trả về phải đúng định dạng JSON:
                 temperature = 0
             };
 
-            var json = JsonSerializer.Serialize(body);
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");

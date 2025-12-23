@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using AutoMapper;
 using EduShpere.Application.DTOs;
@@ -31,7 +32,8 @@ namespace EduShpere.Application.Services
         private readonly IPaginationService _paginationService;
         private static readonly JsonSerializerOptions RegistrationJsonOptions = new()
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
         public ActivityParticipantService(

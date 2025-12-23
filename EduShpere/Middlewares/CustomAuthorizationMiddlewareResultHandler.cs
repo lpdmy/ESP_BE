@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using EduShpere.Application;
 
@@ -47,7 +48,8 @@ public class CustomAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewa
         {
             var serializeOptions = new JsonSerializerOptions
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
 
             var message = statusCode == StatusCodes.Status404NotFound ? "Not Found" : "Unauthorized";

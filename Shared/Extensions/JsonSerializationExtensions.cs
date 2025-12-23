@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace EduShpere.Shared;
 public static class JsonSerializationExtensions
@@ -7,7 +8,8 @@ public static class JsonSerializationExtensions
     { 
         var serializeOptions = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
         return JsonSerializer.Serialize(obj, serializeOptions);
