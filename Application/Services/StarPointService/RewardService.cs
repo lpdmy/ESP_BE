@@ -41,8 +41,6 @@ namespace EduShpere.Application.Services.StarPointService
 
         public async Task<Reward> UpdateAsync(int id, Reward reward)
         {
-            var userId = _currentUserService.GetCurrentUserId() ?? 0;
-
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null) return null;
 
@@ -52,7 +50,8 @@ namespace EduShpere.Application.Services.StarPointService
             existing.Category = reward.Category;
             existing.ImageUrl = reward.ImageUrl;
             existing.UpdatedAt = DateTime.Now;
-            existing.UpdatedBy = reward.UpdatedBy;
+            // Lấy user hiện tại thay vì dùng giá trị từ payload
+            existing.UpdatedBy = _currentUserService.GetCurrentUserId() ?? existing.UpdatedBy;
 
             return await _repository.UpdateAsync(existing);
         }

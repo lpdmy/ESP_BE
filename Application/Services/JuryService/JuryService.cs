@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -707,7 +708,10 @@ namespace EduShpere.Application.Services
                 if (!gradingCriteria.Contains(key))
                     throw new BadRequestException($"Tiêu chí không hợp lệ: {key}");
             }
-            var scoreJson = JsonSerializer.Serialize(scores);
+            var scoreJson = JsonSerializer.Serialize(scores, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
             var reuslt =  _juryAssignRepo.GradeSubmission(scoreJson, assignmentId, comment, totalScore);
             return scoreJson;
         }

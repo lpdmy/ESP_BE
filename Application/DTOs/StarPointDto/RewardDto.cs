@@ -19,7 +19,11 @@ namespace EduShpere.Application.DTOs.StarPointDto
         [Range(0, int.MaxValue)]
         public int Stock { get; set; }
 
-        public RewardCategory Category { get; set; } = RewardCategory.Voucher;
+        /// <summary>
+        /// Cho phép null để tránh lỗi ModelState khi FE gửi chuỗi rỗng.
+        /// Nếu null thì backend sẽ tự gán mặc định là Voucher.
+        /// </summary>
+        public RewardCategory? Category { get; set; } = RewardCategory.Voucher;
 
         [MaxLength(500)]
         public string ImageUrl { get; set; }

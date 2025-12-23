@@ -19,7 +19,7 @@ public class Reward
 
     public int Stock { get; set; }
 
-    public RewardCategory Category { get; set; } = RewardCategory.Voucher;
+    public RewardCategory? Category { get; set; } = RewardCategory.Voucher;
 
     [MaxLength(500)]
     public string ImageUrl { get; set; }

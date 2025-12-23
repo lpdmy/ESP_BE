@@ -477,9 +477,9 @@ namespace EduShpere.Application.Services
                     ? (DateTime.UtcNow < a.StartDate.Value.ToUniversalTime()
                         ? "Sắp diễn ra"
                         : DateTime.UtcNow >= a.StartDate.Value.ToUniversalTime() && DateTime.UtcNow <= a.EndDate.Value.ToUniversalTime()
-                        ? "�ang di?n ra"
-                        : "�? k?t th�c")
-                    : "�ang c?p nh?t"
+                        ? "Đang diễn ra"
+                        : "Đã kết thúc")
+                    : "Đang cập nhật"
             }).ToList();
 
             // T�nh s? l�?ng participants cho m?i activity (batch query �? t?i �u)
