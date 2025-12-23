@@ -13,7 +13,7 @@ namespace EduShpere.Infrastructure.DTOs
         public string Name { get; set; }
         public int PointCost { get; set; }
         public int Stock { get; set; }
-        public RewardCategory Category { get; set; }
+        public RewardCategory? Category { get; set; }
         public string ImageUrl { get; set; }
         public int Claimed { get; set; }
     }

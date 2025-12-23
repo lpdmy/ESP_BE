@@ -173,7 +173,7 @@ namespace EduShpere.Infrastructure.Repositories.StarPoint
     {
         public int Id { get; set; }
         public string RewardName { get; set; }
-        public RewardCategory Category { get; set; }
+        public RewardCategory? Category { get; set; }
         public string UserName { get; set; }
         public string StudentNumber { get; set; }
         public int Quantity { get; set; }
