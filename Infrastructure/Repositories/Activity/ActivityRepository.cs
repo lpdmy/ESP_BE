@@ -201,11 +201,12 @@ namespace EduShpere.Infrastructure.Repositories
             try
             {
                 // Apply pagination and ordering
+                // Sort by StartDate DESC to match user list (most recent activities first)
                 var items = await query
                     .Include(a => a.Rules.Where(r => !r.IsDeleted))
                     .Include(a => a.ActivityParticipants.Where(p => p.UserId == userId && !p.IsDeleted))
                     .Include(a => a.RegistrationReward)
-                    .OrderByDescending(a => a.CreatedAt)
+                    .OrderByDescending(a => a.StartDate ?? DateTime.MinValue)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
