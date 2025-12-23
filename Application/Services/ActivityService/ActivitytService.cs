@@ -100,8 +100,9 @@ namespace EduShpere.Application.Services
             var totalCount = await query.CountAsync();
 
             // Get activity IDs for the current page (for efficient loading of related data)
+            // Sort by StartDate DESC to match user list (most recent activities first)
             var activityIds = await query
-                .OrderByDescending(a => a.CreatedAt)
+                .OrderByDescending(a => a.StartDate ?? DateTime.MinValue)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(a => a.Id)
