@@ -35,9 +35,6 @@ namespace EduShpere
     {
         public static void Main(string[] args)
         {
-            // Điều chỉnh ThreadPool phù hợp với AWS environment
-            // Không set quá cao để tránh resource exhaustion
-            // AWS instances thường có 2-4 cores, nên set hợp lý hơn
             var processorCount = Environment.ProcessorCount;
             var minThreads = Math.Max(processorCount * 2, 50); // Tối thiểu 50 threads
             var maxThreads = Math.Min(processorCount * 50, 200); // Tối đa 200 threads để tránh overload
@@ -47,7 +44,6 @@ namespace EduShpere
             
             var builder = WebApplication.CreateBuilder(args);
             
-            // Cấu hình Kestrel để xử lý nhiều concurrent connections
             builder.WebHost.ConfigureKestrel(options =>
             {
                 options.Limits.MaxConcurrentConnections = 1000;
