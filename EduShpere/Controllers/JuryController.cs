@@ -295,7 +295,7 @@ namespace EduShpere.Controllers
             try
             {
                 var result = await _juryService.ImprovedRandomAssignAsync(dto.ActivityId, dto.NumberOfJury);
-                return Ok(new ResponseDto<bool>(result, "Phân công giám khảo ngẫu nhiên (cải tiến) thành công"));
+                return Ok(new ResponseDto<bool>(result, "Phân công giám khảo ngẫu nhiên thành công"));
             }
             catch (BadRequestException ex)
             {
