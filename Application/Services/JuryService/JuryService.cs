@@ -712,7 +712,7 @@ namespace EduShpere.Application.Services
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             });
-            var reuslt =  _juryAssignRepo.GradeSubmission(scoreJson, assignmentId, comment, totalScore);
+            await _juryAssignRepo.GradeSubmission(scoreJson, assignmentId, comment, totalScore);
             return scoreJson;
         }
 

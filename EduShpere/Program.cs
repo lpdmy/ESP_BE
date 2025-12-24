@@ -183,6 +183,8 @@ namespace EduShpere
                 // Handle circular references by ignoring cycles
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
                 options.JsonSerializerOptions.WriteIndented = false;
+                // Use camelCase naming policy to match frontend JSON format
+                options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                 // Ensure DateTime is always serialized as UTC ISO 8601 format with 'Z' suffix
                 // System.Text.Json by default serializes UTC DateTime with 'Z', but we ensure it explicitly
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
