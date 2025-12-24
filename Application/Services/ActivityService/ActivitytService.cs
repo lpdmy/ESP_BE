@@ -1561,8 +1561,8 @@ namespace EduShpere.Application.Services
 
             // L?y t?t c? activities ch�a b? x�a
             // Tối ưu: Đếm trực tiếp trong database thay vì load tất cả vào memory
-            // Thực hiện song song các queries để tăng tốc độ
-            var ongoingCountTask = _context.Activities
+            // Chạy tuần tự để tránh lỗi DbContext threading (EF Core không cho phép nhiều operations đồng thời trên cùng context)
+            var ongoingCount = await _context.Activities
                 .Where(a => !a.IsDeleted
                     && a.StartDate.HasValue
                     && a.EndDate.HasValue
@@ -1570,31 +1570,28 @@ namespace EduShpere.Application.Services
                     && a.EndDate.Value >= now)
                 .CountAsync();
 
-            var upcomingCountTask = _context.Activities
+            var upcomingCount = await _context.Activities
                 .Where(a => !a.IsDeleted
                     && a.StartDate.HasValue
                     && a.StartDate.Value > now)
                 .CountAsync();
 
-            var completedCountTask = _context.Activities
+            var completedCount = await _context.Activities
                 .Where(a => !a.IsDeleted
                     && a.EndDate.HasValue
                     && a.EndDate.Value < now)
                 .CountAsync();
 
-            var totalParticipantsTask = _context.ActivityParticipants
+            var totalParticipants = await _context.ActivityParticipants
                 .Where(p => !p.IsDeleted)
                 .CountAsync();
 
-            // Chờ tất cả queries hoàn thành song song
-            await Task.WhenAll(ongoingCountTask, upcomingCountTask, completedCountTask, totalParticipantsTask);
-
             return new ActivityStatisticsDto
             {
-                OngoingCount = await ongoingCountTask,
-                UpcomingCount = await upcomingCountTask,
-                CompletedCount = await completedCountTask,
-                TotalParticipants = await totalParticipantsTask
+                OngoingCount = ongoingCount,
+                UpcomingCount = upcomingCount,
+                CompletedCount = completedCount,
+                TotalParticipants = totalParticipants
             };
         }
 
