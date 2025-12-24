@@ -45,6 +45,19 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(c => c.ClubJoinRequests)
                 .FirstOrDefaultAsync();
         }
+        public async Task<Club?> GetByIdWithIncludes(int id)
+        {
+            return await _context.Clubs
+                .Where(c => c.Id == id)
+                .Include(c => c.ClubMembers)
+                .ThenInclude(m => m.User)
+                .Include(c => c.Category)
+                .Include(c => c.CreatedByUser)
+                .Include(c => c.President)
+                .Include(c => c.Mentor)
+                .Include(c => c.ClubJoinRequests)
+                .FirstOrDefaultAsync();
+        }
         public IQueryable<Club> GetAllWithIncludes()
         {
             return _context.Clubs
@@ -75,6 +88,18 @@ namespace EduShpere.Infrastructure.Repositories
                 return false;
             }
             entity.IsDeleted = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<bool> RestoreClub(int id)
+        {
+
+            var entity = await _context.Clubs.FindAsync(id);
+            if (entity == null || !entity.IsDeleted)
+            {
+                return false;
+            }
+            entity.IsDeleted = false;
             await _context.SaveChangesAsync();
             return true;
         }

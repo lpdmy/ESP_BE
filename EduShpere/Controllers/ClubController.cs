@@ -85,6 +85,16 @@ namespace EduShpere.Controllers
                        statusCode: 200
                    ));
         }
+        [HttpPut(ApiEndpoints.Club.GetClubById)]
+        public async Task<IActionResult> RestoreClub(int id)
+        {
+            var result = await _clubService.RestoreClub(id);
+            return Ok(new ResponseDto<bool>(
+                       result,
+                       message: "Khôi phục câu lạc bộ thành công",
+                       statusCode: 200
+                   ));
+        }
         [HttpGet(ApiEndpoints.Club.Categories)]
         public async Task<IActionResult> GetAllClubCategory()
         {
