@@ -27,5 +27,6 @@ namespace EduShpere.Application.Services
         Task<PaginationResponseDto<ClubResponseDto>> GetAllAdminAsync(User user,
     PaginationRequestDto paginationRequest,
     string? search = null);
+        Task<bool> RestoreClub(int id);
     }
 }

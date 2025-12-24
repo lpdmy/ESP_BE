@@ -25,7 +25,7 @@ namespace EduShpere.Infrastructure.Repositories
         }
         public IQueryable<ClubMember> GetClubMemberByUser(User user)
         {
-            return _context.ClubMembers.Where(p => p.UserId == user.Id && p.IsDeleted==false).Include(p=>p.Club).ThenInclude(p=>p.Category);
+            return _context.ClubMembers.Where(p => p.UserId == user.Id && p.IsDeleted==false && p.Club.IsDeleted==false).Include(p=>p.Club).ThenInclude(p=>p.Category);
         }
         public async Task<bool> IsMentorAnyClub(int userId)
         {
