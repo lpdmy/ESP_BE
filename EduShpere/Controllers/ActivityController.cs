@@ -221,6 +221,103 @@ namespace EduShpere.Controllers
                 (int)HttpStatusCode.OK
             ));
         }
+
+        /// <summary>
+        /// Get lightweight activity info for schedule generation - chỉ lấy các trường cần thiết
+        /// Tối ưu performance bằng cách chỉ query các trường cần thiết
+        /// </summary>
+        [HttpGet(ApiEndpoints.Activity.GetScheduleInfo)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetScheduleInfo(int id)
+        {
+            var scheduleInfo = await _Service.GetScheduleInfoByIdAsync(id);
+            if (scheduleInfo == null)
+            {
+                return NotFound(new ResponseDto<string>(
+                    null,
+                    ErrorMessages.Activity.ActivityNotFound,
+                    (int)HttpStatusCode.NotFound
+                ));
+            }
+            return Ok(new ResponseDto<ActivityScheduleInfoDto>(
+                scheduleInfo,
+                "Lấy thông tin hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        /// <summary>
+        /// Get lightweight activity info for registration form - chỉ lấy các trường cần thiết
+        /// Tối ưu performance bằng cách chỉ query các trường cần thiết
+        /// </summary>
+        [HttpGet(ApiEndpoints.Activity.GetRegisterInfo)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetRegisterInfo(int id)
+        {
+            var registerInfo = await _Service.GetRegisterInfoByIdAsync(id);
+            if (registerInfo == null)
+            {
+                return NotFound(new ResponseDto<string>(
+                    null,
+                    ErrorMessages.Activity.ActivityNotFound,
+                    (int)HttpStatusCode.NotFound
+                ));
+            }
+            return Ok(new ResponseDto<ActivityRegisterInfoDto>(
+                registerInfo,
+                "Lấy thông tin hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        /// <summary>
+        /// Get lightweight activity info for view detail - chỉ lấy các trường cần thiết
+        /// Tối ưu performance bằng cách chỉ query các trường cần thiết
+        /// </summary>
+        [HttpGet(ApiEndpoints.Activity.GetViewInfo)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetViewInfo(int id)
+        {
+            var viewInfo = await _Service.GetViewInfoByIdAsync(id);
+            if (viewInfo == null)
+            {
+                return NotFound(new ResponseDto<string>(
+                    null,
+                    ErrorMessages.Activity.ActivityNotFound,
+                    (int)HttpStatusCode.NotFound
+                ));
+            }
+            return Ok(new ResponseDto<ActivityViewInfoDto>(
+                viewInfo,
+                "Lấy thông tin hoạt động thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
+        /// <summary>
+        /// Get participants with paging and optional class filter - tối ưu cho tab participants
+        /// </summary>
+        [HttpGet(ApiEndpoints.Activity.GetParticipants)]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<IActionResult> GetParticipants(int id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] int? classGroupId = null)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ResponseDto<string>(
+                    null,
+                    ErrorMessages.Generic.UnknownError,
+                    (int)HttpStatusCode.BadRequest
+                ));
+            }
+
+            var result = await _Service.GetParticipantsAsync(id, pageNumber, pageSize, classGroupId);
+            return Ok(new ResponseDto<PaginationResponseDto<ActivityParticipantViewDto>>(
+                result,
+                "Lấy danh sách người tham gia thành công",
+                (int)HttpStatusCode.OK
+            ));
+        }
+
         [HttpPost(ApiEndpoints.Activity.Activities)]
         [Authorize(Roles = "Teacher,Admin")]
         public async Task<IActionResult>CreateActivity([FromBody] CreateActivityDto dto)

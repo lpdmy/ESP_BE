@@ -1,4 +1,4 @@
-using ESP.AIService.Entities;
+using EduShpere.Domain.Models;
 using System.Collections.Generic;
 
 namespace ESP.AIService.Models;

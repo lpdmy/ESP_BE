@@ -270,13 +270,17 @@ namespace EduShpere.Application.Services
         {
             await EnsureSchemaAsync();
             var matches = await _matchRepo.GetByActivityAndSportAndGradeAsync(activityId, sportId, grade);
-            var activity = await _activityRepo.GetByIdWithIncludesAsync(activityId);
-            var sport = activity?.Sports?.FirstOrDefault(s => s.Id == sportId);
 
             if (!matches.Any())
             {
                 throw new NotFoundException(ErrorMessages.ActivityMatch.BracketNotFound);
             }
+
+            // Tối ưu: Chỉ query SportName thay vì load toàn bộ Activity
+            var sportName = await _context.ActivitySports
+                .Where(s => s.ActivityId == activityId && s.Id == sportId && !s.IsDeleted)
+                .Select(s => s.SportName)
+                .FirstOrDefaultAsync();
 
             var groupedRounds = matches
                 .GroupBy(m => m.Round)
@@ -301,7 +305,7 @@ namespace EduShpere.Application.Services
             {
                 ActivityId = activityId,
                 SportId = sportId,
-                SportName = sport?.SportName,
+                SportName = sportName,
                 Grade = grade ?? matches.First().Grade,
                 TotalRounds = totalRounds,
                 TotalMatches = matches.Count(),
@@ -412,18 +416,19 @@ namespace EduShpere.Application.Services
                 throw new NotFoundException(ErrorMessages.ActivityMatch.NotFound);
             }
 
-            if (match.Status == MatchStatus.Completed && (dto.MarkAsCompleted))
+            if (match.Status == MatchStatus.Completed && dto.MarkAsCompleted)
             {
                 throw new BadRequestException(ErrorMessages.ActivityMatch.MatchAlreadyCompleted);
             }
 
             var markAsCompleted = dto.MarkAsCompleted;
+            var hasWinner = dto.WinnerClassGroupId.HasValue;
 
-            if (markAsCompleted)
+            // Validate winner nếu có
+            if (hasWinner)
             {
-                if (!dto.WinnerClassGroupId.HasValue ||
-                    (dto.WinnerClassGroupId != match.ClassGroup1Id &&
-                     dto.WinnerClassGroupId != match.ClassGroup2Id))
+                if (dto.WinnerClassGroupId != match.ClassGroup1Id &&
+                    dto.WinnerClassGroupId != match.ClassGroup2Id)
                 {
                     throw new BadRequestException(ErrorMessages.ActivityMatch.InvalidWinner);
                 }
@@ -432,7 +437,8 @@ namespace EduShpere.Application.Services
             match.Score1 = dto.Score1;
             match.Score2 = dto.Score2;
 
-            if (markAsCompleted)
+            // Tự động set status = Completed khi có winner (dù chưa tới ngày)
+            if (hasWinner)
             {
                 match.WinnerClassGroupId = dto.WinnerClassGroupId;
                 match.Status = MatchStatus.Completed;
@@ -441,11 +447,13 @@ namespace EduShpere.Application.Services
                     match.ActualStartTime = DateTime.UtcNow;
                 }
 
+                // Cập nhật trận tiếp theo với đội thắng
                 if (match.NextMatchId.HasValue)
                 {
-                    var nextMatch = await _matchRepo.GetByIdAsync(match.NextMatchId.Value);
+                    var nextMatch = await _matchRepo.GetByIdWithIncludesAsync(match.NextMatchId.Value);
                     if (nextMatch != null && !nextMatch.IsDeleted)
                     {
+                        // Tìm vị trí trống trong nextMatch (ClassGroup1Id hoặc ClassGroup2Id)
                         if (!nextMatch.ClassGroup1Id.HasValue)
                         {
                             nextMatch.ClassGroup1Id = match.WinnerClassGroupId;
@@ -460,10 +468,23 @@ namespace EduShpere.Application.Services
                     }
                 }
             }
-            else
+            else if (markAsCompleted)
             {
+                // Nếu markAsCompleted nhưng không có winner, chỉ set InProgress
                 match.Status = MatchStatus.InProgress;
                 match.WinnerClassGroupId = null;
+                if (!match.ActualStartTime.HasValue)
+                {
+                    match.ActualStartTime = DateTime.UtcNow;
+                }
+            }
+            else
+            {
+                // Chỉ cập nhật tỉ số, giữ nguyên status
+                if (match.Status == MatchStatus.Pending)
+                {
+                    match.Status = MatchStatus.InProgress;
+                }
                 if (!match.ActualStartTime.HasValue)
                 {
                     match.ActualStartTime = DateTime.UtcNow;

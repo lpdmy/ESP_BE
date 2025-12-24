@@ -286,7 +286,7 @@ class Program
                     Console.WriteLine($"    Status: {match.Status}");
                     
                     // Chỉ hiển thị kết quả nếu match đã completed
-                    if (match.Status == ESP.AIService.Entities.MatchStatus.Completed)
+                    if (match.Status == EduShpere.Domain.Enum.MatchStatus.Completed)
                     {
                         if (match.Score1.HasValue && match.Score2.HasValue)
                         {

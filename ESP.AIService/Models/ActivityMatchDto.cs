@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
-using ESP.AIService.Entities;
+using EduShpere.Domain.Enum;
+using EduShpere.Domain.Models;
 
 namespace ESP.AIService.Models;
 

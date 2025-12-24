@@ -16,6 +16,22 @@ namespace EduShpere.Application.Services
         Task<IEnumerable<ActivityListItemDto>> GetListItemsAsync();
         Task<PaginationResponseDto<ActivityListItemDto>> GetListItemsWithFilterAsync(ActivityListFilterDto filter, int? userId = null);
         Task<Activity?> GetByIdAsync(int id);
+        /// <summary>
+        /// Get lightweight activity info for schedule generation - chỉ lấy các trường cần thiết
+        /// </summary>
+        Task<ActivityScheduleInfoDto?> GetScheduleInfoByIdAsync(int id);
+        /// <summary>
+        /// Get lightweight activity info for registration form - chỉ lấy các trường cần thiết
+        /// </summary>
+        Task<ActivityRegisterInfoDto?> GetRegisterInfoByIdAsync(int id);
+        /// <summary>
+        /// Get lightweight activity info for view detail - chỉ lấy các trường cần thiết
+        /// </summary>
+        Task<ActivityViewInfoDto?> GetViewInfoByIdAsync(int id);
+        /// <summary>
+        /// Get participants with paging and optional class filter - tối ưu cho tab participants
+        /// </summary>
+        Task<PaginationResponseDto<ActivityParticipantViewDto>> GetParticipantsAsync(int activityId, int pageNumber, int pageSize, int? classGroupId = null);
         Task<ActivityResponseDto> AddAsync(CreateActivityDto dto);
         Task<ActivityResponseDto> UpdateAsync(UpdateActivityDto dto);
         Task<(IEnumerable<Activity> Items, int TotalCount)> GetActivitiesByUserIdAsync(int userId, int pageNumber, int pageSize, string? search = null, string? status = null);

@@ -8,7 +8,6 @@ using EduShpere.Infrastructure.Repositories;
 using EduShpere.Shared.Constants;
 using ESP.AIService.Services;
 using ESP.AIService.Models;
-using ESP.AIService.Entities;
 using Microsoft.EntityFrameworkCore;
 using EduShpere.Shared;
 

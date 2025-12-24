@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using ESP.AIService.Models;
-using ESP.AIService.Entities;
 using EduShpere.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,12 +9,10 @@ namespace ESP.AIService.Services;
 public class TournamentScheduleService
 {
     private readonly TournamentScheduleMLService _mlService;
-    private readonly ORToolsScheduler _scheduler;
 
     public TournamentScheduleService()
     {
         _mlService = new TournamentScheduleMLService();
-        _scheduler = new ORToolsScheduler();
     }
 
     /// <summary>
@@ -44,14 +41,14 @@ public class TournamentScheduleService
             };
         }
 
-        // Bước 2: Optimize với OR-Tools
-        Console.WriteLine("⚙️ Đang tối ưu hóa lịch với OR-Tools...");
-        var response = _scheduler.OptimizeSchedule(request, slots, dbContext);
+        // Bước 2: Generate schedule với TournamentScheduler mới
+        Console.WriteLine("⚙️ Đang tạo lịch thi đấu...");
+        var scheduler = new TournamentScheduler(dbContext);
+        var response = scheduler.GenerateSchedule(request, slots);
 
         if (response.Success)
         {
             Console.WriteLine($"✅ Đã tạo thành công {response.TotalMatches} matches trong {response.TotalRounds} rounds");
-            Console.WriteLine($"   Objective value: {response.ObjectiveValue:F2}");
         }
         else
         {

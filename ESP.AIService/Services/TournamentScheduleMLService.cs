@@ -7,8 +7,8 @@ using Microsoft.ML.Data;
 using ESP.AIService.Models;
 using EduShpere.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using AiActivityMatch = ESP.AIService.Entities.ActivityMatch;
-using AiMatchStatus = ESP.AIService.Entities.MatchStatus;
+using AiActivityMatch = EduShpere.Domain.Models.ActivityMatch;
+using AiMatchStatus = EduShpere.Domain.Enum.MatchStatus;
 
 namespace ESP.AIService.Services;
 

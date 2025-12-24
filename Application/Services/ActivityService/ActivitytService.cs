@@ -531,6 +531,230 @@ namespace EduShpere.Application.Services
         {
             return await _repo.GetByIdWithIncludesAsync(id);
         }
+
+        /// <summary>
+        /// Get lightweight activity info for schedule generation - chỉ lấy các trường cần thiết
+        /// Tối ưu performance bằng cách chỉ query các trường cần thiết
+        /// </summary>
+        public async Task<ActivityScheduleInfoDto?> GetScheduleInfoByIdAsync(int id)
+        {
+            var activity = await _context.Activities
+                .Where(a => a.Id == id && !a.IsDeleted)
+                .Select(a => new ActivityScheduleInfoDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate,
+                    Location = a.Location,
+                    Sports = a.Sports
+                        .Where(s => !s.IsDeleted)
+                        .Select(s => new ActivitySportBasicDto
+                        {
+                            Id = s.Id,
+                            SportName = s.SportName
+                        })
+                        .ToList(),
+                    Participants = a.ActivityParticipants
+                        .Where(p => !p.IsDeleted)
+                        .Select(p => new ActivityParticipantBasicDto
+                        {
+                            ClassGroupId = p.ClassGroupId,
+                            IsDeleted = p.IsDeleted
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return activity;
+        }
+
+        /// <summary>
+        /// Get lightweight activity info for registration form - chỉ lấy các trường cần thiết
+        /// Tối ưu performance bằng cách chỉ query các trường cần thiết
+        /// </summary>
+        public async Task<ActivityRegisterInfoDto?> GetRegisterInfoByIdAsync(int id)
+        {
+            var activity = await _context.Activities
+                .Where(a => a.Id == id && !a.IsDeleted)
+                .Select(a => new ActivityRegisterInfoDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Description = a.Description,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate,
+                    Location = a.Location,
+                    MaxParticipants = a.MaxParticipants,
+                    NumberOfParticipants = a.ActivityParticipants.Count(p => !p.IsDeleted),
+                    Category = a.Category,
+                    SubType = a.SubType,
+                    RegisterDate = a.RegisterDate,
+                    EndRegisterDate = a.EndRegisterDate,
+                    RegistrationSettings = a.RegistrationSettings,
+                    Sports = a.Sports
+                        .Where(s => !s.IsDeleted)
+                        .Select(s => new ActivitySportRegisterDto
+                        {
+                            Id = s.Id,
+                            SportName = s.SportName,
+                            MaxMembers = s.MaxMembers,
+                            Description = null // ActivitySport entity không có Description property
+                        })
+                        .ToList(),
+                    Participants = a.ActivityParticipants
+                        .Where(p => !p.IsDeleted)
+                        .Select(p => new ActivityParticipantRegisterDto
+                        {
+                            UserId = p.UserId,
+                            IsDeleted = p.IsDeleted
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return activity;
+        }
+
+        /// <summary>
+        /// Get lightweight activity info for view detail - chỉ lấy các trường cần thiết
+        /// Tối ưu performance bằng cách chỉ query các trường cần thiết
+        /// </summary>
+        public async Task<ActivityViewInfoDto?> GetViewInfoByIdAsync(int id)
+        {
+            var now = DateTime.UtcNow;
+            var startDate = await _context.Activities
+                .Where(a => a.Id == id && !a.IsDeleted)
+                .Select(a => a.StartDate)
+                .FirstOrDefaultAsync();
+
+            var isProblemVisible = startDate.HasValue && now >= startDate.Value;
+
+            var activity = await _context.Activities
+                .Where(a => a.Id == id && !a.IsDeleted)
+                .Select(a => new ActivityViewInfoDto
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Description = a.Description,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate,
+                    Location = a.Location,
+                    MaxParticipants = a.MaxParticipants,
+                    NumberOfParticipants = a.ActivityParticipants.Count(p => !p.IsDeleted),
+                    Category = a.Category,
+                    SubType = a.SubType,
+                    ThumbnailUrl = a.ThumbnailUrl,
+                    RegisterDate = a.RegisterDate,
+                    EndRegisterDate = a.EndRegisterDate,
+                    SubmissionDeadline = a.SubmissionDeadline,
+                    ProblemText = isProblemVisible ? a.ProblemText : null,
+                    ProblemFileUrl = isProblemVisible ? a.ProblemFileUrl : null,
+                    IsProblemVisible = isProblemVisible,
+                    IsDeleted = a.IsDeleted,
+                    Sports = a.Sports
+                        .Where(s => !s.IsDeleted)
+                        .Select(s => new ActivitySportViewDto
+                        {
+                            Id = s.Id,
+                            SportName = s.SportName,
+                            MaxMembers = s.MaxMembers
+                        })
+                        .ToList(),
+                    // Không load participants trong GetViewInfo - sẽ load riêng khi cần với paging
+                    Participants = new List<ActivityParticipantViewDto>(),
+                    Rules = a.Rules
+                        .Where(r => !r.IsDeleted)
+                        .Select(r => r.RuleText ?? "")
+                        .ToList(),
+                    Speakers = a.Speakers
+                        .Where(s => !s.IsDeleted)
+                        .Select(s => new ActivitySpeakerViewDto
+                        {
+                            Id = s.Id,
+                            Name = s.Name,
+                            Title = s.Title,
+                            Bio = s.Bio,
+                            ImageUrl = s.ImageUrl,
+                            Order = s.Order
+                        })
+                        .OrderBy(s => s.Order)
+                        .ToList(),
+                    Programs = a.Programs
+                        .Where(p => !p.IsDeleted)
+                        .Select(p => new ActivityProgramViewDto
+                        {
+                            Id = p.Id,
+                            Title = p.Title,
+                            Description = p.Description,
+                            Time = p.Time,
+                            Order = p.Order
+                        })
+                        .OrderBy(p => p.Order)
+                        .ToList(),
+                    ActivityDetail = a.ActivityDetail != null ? new ActivityDetailViewDto
+                    {
+                        Id = a.ActivityDetail.Id,
+                        CompetitionType = a.ActivityDetail.CompetitionType,
+                        Theme = a.ActivityDetail.Theme,
+                        Genre = a.ActivityDetail.Genre,
+                        PaperSize = a.ActivityDetail.PaperSize,
+                        DrawingMedium = a.ActivityDetail.DrawingMedium,
+                        TimeLimit = a.ActivityDetail.TimeLimit,
+                        SubmissionFormat = a.ActivityDetail.SubmissionFormat
+                    } : null
+                })
+                .FirstOrDefaultAsync();
+
+            return activity;
+        }
+
+        public async Task<PaginationResponseDto<ActivityParticipantViewDto>> GetParticipantsAsync(int activityId, int pageNumber, int pageSize, int? classGroupId = null)
+        {
+            var query = _context.ActivityParticipants
+                .Where(p => p.ActivityId == activityId && !p.IsDeleted);
+
+            // Filter theo lớp nếu có (cho hội thao)
+            if (classGroupId.HasValue)
+            {
+                query = query.Where(p => p.ClassGroupId == classGroupId.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var participants = await query
+                .OrderBy(p => p.ClassGroup != null ? p.ClassGroup.Grade : 999)
+                .ThenBy(p => p.ClassGroup != null ? p.ClassGroup.Name : "")
+                .ThenBy(p => p.User != null ? p.User.FirstName : "")
+                .ThenBy(p => p.User != null ? p.User.LastName : "")
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ActivityParticipantViewDto
+                {
+                    Id = p.Id,
+                    UserId = p.UserId,
+                    ClassGroupId = p.ClassGroupId,
+                    SportId = p.SportId,
+                    Status = p.Status != null ? p.Status.ToString() : null,
+                    IsDeleted = p.IsDeleted,
+                    UserFullName = p.User != null ? (p.User.FirstName + " " + p.User.LastName).Trim() : null,
+                    UserAvatarUrl = p.User != null ? p.User.AvatarUrl : null,
+                    ClassGroupName = p.ClassGroup != null ? (p.ClassGroup.Grade != null ? p.ClassGroup.Grade.ToString() : "") + (p.ClassGroup.Name ?? "") : null,
+                    Grade = p.ClassGroup != null ? p.ClassGroup.Grade : null,
+                    SportName = p.Sport != null ? p.Sport.SportName : null
+                })
+                .ToListAsync();
+
+            return new PaginationResponseDto<ActivityParticipantViewDto>
+            {
+                Data = participants,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+                // TotalPages là computed property, tự động tính từ TotalCount và PageSize
+            };
+        }
+
         public async Task<ActivityResponseDto> AddAsync(CreateActivityDto dto)
         {
             // Validation
@@ -1336,49 +1560,44 @@ namespace EduShpere.Application.Services
             var now = DateTime.UtcNow;
 
             // L?y t?t c? activities ch�a b? x�a
-            var allActivities = await _context.Activities
-                .Where(a => !a.IsDeleted)
-                .Select(a => new
-                {
-                    a.Id,
-                    a.StartDate,
-                    a.EndDate
-                })
-                .ToListAsync();
+            // Tối ưu: Đếm trực tiếp trong database thay vì load tất cả vào memory
+            // Thực hiện song song các queries để tăng tốc độ
+            var ongoingCountTask = _context.Activities
+                .Where(a => !a.IsDeleted
+                    && a.StartDate.HasValue
+                    && a.EndDate.HasValue
+                    && a.StartDate.Value <= now
+                    && a.EndDate.Value >= now)
+                .CountAsync();
 
-            // T�nh s? l�?ng activities theo tr?ng th�i
-            var ongoingCount = allActivities.Count(a =>
-                a.StartDate.HasValue &&
-                a.EndDate.HasValue &&
-                a.StartDate.Value.ToUniversalTime() <= now &&
-                a.EndDate.Value.ToUniversalTime() >= now);
+            var upcomingCountTask = _context.Activities
+                .Where(a => !a.IsDeleted
+                    && a.StartDate.HasValue
+                    && a.StartDate.Value > now)
+                .CountAsync();
 
-            var upcomingCount = allActivities.Count(a =>
-                a.StartDate.HasValue &&
-                a.StartDate.Value.ToUniversalTime() > now);
+            var completedCountTask = _context.Activities
+                .Where(a => !a.IsDeleted
+                    && a.EndDate.HasValue
+                    && a.EndDate.Value < now)
+                .CountAsync();
 
-            var completedCount = allActivities.Count(a =>
-                a.EndDate.HasValue &&
-                a.EndDate.Value.ToUniversalTime() < now);
-
-            // T�nh t?ng s? ng�?i tham gia t? ActivityParticipants
-            var totalParticipants = await _context.ActivityParticipants
+            var totalParticipantsTask = _context.ActivityParticipants
                 .Where(p => !p.IsDeleted)
                 .CountAsync();
 
+            // Chờ tất cả queries hoàn thành song song
+            await Task.WhenAll(ongoingCountTask, upcomingCountTask, completedCountTask, totalParticipantsTask);
+
             return new ActivityStatisticsDto
             {
-                OngoingCount = ongoingCount,
-                UpcomingCount = upcomingCount,
-                CompletedCount = completedCount,
-                TotalParticipants = totalParticipants
+                OngoingCount = await ongoingCountTask,
+                UpcomingCount = await upcomingCountTask,
+                CompletedCount = await completedCountTask,
+                TotalParticipants = await totalParticipantsTask
             };
         }
 
-        /// <summary>
-        /// Quét danh sách participants đã hoàn thành hoạt động và cộng điểm tham gia
-        /// Điều kiện: Activity đã kết thúc (EndDate < Now) và participant có Status = Joined
-        /// </summary>
         public async Task<int> AwardParticipationPointsAsync(int activityId)
         {
             var activity = await _repo.GetByIdAsync(activityId);
@@ -1387,32 +1606,24 @@ namespace EduShpere.Application.Services
                 throw new NotFoundException($"Activity with ID {activityId} not found");
             }
 
-            // QUAN TRỌNG: Kiểm tra đã cộng điểm chưa
             if (activity.HasAwardedParticipationPoints)
             {
-                // Đã cộng điểm rồi, không cần cộng lại
                 return 0;
             }
 
-            // Kiểm tra activity đã kết thúc chưa
-            // Lưu ý: StartDate/EndDate đã được NormalizeDateToUTC khi lưu,
-            // nên ở đây so sánh trực tiếp với DateTime.UtcNow (không dùng ToUniversalTime trong LINQ)
             if (activity.EndDate == null || activity.EndDate.Value > DateTime.UtcNow)
             {
                 throw new BadRequestException("Activity has not ended yet. Cannot award participation points.");
             }
 
-            // Lấy điểm thưởng đăng ký từ ActivityRegistrationReward
             var registrationReward = await _registrationRewardRepo.GetByActivityIdAsync(activityId);
             if (registrationReward == null || registrationReward.StarPoints <= 0)
             {
-                // Không có điểm thưởng đăng ký, đánh dấu đã xử lý để không check lại
                 activity.HasAwardedParticipationPoints = true;
                 await _repo.UpdateAsync(activity);
                 return 0;
             }
 
-            // Lấy danh sách participants đã tham gia (Status = Joined và không bị xóa)
             var participants = await _context.ActivityParticipants
                 .Where(p => p.ActivityId == activityId 
                     && !p.IsDeleted 
