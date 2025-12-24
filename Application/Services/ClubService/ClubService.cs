@@ -174,6 +174,24 @@ namespace EduShpere.Application.Services
             await _repo.DeleteSoft(club.Id);
             return true;
         }
+        public async Task<bool> RestoreClub(int id)
+        {
+            var club = await _repo.GetByIdAsync(id);
+            if (club == null)
+            {
+                throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
+            }
+            await _notificationService.AddAsync(new Notification
+            {
+                Title = $"Câu lạc bộ {club.Name} của bạn đã dược khôi phục ",
+                CreatedAt = DateTime.Now,
+                Read = false,
+                Type = "system",
+                UserId = club.ClubMembers.Where(p => p.Role.Equals("President")).Select(p => p.UserId).FirstOrDefault(),
+            });
+            await _repo.RestoreClub(club.Id);
+            return true;
+        }
         public async Task<ClubResponseDto> CreateClub(CreateClubDto dto)
         {
             var club = new Club
