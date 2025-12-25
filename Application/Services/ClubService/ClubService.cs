@@ -8,6 +8,7 @@ using EduShpere.Application.DTOs;
 using EduShpere.Infrastructure.Repositories;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using EduShpere.Shared;
 using EduShpere.Shared.Constants;
 using EduShpere.Domain.Models;
@@ -123,6 +124,90 @@ namespace EduShpere.Application.Services
             mapped.IsRequestToJoin = club.ClubJoinRequests.Any(r => r.UserId == user.Id && r.Status == "Pending");
             mapped.IsMentorInvite = club.ClubJoinRequests.Any(r => r.UserId == user.Id && r.IsMentor== true && r.Status == "Pending");
             return mapped;
+        }
+        
+        /// <summary>
+        /// Lấy thông tin chi tiết club (không bao gồm members) để tối ưu performance
+        /// </summary>
+        public async Task<ClubDetailDto> GetClubDetailAsync(int id, User user)
+        {
+            var club = await _repo.GetByIdForDetailAsync(id);
+            if (club == null)
+            {
+                throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
+            }
+
+            var mapped = _mapper.Map<ClubDetailDto>(club);
+            mapped.IsPresident = club.PresidentUserId == user.Id;
+            // Check membership và requests mà không load toàn bộ ClubMembers
+            mapped.IsMember = await _clubMemberRepo.IsInClub(user.Id, id);
+            mapped.IsRequestToJoin = club.ClubJoinRequests.Any(r => r.UserId == user.Id && r.Status == "Pending");
+            mapped.IsMentorInvite = club.ClubJoinRequests.Any(r => r.UserId == user.Id && r.IsMentor == true && r.Status == "Pending");
+            
+            // Tính MemberCount từ database (không load toàn bộ members)
+            mapped.MemberCount = await _clubMemberRepo.GetQueryable()
+                .Where(m => m.ClubId == id)
+                .CountAsync();
+            
+            return mapped;
+        }
+        
+        /// <summary>
+        /// Lấy danh sách members của club với pagination và search
+        /// </summary>
+        public async Task<PaginationResponseDto<ClubMemberDto>> GetClubMembersAsync(int clubId, PaginationRequestDto paginationRequest, string? search = null)
+        {
+            // Kiểm tra club tồn tại
+            var club = await _repo.GetByIdAsync(clubId);
+            if (club == null || club.IsDeleted)
+            {
+                throw new BadRequestException(ErrorMessages.Club.ClubNotFound);
+            }
+
+            // Query members với includes
+            // Build query một lần với tất cả điều kiện để tránh type conversion issues
+            var baseQuery = _clubMemberRepo.GetQueryable()
+                .Where(m => m.ClubId == clubId);
+
+            // Build query với Include và search filter một lần
+            IQueryable<ClubMember> query;
+            if (!string.IsNullOrEmpty(search))
+            {
+                var searchLower = search.ToLower();
+                query = baseQuery
+                    .Include(m => m.User)
+                    .Where(m =>
+                        (m.User.FirstName != null && m.User.FirstName.ToLower().Contains(searchLower)) ||
+                        (m.User.LastName != null && m.User.LastName.ToLower().Contains(searchLower)) ||
+                        (m.User.Email != null && m.User.Email.ToLower().Contains(searchLower)) ||
+                        (m.User.Username != null && m.User.Username.ToLower().Contains(searchLower)));
+            }
+            else
+            {
+                query = baseQuery.Include(m => m.User);
+            }
+
+            // Count total
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination và ordering (President trước, sau đó theo CreatedAt)
+            var data = await query
+                .OrderByDescending(m => m.Role == "President")
+                .ThenByDescending(m => m.CreatedAt)
+                .Skip((paginationRequest.PageNumber - 1) * paginationRequest.PageSize)
+                .Take(paginationRequest.PageSize)
+                .ToListAsync();
+
+            // Map to DTO
+            var mapped = _mapper.Map<IEnumerable<ClubMemberDto>>(data);
+
+            return new PaginationResponseDto<ClubMemberDto>
+            {
+                Data = mapped,
+                TotalCount = totalCount,
+                PageNumber = paginationRequest.PageNumber,
+                PageSize = paginationRequest.PageSize
+            };
         }
         public async Task<ClubResponseDto> UpdateClub(UpdateClubDto dto)
         {

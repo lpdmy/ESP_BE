@@ -58,6 +58,21 @@ namespace EduShpere.Infrastructure.Repositories
                 .Include(c => c.ClubJoinRequests)
                 .FirstOrDefaultAsync();
         }
+        
+        /// <summary>
+        /// Lấy club detail (không bao gồm ClubMembers) để tối ưu performance
+        /// </summary>
+        public async Task<Club?> GetByIdForDetailAsync(int id)
+        {
+            return await _context.Clubs
+                .Where(c => c.Id == id && !c.IsDeleted)
+                .Include(c => c.Category)
+                .Include(c => c.CreatedByUser)
+                .Include(c => c.President)
+                .Include(c => c.Mentor)
+                .Include(c => c.ClubJoinRequests)
+                .FirstOrDefaultAsync();
+        }
         public IQueryable<Club> GetAllWithIncludes()
         {
             return _context.Clubs

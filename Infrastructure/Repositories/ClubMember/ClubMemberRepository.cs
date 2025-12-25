@@ -32,5 +32,9 @@ namespace EduShpere.Infrastructure.Repositories
             return await _context.ClubMembers.AnyAsync(cm=> cm.UserId == userId && cm.Role == "Mentor" && !cm.IsDeleted);
         }
         
+        public IQueryable<ClubMember> GetQueryable()
+        {
+            return _context.ClubMembers.Where(m => !m.IsDeleted);
+        }
     }
 }

@@ -17,6 +17,8 @@ namespace EduShpere.Application.Services
     PaginationRequestDto paginationRequest,
     string? search = null);
         Task<ClubResponseDto> GetClubByID(int id,User user);
+         Task<ClubDetailDto> GetClubDetailAsync(int id, User user);
+        Task<PaginationResponseDto<ClubMemberDto>> GetClubMembersAsync(int clubId, PaginationRequestDto paginationRequest, string? search = null);
         Task<ClubResponseDto> UpdateClub(UpdateClubDto dto);
         Task<ClubResponseDto> CreateClub(CreateClubDto dto);
         Task<bool> DeleteClub(int id);
