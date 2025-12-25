@@ -481,7 +481,7 @@ namespace EduShpere.Application.Services
                         : "Đã kết thúc")
                     : "Đang cập nhật"
             }).ToList();
-
+            
             // T�nh s? l�?ng participants cho m?i activity (batch query �? t?i �u)
             var activityIds = activities.Select(a => a.Id).ToList();
             if (activityIds.Any())
@@ -509,12 +509,18 @@ namespace EduShpere.Application.Services
                     
                     userRegisteredActivityIds = userParticipants.ToHashSet();
                 }
-
+                var submittedActivityIds = await _context.Submissions
+                .Where(s => activityIds.Contains(s.ActivityId) && s.UserId == userId && !s.IsDeleted)
+                .Select(s => s.ActivityId)
+                .Distinct()
+                .ToListAsync();
+                var userSubmittedActivityIds = submittedActivityIds.ToHashSet();
                 // G�n s? l�?ng participants v� IsRegistered
                 foreach (var activity in activities)
                 {
                     activity.NumberOfParticipants = participantCounts.GetValueOrDefault(activity.Id, 0);
                     activity.IsRegistered = userRegisteredActivityIds.Contains(activity.Id);
+                    activity.HasSubmitted = userSubmittedActivityIds.Contains(activity.Id);
                 }
             }
 

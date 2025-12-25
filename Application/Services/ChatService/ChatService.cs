@@ -4,6 +4,8 @@ using EduShpere.Domain.Models;
 using EduShpere.Infrastructure;
 using EduShpere.Infrastructure.Repositories;
 using EduShpere.Infrastructure.Repositories.Chat;
+using EduShpere.Shared.Constants;
+using EduShpere.Shared;
 using EduSphere.Domain.Models;
 using MongoDB.Driver;
 
@@ -16,19 +18,25 @@ namespace EduShpere.Application.Services.ChatService
         private readonly INotificationService _notificationService;
         private readonly IClassGroupRepository _classGroupRepository;
         private readonly IClubMemberRepository _clubMemberRepository;
+        private readonly ContentModerationService _contentModerationService;
+        private readonly IModerationService _moderationService;
 
         public ChatService(
             IChatRepository repo,
             IUserService userService,
             INotificationService notificationService,
             IClassGroupRepository classGroupRepository,
-            IClubMemberRepository clubMemberRepository)
+            IClubMemberRepository clubMemberRepository,
+            ContentModerationService contentModerationService,
+            IModerationService moderationService)
         {
             _repo = repo;
             _userService = userService;
             _notificationService = notificationService;
             _classGroupRepository = classGroupRepository;
             _clubMemberRepository = clubMemberRepository;
+            _contentModerationService = contentModerationService;
+            _moderationService = moderationService;
         }
 
         public Task<List<ChatMessage>> GetRoomMessages(string roomId, int limit = 50)
@@ -36,6 +44,19 @@ namespace EduShpere.Application.Services.ChatService
 
         public async Task<ChatMessage> SendMessage(ChatMessage message)
         {
+
+            var moderationResult = _contentModerationService.Check(message.Content);
+            if (moderationResult.Decision == "block")
+            {
+                await _moderationService.CreateReport(new DTOs.ModerationDto.AddModerationDto
+                {
+                    ContentText = message.Content,
+                    AuthorId = message.SenderId,
+                    ReporterId = 0,
+                    Status = "Approved"
+                });
+                throw new BadRequestException(ErrorMessages.Moderation.ContentViolation);
+            }
             var mes = await _repo.AddMessage(message);
             var user = await _userService.GetUserByIdAsync(message.SenderId);
             var room = await _repo.GetRoomById(message.RoomId);
