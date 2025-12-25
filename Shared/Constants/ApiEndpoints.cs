@@ -149,6 +149,8 @@ namespace EduShpere.Shared.Constants
             public const string Clubs = "api/club";
             public const string ClubAdmins = "api/club/admin";
             public const string GetClubById = "api/club/{id}";
+            public const string GetClubDetail = "api/club/{id}/detail";
+            public const string GetClubMembers = "api/club/{clubId}/members";
             public const string GetClubByUser = "api/club/user";
             public const string Categories = "api/club/categories";
             public const string Members = "api/club/members";

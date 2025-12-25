@@ -740,9 +740,6 @@ namespace EduShpere.Application.Services
 
         public async Task<bool> ImprovedRandomAssignAsync(int activityId, int juryPerSubmission)
         {
-            // Rule A: Check if jurors have already graded - don't remove them
-            // Rule B: Distribute evenly (prioritize jurors with fewer assignments)
-            // Rule C: Don't assign duplicates
 
             var activity = await _activityRepo.GetByIdAsync(activityId);
             if (activity == null)
@@ -750,7 +747,6 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException(ErrorMessages.Activity.ActivityNotFound);
             }
 
-            // Get all submissions for this activity
             var submissions = await _submissionRepository.GetAllSubmissionsByActivityId(activityId)
                 .Select(s => new { s.Id })
                 .ToListAsync();
@@ -760,7 +756,6 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException("Sự kiện này chưa có bài nộp nào.");
             }
 
-            // Get all available jurors for this activity
             var juryActivities = await _juryActivityRepo.GetAllJuryActivityByActivityIdIncluding(activityId)
                 .Select(j => j.UserId)
                 .Distinct()
@@ -771,7 +766,6 @@ namespace EduShpere.Application.Services
                 throw new BadRequestException($"Số lượng giám khảo không đủ. Cần ít nhất {juryPerSubmission} giám khảo.");
             }
 
-            // Get existing assignments with grading status and ids
             var existingAssignments = await _juryAssignRepo.GetQueryable()
                 .Where(ja => ja.Submission.ActivityId == activityId)
                 .Select(ja => new
@@ -783,7 +777,6 @@ namespace EduShpere.Application.Services
                 })
                 .ToListAsync();
 
-            // Rule B: Calculate workload for each juror (number of assignments across all submissions)
             var jurorWorkload = existingAssignments
                 .GroupBy(a => a.UserId)
                 .ToDictionary(g => g.Key, g => g.Count());
@@ -808,7 +801,6 @@ namespace EduShpere.Application.Services
                     .Where(a => a.SubmissionId == submission.Id && !a.HasGraded)
                     .ToList();
 
-                // Keep only the best ungraded assignments up to the required slots
                 var remainingSlots = Math.Max(juryPerSubmission - graded.Count, 0);
                 var ungradedToKeep = ungraded
                     .OrderBy(a => jurorWorkload.GetValueOrDefault(a.UserId, 0))

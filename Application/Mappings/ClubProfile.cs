@@ -42,6 +42,17 @@ namespace EduShpere.Application.Mappings
                     src.RequestedByUser != null ? src.RequestedByUser.LastName + " " + src.RequestedByUser.FirstName : null))
                 .ForMember(dest => dest.RequestedByEmail, opt => opt.MapFrom(src =>
                     src.RequestedByUser != null ? src.RequestedByUser.Email : null));
+            
+            // Mapping cho ClubDetailDto (không có Members)
+            // MemberCount sẽ được tính riêng trong service để tối ưu
+            CreateMap<Club, ClubDetailDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src =>
+                    src.Mentor != null ? src.Mentor.LastName + " " + src.Mentor.FirstName : null))
+                .ForMember(dest => dest.PresidentName, opt => opt.MapFrom(src =>
+                    src.President != null ? src.President.LastName + " " + src.President.FirstName : null))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src =>
+                    src.Category != null ? src.Category.Name : null))
+                .ForMember(dest => dest.MemberCount, opt => opt.Ignore()); // Sẽ được set trong service
                 
         }
     }

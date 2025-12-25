@@ -18,6 +18,7 @@ namespace EduShpere.Infrastructure.Repositories
         Task<IEnumerable<Club>> SearchAsync(string query, int pageSize);
         IQueryable<Club> GetAllWithIncludes();
         Task<Club?> GetByIdWithIncludesAsync(int id);
+        Task<Club?> GetByIdForDetailAsync(int id);
         Task<bool> DeleteSoft(int id);
         IQueryable<Club> GetAllWithAdminIncludes();
         Task<bool> RestoreClub(int id);
