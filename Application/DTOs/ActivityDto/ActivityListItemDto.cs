@@ -24,7 +24,8 @@ namespace EduShpere.Application.DTOs.ActivityDto
         public string ThumbnailUrl { get; set; } = null!;
         public int NumberOfParticipants { get; set; }
         public string? Status { get; set; }
-        
+        public bool? HasSubmitted { get; set; }
+
         // Additional fields for admin list view
         public bool OnlyTeacherCanRegister { get; set; }
         public string? GradingSettings { get; set; }

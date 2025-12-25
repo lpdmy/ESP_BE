@@ -209,6 +209,7 @@ namespace EduShpere.Infrastructure.Repositories
                     .OrderByDescending(a => a.StartDate ?? DateTime.MinValue)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
+                    .OrderByDescending(p=>p.CreatedAt)
                     .ToListAsync();
                 
                 return (items ?? new List<Activity>(), totalCount);
